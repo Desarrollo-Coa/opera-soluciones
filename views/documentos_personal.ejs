@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Documental Opera Soluciones</title>
+ 
+ 
+    <style>
+        :root {
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --accent-color: #3498db;
+    --background-color: #ecf0f1;
+    --text-color: #333;
+    --button-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+#loading-spinner {
+    text-align: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+#loading-spinner svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+body {
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    background-color: rgb(0, 0, 0);
+    color: var(--text-color);
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.6;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    background-color: white;
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+h1 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2.5em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.search-container, .upload-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+#search {
+    width: 60%;
+    padding: 15px;
+    font-size: 16px;
+    border: 2px solid var(--accent-color);
+    border-radius: 10px 0 0 10px;
+    outline: none;
+    transition: var(--transition);
+}
+
+#search:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.2);
+}
+
+.button-3d {
+    padding: 15px 30px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--button-shadow);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.button-3d:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.button-3d:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#search-button {
+    background-color: var(--accent-color);
+    color: white;
+    border-radius: 0 10px 10px 0;
+}
+
+#file-input {
+    display: none;
+}
+
+.file-label {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--button-shadow);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.file-label:hover {
+    background-color: var(--primary-color);
+}
+
+#upload-button {
+    background-color: var(--accent-color);
+    color: white;
+    margin-left: 20px;
+}
+
+.documents-container {
+    display: flex;
+    gap: 20px; 
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.document-card {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 15px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: var(--transition);
+    box-shadow: var(--card-shadow);
+}
+
+.document-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.document-icon {
+    font-size: 64px;
+    color: var(--accent-color);
+    margin-bottom: 20px;
+}
+
+.document-name {
+    font-weight: 600;
+    margin-bottom: 20px;
+    font-size: 1em;
+    display: flex;
+    color: var(--primary-color);
+}
+
+.card-buttons {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    gap: 5px;
+}
+
+.preview-button, .download-button {
+    padding: 7px 5px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--transition);
+    box-shadow: var(--button-shadow);
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+}
+
+.preview-button:hover, .download-button:hover {
+    background-color: var(--primary-color);
+}
+
+.preview-button:active, .download-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 900px;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    transition: var(--transition);
+}
+
+.close:hover,
+.close:focus {
+    color: var(--primary-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#preview-frame {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+    
+    .container {
+        padding: 1rem;
+    }
+    
+    #search {
+        width: 100%;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+    
+    #search-button {
+        width: 100%;
+        border-radius: 10px;
+    }
+    
+    .search-container, .upload-container {
+        flex-direction: column;
+    }
+    
+    .file-label, #upload-button {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+        text-align: center;
+    }
+    
+    .documents-container {
+        grid-template-columns: 1fr;
+    }
+}  
+
+
+.content-logo{ 
+    display: flex;
+    align-items: center; 
+
+}
+
+.img{
+    width: 200px;
+    margin-right: 80px;
+    
+
+}
+
+    </style>
+
+
+
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="content-logo">
+            <img class="img" src="./img/logopera.jpg" alt="">
+            <h1>Gestor Documental Opera Soluciones</h1>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Buscar documento...">
+        </div>
+
+        <div class="upload-container">
+            <label for="file-input" class="file-label">Seleccionar archivo</label>
+            <input type="file" id="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
+            <button id="upload-button" class="button-3d">Subir archivo</button>
+        </div>
+
+        <div class="documents-container" id="documents-container"></div>
+    </div>
+    <div id="loading-spinner" style="display:none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-circle-loading" viewBox="0 0 16 16">
+            <path d="M8 0a8 8 0 1 0 8 8A8 8 0 0 0 8 0zm0 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14z" class="spin"/>
+        </svg>
+    </div>
+    
+    <div id="preview-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <iframe id="preview-frame"></iframe>
+        </div>
+    </div>
+ 
+<!--   
+    <script>
+        const documentsContainer = document.getElementById('documents-container');
+        const searchInput = document.getElementById('search');
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+        const loadingSpinner = document.getElementById('loading-spinner'); // Asumimos que tienes un div con id 'loading-spinner'
+        const personaId = '123';  // Esto debería ser dinámico, asignado según la persona actual
+    
+        // Función para mostrar el spinner de carga y deshabilitar los botones/formulario
+        function showLoading() {
+            loadingSpinner.style.display = 'block'; // Muestra el indicador de carga
+            uploadButton.disabled = true;           // Deshabilita el botón de subir
+            searchInput.disabled = true;           // Deshabilita el campo de búsqueda
+            fileInput.disabled = true;             // Deshabilita el input de archivos
+        }
+    
+        // Función para ocultar el spinner de carga y habilitar los botones/formulario
+        function hideLoading() {
+            loadingSpinner.style.display = 'none'; // Oculta el indicador de carga
+            uploadButton.disabled = false;         // Habilita el botón de subir
+            searchInput.disabled = false;          // Habilita el campo de búsqueda
+            fileInput.disabled = false;            // Habilita el input de archivos
+        }
+    
+        // Función para obtener documentos desde la nueva API
+        async function fetchDocuments() {
+            try {
+                showLoading(); // Muestra el loading y deshabilita los controles
+                const response = await fetch(`/api/v1/documentos`);
+                const { documentos } = await response.json();
+                renderDocuments(documentos);
+            } catch (error) {
+                console.error('Error al obtener documentos:', error);
+            } finally {
+                hideLoading(); // Oculta el loading y habilita los controles
+            }
+        }
+    
+        // Función para renderizar los documentos en la interfaz
+        function renderDocuments(docs) {
+            documentsContainer.innerHTML = '';
+            docs.forEach((doc) => {
+                const card = document.createElement('div');
+                card.className = 'document-card';
+                const icon = getDocumentIcon(doc.tipo_documento);
+                card.innerHTML = `
+                    <div class="document-icon">${icon}</div>
+                    <div class="document-name">${doc.nombre_documento}</div>
+                    <div class="card-buttons">
+                        <a href="${doc.url}" class="download-button" download="${doc.nombre_documento}">Descargar</a>
+                        <button class="download-button" onclick="deleteDocument('${doc.archivo_url}')">Borrar</button>
+                    </div>
+                `;
+                documentsContainer.appendChild(card);
+            });
+        }
+    
+        // Función para eliminar un documento
+        async function deleteDocument(fileUrl) {
+            try {
+                showLoading(); // Muestra el loading y deshabilita los controles
+                const response = await fetch(`/api/v1/eliminar-documento`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ archivoUrl: fileUrl })
+                });
+                if (response.ok) {
+                    fetchDocuments(); // Recargamos los documentos
+                } else {
+                    console.error('Error al eliminar el documento');
+                }
+            } catch (error) {
+                console.error('Error al eliminar el documento:', error);
+            } finally {
+                hideLoading(); // Oculta el loading y habilita los controles
+            }
+        }
+    
+        // Función para buscar documentos
+        async function searchDocuments() {
+            const searchTerm = searchInput.value.toLowerCase();
+            try {
+                showLoading(); // Muestra el loading y deshabilita los controles
+                const response = await fetch(`/api/v1/documentos?query=${searchTerm}`);
+                const { documentos } = await response.json();
+                renderDocuments(documentos);
+            } catch (error) {
+                console.error('Error al buscar documentos:', error);
+            } finally {
+                hideLoading(); // Oculta el loading y habilita los controles
+            }
+        }
+    
+        // Función para subir un nuevo documento
+        async function uploadDocument() {
+            const file = fileInput.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('documents', file);
+    
+                try {
+                    showLoading(); // Muestra el loading y deshabilita los controles
+                    const response = await fetch(`/api/v1/subir-documento`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    if (response.ok) {
+                        fetchDocuments(); // Recargamos los documentos
+                        fileInput.value = ''; // Limpiamos el input
+                    } else {
+                        console.error('Error al subir el documento');
+                    }
+                } catch (error) {
+                    console.error('Error al subir el documento:', error);
+                } finally {
+                    hideLoading(); // Oculta el loading y habilita los controles
+                }
+            }
+        }
+    
+        // Función para obtener el icono adecuado según el tipo de archivo
+        function getDocumentIcon(fileType) {
+            switch (fileType) {
+                case 'application/pdf':
+                    return `<svg xmlns="http://www.w3.org/2000/svg" width="62" height="62" fill="currentColor" class="bi bi-filetype-pdf" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM1.6 11.85H0v3.999h.791v-1.342h.803q.43 0 .732-.173.305-.175.463-.474a1.4 1.4 0 0 0 .161-.677q0-.375-.158-.677a1.2 1.2 0 0 0-.46-.477q-.3-.18-.732-.179m.545 1.333a.8.8 0 0 1-.085.38.57.57 0 0 1-.238.241.8.8 0 0 1-.375.082H.788V12.48h.66q.327 0 .512.181.185.183.185.522m1.217-1.333v3.999h1.46q.602 0 .998-.237a1.45 1.45 0 0 0 .595-.689q.196-.45.196-1.084 0-.63-.196-1.075a1.43 1.43 0 0 0-.589-.68q-.396-.234-1.005-.234zm.791.645h.563q.371 0 .609.152a.9.9 0 0 1 .354.454q.118.302.118.753a2.3 2.3 0 0 1-.068.592 1.1 1.1 0 0 1-.196.422.8.8 0 0 1-.334.252 1.3 1.3 0 0 1-.483.082h-.563zm3.743 1.763v1.591h-.79V11.85h2.548v.653H7.896v1.117h1.606v.638z"/></svg>`; 
+                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    return `<svg xmlns="http://www.w3.org/2000/svg" width="62" height="62" fill="currentColor" class="bi bi-file-earmark-word-fill" viewBox="0 0 16 16"><path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M5.485 6.879l1.036 4.144.997-3.655a.5.5 0 0 1 .964 0l.997 3.655 1.036-4.144a.5.5 0 0 1 .998.05l.155 5.143-.993.195-1.013-4.561-1.007 4.561-1.013-.195z"/></svg>`;
+                default:
+                    return '<svg xmlns="http://www.w3.org/2000/svg" width="62" height="62" fill="currentColor" class="bi bi-file-earmark" viewBox="0 0 16 16"><path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0z"/></svg>';
+            }
+        }
+    
+        // Iniciar al cargar la página
+        window.onload = () => {
+            fetchDocuments(); // Cargar documentos cuando la página se inicialice
+        };
+    
+        // Para el formulario de subir documento
+        uploadButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            uploadDocument(); // Subir documento
+        });
+    
+        // Para el campo de búsqueda
+        searchInput.addEventListener('input', searchDocuments);
+    </script>
+     -->
+
+     <script>
+        const documentsContainer = document.getElementById('documents-container');
+        const searchInput = document.getElementById('search');
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+        const loadingSpinner = document.getElementById('loading-spinner'); // Asumimos que tienes un div con id 'loading-spinner'
+        const personaId = '123';  // Esto debería ser dinámico, asignado según la persona actual
+    
+        let documents = [];  // Variable para almacenar los documentos cargados localmente
+    
+        // Función para mostrar el spinner de carga y deshabilitar los botones/formulario
+        function showLoading() {
+            loadingSpinner.style.display = 'block'; // Muestra el indicador de carga
+            uploadButton.disabled = true;           // Deshabilita el botón de subir
+            searchInput.disabled = true;           // Deshabilita el campo de búsqueda
+            fileInput.disabled = true;             // Deshabilita el input de archivos
+        }
+    
+        // Función para ocultar el spinner de carga y habilitar los botones/formulario
+        function hideLoading() {
+            loadingSpinner.style.display = 'none'; // Oculta el indicador de carga
+            uploadButton.disabled = false;         // Habilita el botón de subir
+            searchInput.disabled = false;          // Habilita el campo de búsqueda
+            fileInput.disabled = false;            // Habilita el input de archivos
+        }
+    
+        // Función para obtener documentos desde la nueva API
+        async function fetchDocuments() {
+            try {
+                showLoading(); // Muestra el loading y deshabilita los controles
+                const response = await fetch(`/api/v1/documentos`);
+                const { documentos } = await response.json();
+                documents = documentos;  // Almacenar los documentos en la variable local
+                renderDocuments(documents);  // Renderizar los documentos
+            } catch (error) {
+                console.error('Error al obtener documentos:', error);
+            } finally {
+                hideLoading(); // Oculta el loading y habilita los controles
+            }
+        }
+    
+        // Función para renderizar los documentos en la interfaz
+        function renderDocuments(docs) {
+            documentsContainer.innerHTML = '';
+            docs.forEach((doc) => {
+                const card = document.createElement('div');
+                card.className = 'document-card';
+                const icon = getDocumentIcon(doc.tipo_documento);
+                card.innerHTML = `
+                    <div class="document-icon">${icon}</div>
+                    <div class="document-name">${doc.nombre_documento}</div>
+                    <div class="card-buttons">
+                        <a href="${doc.url}" class="download-button" download="${doc.nombre_documento}">Descargar</a>
+                        <button class="download-button" onclick="deleteDocument('${doc.archivo_url}')">Borrar</button>
+                    </div>
+                `;
+                documentsContainer.appendChild(card);
+            });
+        }
+    
+        // Función para eliminar un documento
+        async function deleteDocument(fileUrl) {
+            try {
+                showLoading(); // Muestra el loading y deshabilita los controles
+                const response = await fetch(`/api/v1/eliminar-documento`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ archivoUrl: fileUrl })
+                });
+                if (response.ok) {
+                    fetchDocuments(); // Recargamos los documentos
+                } else {
+                    console.error('Error al eliminar el documento');
+                }
+            } catch (error) {
+                console.error('Error al eliminar el documento:', error);
+            } finally {
+                hideLoading(); // Oculta el loading y habilita los controles
+            }
+        }
+    
+        // Función para buscar documentos (usando los documentos locales)
+        function searchDocuments() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredDocuments = documents.filter(doc => 
+                doc.nombre_documento.toLowerCase().includes(searchTerm)
+            );
+            renderDocuments(filteredDocuments);  // Renderiza solo los documentos que coinciden
+        }
+    
+        // Función para subir un nuevo documento
+        async function uploadDocument() {
+            const file = fileInput.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('documents', file);
+    
+                try {
+                    showLoading(); // Muestra el loading y deshabilita los controles
+                    const response = await fetch(`/api/v1/subir-documento`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    if (response.ok) {
+                        fetchDocuments(); // Recargamos los documentos
+                        fileInput.value = ''; // Limpiamos el input
+                    } else {
+                        console.error('Error al subir el documento');
+                    }
+                } catch (error) {
+                    console.error('Error al subir el documento:', error);
+                } finally {
+                    hideLoading(); // Oculta el loading y habilita los controles
+                }
+            }
+        }
+    
+        // Función para obtener el icono adecuado según el tipo de archivo
+        function getDocumentIcon(fileType) {
+            switch (fileType) {
+                case 'application/pdf':
+                    return `<svg xmlns="http://www.w3.org/2000/svg" width="62" height="62" fill="currentColor" class="bi bi-filetype-pdf" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM1.6 11.85H0v3.999h.791v-1.342h.803q.43 0 .732-.173.305-.175.463-.474a1.4 1.4 0 0 0 .161-.677q0-.375-.158-.677a1.2 1.2 0 0 0-.46-.477q-.3-.18-.732-.179m.545 1.333a.8.8 0 0 1-.085.38.57.57 0 0 1-.238.241.8.8 0 0 1-.375.082H.788V12.48h.66q.327 0 .512.181.185.183.185.522m1.217-1.333v3.999h1.46q.602 0 .998-.237a1.45 1.45 0 0 0 .595-.689q.196-.45.196-1.084 0-.63-.196-1.075a1.43 1.43 0 0 0-.589-.68q-.396-.234-1.005-.234zm.791.645h.563q.371 0 .609.152a.9.9 0 0 1 .354.454q.118.302.118.753a2.3 2.3 0 0 1-.068.592 1.1 1.1 0 0 1-.196.422.8.8 0 0 1-.334.252 1.3 1.3 0 0 1-.483.082h-.563zm3.743 1.763v1.591h-.79V11.85h2.548v.653H7.896v1.117h1.606v.638z"/></svg>`; 
+                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    return `<svg xmlns="http://www.w3.org/2000/svg" width="62" height="62" fill="currentColor" class="bi bi-file-earmark-word-fill" viewBox="0 0 16 16"><path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M5.485 6.879l1.036 4.144.997-3.655a.5.5 0 0 1 .964 0l.997 3.655 1.036-4.144a.5.5 0 0 1 .998.05l.155 5.143-.993.195-1.013-4.561-1.007 4.561-1.013-.195z"/></svg>`;
+                default:
+                    return '<svg xmlns="http://www.w3.org/2000/svg" width="62" height="62" fill="currentColor" class="bi bi-file-earmark" viewBox="0 0 16 16"><path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0z"/></svg>';
+            }
+        }
+    
+        // Iniciar al cargar la página
+        window.onload = () => {
+            fetchDocuments(); // Cargar documentos cuando la página se inicialice
+        };
+    
+        // Para el formulario de subir documento
+        uploadButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            uploadDocument(); // Subir documento
+        });
+    
+        // Para el campo de búsqueda
+        searchInput.addEventListener('input', searchDocuments);
+    </script>
+    
+    
+    
+</body>
+</html>

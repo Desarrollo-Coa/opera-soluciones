@@ -1,0 +1,5 @@
+project name opera-soluciones
+contraseña: opera-soluciones2025
+
+api_url: https://tjbtusdhxjczmpvwzqzx.supabase.co
+api_key eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqYnR1c2RoeGpjem1wdnd6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzEyMTc5NzgsImV4cCI6MjA0Njc5Mzk3OH0.qbb3MoBlcwcE1gqCa1-AybqtvjW9zokilh1CyJCeIDQ

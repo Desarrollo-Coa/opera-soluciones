@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OPERA SOLUCIONES - Servicios profesionales y soluciones empresariales">
+    <meta name="theme-color" content="#ff4081">
+    <title>OPERA SOLUCIONES</title>
+    <style>
+        /* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Estilos para el body */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Contenedor principal */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Logo */
+.logo {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Estilos para las tarjetas */
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card h2 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.card p {
+    font-size: 1rem;
+    color: #555;
+}
+
+/* Efecto al pasar el cursor por las tarjetas */
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilos para la sección de trabajos */
+.trabajos {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.trabajos__image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .card-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .card h2 {
+        font-size: 1.2rem;
+    }
+
+    .card p {
+        font-size: 0.9rem;
+    }
+
+    .trabajos__image {
+        max-width: 90%;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img 
+                src="img/opsol.jpg" 
+                alt="OPERA SOLUCIONES Logo" 
+                class="logo"
+                width="250"
+                height="auto"
+                loading="eager"
+            >
+        </header>
+        
+        <main>
+            <div class="card-container">
+                <article class="card" onclick="window.location.href='/nosotros'" role="button" tabindex="0">
+                    <h2>Quienes Somos</h2>
+                    <p>Servicio ofrecido por OPERA SOLUCIONES.</p>
+                </article>
+
+                <article class="card" onclick="window.location.href='/personal_opera'" role="button" tabindex="0">
+                    <h2>Equipo de Trabajo Opera Soluciones</h2>
+                    <p>Capital Humano</p>
+                </article>
+
+                <article class="card" onclick="window.location.href='/documentos_personal'" role="button" tabindex="0">
+                    <h2>Gestor Documental Opera Soluciones</h2>
+                    <p>Base de Datos</p>
+                </article>
+            </div>
+
+            <section class="trabajos">
+                <img 
+                    src="img/trabajosoperas.jpg" 
+                    alt="Trabajos Opera Soluciones"
+                    class="trabajos__image"
+                    width="400"
+                    height="auto"
+                    loading="lazy"
+                >
+            </section>
+        </main>
+    </div>
+
+    <script>
+        /* // Implementación de navegación por teclado para accesibilidad */
+
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    card.click();
+                }
+            });
+        });
+
+        /* // Implementación de lazy loading para imágenes */
+        if ('loading' in HTMLImageElement.prototype) {
+            const images = document.querySelectorAll('img[loading="lazy"]');
+            images.forEach(img => {
+                img.src = img.src;
+            });
+        } else {
+            // Fallback para navegadores que no soportan lazy loading
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
+            document.body.appendChild(script);
+        }
+    
+    </script>
+</body>
+</html>
