@@ -39,16 +39,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 
  
 
-
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'defaultsecret', // Clave secreta (asegúrate de que sea robusta)
-    resave: false,  // Evita volver a guardar la sesión si no cambia
-    saveUninitialized: false, // Evita guardar sesiones vacías
-    cookie: { 
-      secure: process.env.NODE_ENV === 'production', // Activa solo en producción (HTTPS)
-      maxAge: 3600000 // Duración de 1 hora
+  app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        maxAge: 2 * 60 * 60 * 1000
     }
-  }));
+}));
   
 
  
@@ -58,12 +56,14 @@ const PORT = process.env.PORT || 3000;
 
 
 // Middleware para validar sesión de usuario
-const validateSession = (req, res, next) => {
-  if (!req.session.user) {
-      return res.redirect('/');  // Si no hay sesión, redirige al login
-  }
-  next();  // Continúa con la siguiente acción si la sesión es válida
-};
+function validateSession(req, res, next) {
+    if (req.session.user) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
+
 
 // Ruta para la página principal
 app.get('/', (req, res) => {
