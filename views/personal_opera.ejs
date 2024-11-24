@@ -15,37 +15,71 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
+        .documents-viewCSS {
+            position: absolute;
+            background-color: #fff;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px;
+            height: auto;
+        }
+
+        .selectEstado{
+            background-color: #fff;
+            padding: 7px;
+            border: none;
+            cursor: pointer;
+
+
+        }
+         
+
         /* Estilo para la superposición que oscurece la interfaz */
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Fondo oscuro semi-transparente */
-    z-index: 999; /* Asegúrate de que esté por encima de otros elementos */
-}
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            /* Fondo oscuro semi-transparente */
+            z-index: 999;
+            /* Asegúrate de que esté por encima de otros elementos */
+        }
 
-/* Estilo para el spinner de carga */
-.spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top: 4px solid #3498db; /* Color del borde superior */
-    width: 30px; /* Tamaño del spinner */
-    height: 30px; /* Tamaño del spinner */
-    animation: spin 1s linear infinite; /* Animación de rotación */
-    position: absolute;
-    top: 50%; /* Centrar verticalmente */
-    left: 50%; /* Centrar horizontalmente */
-    transform: translate(-50%, -50%); /* Ajustar para centrar */
-}
+        /* Estilo para el spinner de carga */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            /* Color del borde superior */
+            width: 30px;
+            /* Tamaño del spinner */
+            height: 30px;
+            /* Tamaño del spinner */
+            animation: spin 1s linear infinite;
+            /* Animación de rotación */
+            position: absolute;
+            top: 50%;
+            /* Centrar verticalmente */
+            left: 50%;
+            /* Centrar horizontalmente */
+            transform: translate(-50%, -50%);
+            /* Ajustar para centrar */
+        }
 
-/* Animación de rotación */
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+        /* Animación de rotación */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
 
         .download-button,
         .delete-button {
@@ -276,10 +310,6 @@
             color: #fff;
         }
 
-        button {
-            background-color: #444;
-        }
-
 
         .right-panel {
             background: #ffffff;
@@ -362,8 +392,12 @@
 
         .buttons-dad {
             display: flex;
-            justify-content: space-between;
+
             margin-top: 20px;
+
+            flex-direction: column;
+            gap: 10px;
+
         }
 
         #delete-persona,
@@ -371,6 +405,7 @@
             background-color: #dc3545;
             /* Rojo para eliminar */
             padding: 10px 15px;
+            width: 170px;
         }
 
         #delete-persona:hover,
@@ -384,122 +419,315 @@
             /* Fondo gris claro para campos de solo lectura */
             user-select: none;
         }
+
         /* Para pantallas pequeñas (móviles) */
-@media (max-width: 600px) {
-    .content-carnet-photo {
-        flex-direction: column;
-        gap: 20px;
-    }
+        @media (max-width: 600px) {
+            .content-carnet-photo {
+                flex-direction: column;
+                gap: 20px;
+            }
 
-    .download-button,
-    .delete-button,
-    #foto-upload-form input,
-    #foto-upload-form button {
-        width: 100%;
-    }
+            .download-button,
+            .delete-button,
+            #foto-upload-form input,
+            #foto-upload-form button {
+                width: 100%;
+            }
 
-    .container {
-        width: 90%;
-        margin: 10px;
-        padding: 20px;
-    }
+            .container {
+                width: 90%;
+                margin: 10px;
+                padding: 20px;
+            }
 
-    .modal-content {
-        width: 90%;
-        padding: 15px;
-    }
+            .modal-content {
+                width: 90%;
+                padding: 15px;
+            }
 
-    img, .fade-in {
-        width: 100%;
-        height: auto;
-    }
+            img,
+            .fade-in {
+                width: 100%;
+                height: auto;
+            }
 
-    .buttons-dad {
-        flex-direction: column;
-        gap: 10px;
-    }
 
-    .form-group {
-        width: 100%;
-    }
 
-    #btnAbrirModal, button {
-        width: 100%;
-    }
+            .form-group {
+                width: 100%;
+            }
 
-    .right-panel {
-        margin: 10px;
-        padding: 15px;
-    }
-}
+            #btnAbrirModal,
+            button {
+                width: 100%;
+            }
 
-/* Para pantallas medianas (tablets) */
-@media (min-width: 601px) and (max-width: 1024px) {
-    .content-carnet-photo {
-        flex-direction: column;
-        gap: 30px;
-    }
+            .right-panel {
+                margin: 10px;
+                padding: 15px;
+            }
+        }
 
-    .container {
-        width: 80%;
-        margin: 20px;
-        padding: 25px;
-    }
+        /* Para pantallas medianas (tablets) */
+        @media (min-width: 601px) and (max-width: 1024px) {
+            .content-carnet-photo {
+                flex-direction: column;
+                gap: 30px;
+            }
 
-    .modal-content {
-        width: 80%;
-        padding: 20px;
-    }
+            .container {
+                width: 80%;
+                margin: 20px;
+                padding: 25px;
+            }
 
-    img, .fade-in {
-        width: 80%;
-        height: auto;
-    }
+            .modal-content {
+                width: 80%;
+                padding: 20px;
+            }
 
-    .right-panel {
-        margin: 15px;
-        padding: 25px;
-    }
+            img,
+            .fade-in {
+                width: 80%;
+                height: auto;
+            }
 
-    .buttons-dad {
-        flex-direction: row;
-        gap: 15px;
-    }
+            .right-panel {
+                margin: 15px;
+                padding: 25px;
+            }
 
-    .form-group {
-        width: 100%;
-        gap: 8px;
-    }
-}
+            .buttons-dad {
+                flex-direction: row;
+                gap: 15px;
+            }
 
-/* Para pantallas grandes (escritorios) */
-@media (min-width: 1025px) {
-    .container {
-        width: 350px;
-        margin: 30px;
-    }
+            .form-group {
+                width: 100%;
+                gap: 8px;
+            }
+        }
 
-    .modal-content {
-        max-width: 60%;
-    }
+        /* Para pantallas grandes (escritorios) */
+        @media (min-width: 1025px) {
+            .container {
+                width: 350px;
+                margin: 30px;
+            }
 
-    img, .fade-in {
-        width: 250px;
-        height: 250px;
-    }
+            .modal-content {
+                max-width: 60%;
+            }
 
-    .buttons-dad {
-        flex-direction: row;
-        gap: 20px;
-    }
+            img,
+            .fade-in {
+                width: 250px;
+                height: 250px;
+            }
 
-    .form-group {
-        width: 240px;
-    }
-}
+            .buttons-dad {
+                flex-direction: row;
+                gap: 20px;
+            }
 
-   
-   </style>
+            .form-group {
+                width: 240px;
+            }
+        }
+
+
+        /* Estilo general del modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #f9f9f9;
+            width: 80%;
+            max-width: 900px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Título del modal */
+        #modal-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        /* Vista de carpetas */
+        #folders-view ul {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0;
+            list-style: none;
+            margin: 0;
+        }
+
+        #folders-view .folder {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #fefefe;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #folders-view .folder:hover {
+            background-color: #f0f8ff;
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        #folders-view .folder::before {
+            content: "📁";
+            /* Emoji de carpeta */
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        #folders-view .folder span {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Vista de documentos */
+        #documents-view {
+            padding: 10px;
+        }
+
+        #documents-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            max-height: 150px;
+            overflow-y: scroll;
+        }
+
+        #documents-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        #documents-list li:hover {
+            background-color: #f0f8ff;
+        }
+
+
+        #documents-list li span {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 7px;
+
+
+        }
+
+        #documents-list button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #documents-list button:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        #back-to-folders {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            color: black;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #back-to-folders:hover {
+            background-color: #ddd;
+        }
+
+        /* Botón de subir documentos */
+        #upload-document-input {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        #upload-document-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #0056b3;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #upload-document-button:hover {
+            background-color: #014288;
+        }
+
+        .descargar,
+        .delete {
+            background-color: #007bff;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #fff;
+            cursor: pointer;
+
+        }
+    </style>
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
@@ -575,7 +803,11 @@
                         <label for="fecha_terminacion">Fecha Terminación:</label>
                         <input type="date" id="fecha_terminacion" name="fecha_terminacion"><br>
                     </div>
-
+                    <div class="form-group">
+                        <!-- Campo calculado -->
+                        <label>Contrato a Vencer:</label>
+                        <div id="tiempo_restante" style="font-weight: bold; color: green;">Faltan X días</div>
+                    </div>
                     <div class="form-group">
                         <!-- Tiempo de Trabajo -->
                         <label for="tiempo_trabajo">Tiempo de Trabajo (MESES):</label>
@@ -637,6 +869,14 @@
                         <input class="inputreadonly" type="text" id="foto_url" readonly name="foto_url"><br>
                     </div>
 
+                    <div class="form-group">
+                        <!-- Estado del Contrato -->
+                        <label for="estado_contrato">Estado del Contrato:</label>
+                        <select class="selectEstado"  id="estado_contrato" name="estado_contrato">
+                            <option   value="activo">Activo</option>
+                            <option value="inactivo">Inactivo</option>
+                        </select><br>
+                    </div>
                     <!-- Botón de acción -->
                     <div class="form-group">
                         <button type="submit">Guardar Cambios</button>
@@ -755,23 +995,40 @@
         </div>
     </div>
 
-
-    <!-- Modal de documentos -->
     <div id="documents-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <span id="closeDocument" class="close">&times;</span>
+            <h1 id="modal-title">Carpetas</h1>
 
-            <h1>Documentos del trabajador</h1>
-            <!-- Lista de documentos -->
-            <ul id="documents-list">
-                <!-- Lista de documentos de la persona se llenará dinámicamente -->
-            </ul>
 
-            <!-- Botón para subir documentos -->
-            <input type="file" id="upload-document-input" multiple>
-            <button id="upload-document-button">Subir Documentos</button>
+            <!-- Vista de carpetas -->
+            <div id="folders-view">
+                <ul>
+                    <li class="folder" data-folder-id="1">Volantes</li>
+                    <li class="folder" data-folder-id="2">Seguridad Social</li>
+                    <li class="folder" data-folder-id="3">Documentos</li>
+                </ul>
+            </div>
+
+
         </div>
     </div>
+
+    <!-- Contenedor de los documentos -->
+    <div id="documents-view" class="documents-viewCSS" style="display:none;">
+        <h3 id="title">Documentos</h3>
+        <ul id="documents-list"></ul>
+
+        <!-- Input para seleccionar archivos -->
+        <input name="documents" type="file" id="upload-document-input" multiple>
+
+        <!-- Botón para enviar el archivo seleccionado -->
+        <button id="upload-document-button" class="btn btn-primary">Subir documento</button>
+
+        <!-- Botón para volver a las carpetas -->
+        <button id="back-to-folders" class="btn btn-secondary">Volver a carpetas</button>
+    </div>
+
 
 
     <div id="loading-spinner" style="display: none;">
@@ -780,158 +1037,103 @@
     </div>
 
     <script>
+        // DOM Elements
 
+        const foldersView = document.getElementById('folders-view');
+        const documentsView = document.getElementById('documents-view');
+        const backToFoldersBtn = document.getElementById('back-to-folders');
+        const uploadButton = document.getElementById('upload-document-button');
+        const uploadInput = document.getElementById('upload-document-input');
+        const documentsList = document.getElementById('documents-list');
+        const loadingPersonas = document.getElementById('loading-personas');
+        const personasList = document.getElementById('personas-list');
+        const personaDetails = document.getElementById('persona-details');
+        const personaInfo = document.getElementById('persona-info');
+        const fotoUploadForm = document.getElementById('foto-upload-form');
+        const editForm = document.getElementById('edit-form');
+        const deletePersonaBtn = document.getElementById('delete-persona');
+        const viewDocsBtn = document.getElementById('view-docs-button');
+        const modalRegistro = document.getElementById('modalRegistro');
+        const documentsModal = document.getElementById('documents-modal');
+        const btnAbrirModal = document.getElementById('btnAbrirModal');
+        const btnCerrarModal = document.getElementById('cerrarModal');
+        const closeModalDocument = document.querySelector('.close');
+        const closeModalButton = document.getElementById('closeDocument');
+        const modalCoente = document.querySelector('#documents-modal');
+        const registroForm = document.getElementById('registroForm');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+
+        // Global variables
+        let currentFolderId = null;
+        let currentPersonId = null;
         let isSubmitting = false;
+        let persona = {};
+        let isUploadingPhoto = false;
+        let isEditingPersona = false;
+        let isDeletingPersona = false;
+        let isUploadingDocuments = false;
+        let isDownloadingDocument = false;
 
+        const baseUrl = "https://tjbtusdhxjczmpvwzqzx.supabase.co/storage/v1/object/public/personal-docs/";
 
-        let persona = {}; // Variable para almacenar la persona seleccionada
-
-        // Mostrar el spinner mientras se cargan las personas
-        document.getElementById('loading-personas').style.display = 'block';
-
-
-        // Obtener todas las personas
-
+        // Functions
         function cargarPersonalActualizado() {
+            calcularTiempoRestante()
+            loadingPersonas.style.display = 'block';
             fetch('/api/personas')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('loading-personas').style.display = 'none';
-                    const personasList = document.getElementById('personas-list');
-
-                    // Asegurarse de que el contenedor esté vacío antes de agregar los nuevos elementos
-                    personasList.innerHTML = ''; // Limpiar la lista antes de agregar elementos
-
-                    // Recorrer los datos de las personas y agregar los elementos <li>
+                    loadingPersonas.style.display = 'none';
+                    personasList.innerHTML = '';
                     data.personas.forEach(persona => {
-                        console.log(`Persona ID: ${persona.id}`);
-                        // Crear el contenido HTML del <li> con el atributo persona_id
-                        const liHTML = `
-                    <li class="selected-person" data-persona_id="${persona.id}" onclick="verDetalles(${persona.id})">
-                        ${persona.nombres} ${persona.apellidos}
-                    </li>
-                `;
-                        // Insertar el contenido HTML directamente en el contenedor
-                        personasList.insertAdjacentHTML('beforeend', liHTML);
+                        const li = document.createElement('li');
+                        li.className = 'selected-person';
+                        li.dataset.personaId = persona.id;
+                        li.textContent = `${persona.nombres} ${persona.apellidos}`;
+                        li.onclick = () => verDetalles(persona.id);
+                        personasList.appendChild(li);
                     });
                 })
                 .catch(error => {
                     console.error('Error obteniendo las personas:', error);
-                    document.getElementById('loading-personas').textContent = 'Error al cargar las personas';
+                    loadingPersonas.textContent = 'Error al cargar las personas';
                 });
         }
 
-        cargarPersonalActualizado()
-
-        // Ver los detalles de una persona
         function verDetalles(idPersona) {
+    console.log("ID Persona recibido:", idPersona);
 
-            console.log("ID Persona recibido:", idPersona);
-            const documentsList = document.getElementById('documents-list');
+    // Ocultar el modal de documentos y mostrar la sección de detalles
+    documentsModal.style.display = 'none';
+    personaInfo.innerHTML = '<div class="loading-spinner"></div>';
+    personaDetails.style.display = 'block';
 
-            const documentModal = document.getElementById('documents-modal')
+    fetch(`/api/personas/${idPersona}`)
+        .then(response => response.json())
+        .then(data => {
+            persona = data;
+            const linkImg = baseUrl + persona.foto_url;
+            rellenarFormulario(persona);
+            personaInfo.innerHTML = `<img src="${linkImg}" alt="Foto" width="100">`;
 
-            documentModal.style.display = 'none';
+            // Llamada a la función para calcular el tiempo restante
+            calcularTiempoRestante();
+        })
+        .catch(error => {
+            console.error('Error obteniendo los detalles de la persona:', error);
+            personaInfo.innerHTML = 'Error al cargar los detalles';
+        });
+}
 
-            // Mostrar el spinner mientras se cargan los detalles
-            document.getElementById('persona-info').innerHTML = '<div class="loading-spinner"> </div>';
 
-            const baseUrl = "https://tjbtusdhxjczmpvwzqzx.supabase.co/storage/v1/object/public/personal-docs/";
-
-            fetch(`/api/personas/${idPersona}`)
-                .then(response => response.json())
-                .then(data => {
-                    persona = data;
-                    const linkImg = baseUrl + persona.foto_url;
-                    document.getElementById('persona-details').style.display = 'block';
-
-                    // Rellenar los campos de edición con la información de la persona
-                    document.getElementById('nombres').value = persona.nombres;
-                    document.getElementById('apellidos').value = persona.apellidos;
-                    document.getElementById('cedula').value = persona.cedula;
-                    document.getElementById('fecha_ingreso').value = persona.fecha_ingreso;
-                    document.getElementById('fecha_terminacion').value = persona.fecha_terminacion;
-                    document.getElementById('tiempo_trabajo').value = persona.tiempo_trabajo;
-                    document.getElementById('cargo').value = persona.cargo;
-                    document.getElementById('eps').value = persona.eps;
-                    document.getElementById('arl').value = persona.arl;
-                    document.getElementById('caja_compensacion').value = persona.caja_compensacion;
-                    document.getElementById('fondo_pension').value = persona.fondo_pension;
-                    document.getElementById('correo').value = persona.correo;
-                    document.getElementById('celular').value = persona.celular;
-                    document.getElementById('direccion').value = persona.direccion;
-                    document.getElementById('foto_url').value = persona.foto_url;
-
-                    document.getElementById('persona-info').innerHTML = `
-                    <img src="${linkImg}" alt="Foto" width="100">
-                `;
-                })
-                .catch(error => {
-                    console.error('Error obteniendo los detalles de la persona:', error);
-                    document.getElementById('persona-info').innerHTML = 'Error al cargar los detalles';
-                });
-        }
-
-      // Variable para controlar el estado de envío de la foto
-let isUploadingPhoto = false;
-
-// Subir foto optimizada
-document.getElementById('foto-upload-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    // Comprobar si ya se está subiendo una foto
-    if (isUploadingPhoto) {
-        return; // Si ya se está subiendo, no hacer nada
-    }
-
-    const fileInput = document.querySelector('input[type="file"]');
-    const file = fileInput.files[0];
-
-    if (file) {
-        // Bloquear la interfaz mientras se sube la foto
-        isUploadingPhoto = true; // Establecer el estado de carga
-        disableForm(true); // Deshabilitar el formulario
-
-        // Mostrar la superposición para oscurecer la interfaz
-        const overlay = document.createElement('div');
-        overlay.classList.add('overlay');
-        document.getElementById('persona-details').appendChild(overlay);
-
-        // Mostrar el spinner de carga
-        const spinner = document.createElement('div');
-        spinner.classList.add('spinner'); // Usar la clase existente
-        overlay.appendChild(spinner);
-
-        // Optimizar la imagen antes de subirla
-        optimizeImage(file)
-            .then(optimizedFile => {
-                const formData = new FormData();
-                formData.append('file', optimizedFile);
-
-                return fetch(`/subir-fotografia/${persona.id}`, {
-                    method: 'POST',
-                    body: formData
-                });
-            })
-            .then(response => response.json())
-            .then(data => {
-                swal('Foto subida correctamente');
-                verDetalles(persona.id); // Recargar los detalles
-            })
-            .catch(error => {
-                console.error('Error subiendo la foto:', error);
-                swal('Error al subir la foto');
-            })
-            .finally(() => {
-                // Restablecer el estado de carga y ocultar el spinner
-                isUploadingPhoto = false; // Restablecer el estado de carga
-                disableForm(false); // Habilitar el formulario
-                overlay.remove(); // Eliminar la superposición
-            });
-    }
-});
-
-        // Función para optimizar la imagen (puedes usar una librería como pica.js o simplemente ajustar la resolución y calidad)
+        function rellenarFormulario(persona) {
+    const campos = ['nombres', 'apellidos', 'cedula', 'fecha_ingreso', 'fecha_terminacion', 'tiempo_trabajo', 'cargo', 'eps', 'arl', 'caja_compensacion', 'fondo_pension', 'correo', 'celular', 'direccion', 'foto_url', 'estado_contrato'];
+    campos.forEach(campo => {
+        document.getElementById(campo).value = persona[campo] || '';
+    });
+}
+        
         function optimizeImage(file) {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -941,14 +1143,11 @@ document.getElementById('foto-upload-form').addEventListener('submit', function 
                     img.onload = function () {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
-
-                        const maxWidth = 800; // Max width of the image
-                        const maxHeight = 800; // Max height of the image
-
+                        const maxWidth = 800;
+                        const maxHeight = 800;
                         let width = img.width;
                         let height = img.height;
 
-                        // Resizing image to fit within max width/height
                         if (width > height) {
                             if (width > maxWidth) {
                                 height = height * (maxWidth / width);
@@ -965,26 +1164,20 @@ document.getElementById('foto-upload-form').addEventListener('submit', function 
                         canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        canvas.toBlob(function (blob) {
-                            resolve(blob); // Returning the optimized image as blob
-                        }, 'image/jpeg', 0.8); // Adjust the quality as needed
+                        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
                     };
-
                     img.src = e.target.result;
                 };
 
-                reader.onerror = function (error) {
-                    reject(error);
-                };
-
+                reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
         }
 
-        // Deshabilitar o habilitar formulario
         function disableForm(disable) {
-            const formElements = document.querySelectorAll('#foto-upload-form input, #edit-form input');
+            const formElements = document.querySelectorAll('#foto-upload-form input, #edit-form input, button');
             formElements.forEach(el => {
+                el.disabled = disable;
                 if (disable) {
                     el.classList.add('disabled-input');
                 } else {
@@ -993,488 +1186,369 @@ document.getElementById('foto-upload-form').addEventListener('submit', function 
             });
         }
 
-        // Variable para controlar el estado de edición
-let isEditingPersona = false;
+        function mostrarOverlay() {
+            const overlay = document.createElement('div');
+            overlay.classList.add('overlay');
+            const spinner = document.createElement('div');
+            spinner.classList.add('spinner');
+            overlay.appendChild(spinner);
+            document.body.appendChild(overlay);
+        }
 
-// Editar persona
-document.getElementById('edit-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    // Comprobar si ya se está editando una persona
-    if (isEditingPersona) {
-        return; // Si ya se está editando, no hacer nada
-    }
-
-    const formData = new FormData(this);
-    const updatedPersona = {};
-    formData.forEach((value, key) => {
-        updatedPersona[key] = value;
-    });
-
-    // Bloquear la interfaz mientras se edita la persona
-    isEditingPersona = true; // Establecer el estado de edición
-    disableForm(true); // Deshabilitar el formulario
-
-    // Mostrar la superposición para oscurecer la interfaz
-    const overlay = document.createElement('div');
-    overlay.classList.add('overlay');
-    document.getElementById('persona-details').appendChild(overlay);
-
-    // Mostrar el spinner de carga
-    const spinner = document.createElement('div');
-    spinner.classList.add('spinner'); // Usar la clase existente
-    overlay.appendChild(spinner);
-
-    // Enviar la solicitud de edición
-    fetch(`/editar-persona/${persona.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPersona)
-    })
-        .then(response => response.json())
-        .then(data => {
-            swal('Información actualizada');
-            verDetalles(persona.id); // Recargar los detalles
-            cargarPersonalActualizado();
-        })
-        .catch(error => {
-            console.error('Error editando la persona:', error);
-            swal('Error al actualizar la información');
-        })
-        .finally(() => {
-            // Restablecer el estado de edición y ocultar el spinner
-            isEditingPersona = false; // Restablecer el estado de edición
-            disableForm(false); // Habilitar el formulario
-            overlay.remove(); // Eliminar la superposición
-        });
-});
+        function ocultarOverlay() {
+            const overlay = document.querySelector('.overlay');
+            if (overlay) overlay.remove();
+        }
 
 
+        async function deleteDocument(archivoUrl, personaId) {
+            try {
+                mostrarOverlay();  // Mostrar overlay antes de realizar la eliminación
 
-// Variable para controlar el estado de eliminación de persona
-let isDeletingPersona = false;
+                const response = await fetch(`/eliminar-documento/${personaId}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ archivoUrl }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-// Eliminar persona
-document.getElementById('delete-persona').addEventListener('click', function () {
-    // Comprobar si ya se está eliminando una persona
-    if (isDeletingPersona) {
-        return; // Si ya se está eliminando, no hacer nada
-    }
+                const data = await response.json();
 
-    const confirmDelete = confirm('¿Estás seguro de que deseas eliminar esta persona?');
-    if (confirmDelete) {
-        // Bloquear la interfaz mientras se elimina la persona
-        isDeletingPersona = true; // Establecer el estado de eliminación
-        disableForm(true); // Deshabilitar el formulario
-
-        // Mostrar la superposición para oscurecer la interfaz
-        const overlay = document.createElement('div');
-        overlay.classList.add('overlay');
-        document.getElementById('persona-details').appendChild(overlay);
-
-        // Mostrar el spinner de carga
-        const spinner = document.createElement('div');
-        spinner.classList.add('spinner'); // Usar la clase existente
-        overlay.appendChild(spinner);
-
-        fetch(`/borrar-persona/${persona.id}`, {
-            method: 'DELETE'
-        })
-            .then(response => response.json())
-            .then(() => {
-                swal('Persona eliminada');
-                // Ocultar los detalles de la persona
-                document.getElementById('persona-details').style.display = 'none';
-                cargarPersonalActualizado()
-            })
-            .catch(error => {
-                console.error('Error eliminando la persona:', error);
-                swal('Hubo un error al eliminar la persona.');
-            })
-            .finally(() => {
-                // Restablecer el estado de eliminación y ocultar el spinner
-                isDeletingPersona = false; // Restablecer el estado de eliminación
-                disableForm(false); // Habilitar el formulario
-                overlay.remove(); // Eliminar la superposición
-            });
-    }
-});
-
-        // Abrir el modal de documentos
-        document.getElementById('view-docs-button').addEventListener('click', function () {
-            const modal = document.getElementById('documents-modal');
-            modal.style.display = 'block';
-
-            console.log("Comprobando id: ", persona.id);  // Log para verificar el ID de la persona
-
-            cargarDocumentos(persona.id); // Cargar los documentos cuando se abre el modal
-        });
-
-
-
-
-
-
-        // Variable para controlar el estado de eliminación de documento
-let isDeletingDocument = false;
-
-// Función que llama a la API para eliminar el documento de una persona
-function borrarDocumento(personaId, archivoUrl) {
-    // Comprobar si ya se está eliminando un documento
-    if (isDeletingDocument) {
-        return; // Si ya se está eliminando, no hacer nada
-    }
-
-    // Confirmar la eliminación antes de proceder
-    if (!confirm('¿Estás seguro de que deseas eliminar este documento?')) {
-        return;  // Si el usuario cancela, no hacer nada
-    }
-
-    // Bloquear la interfaz mientras se elimina el documento
-    isDeletingDocument = true; // Establecer el estado de eliminación
-    disableForm(true); // Deshabilitar el formulario
-
-    // Mostrar la superposición para oscurecer la interfaz
-    const overlay = document.createElement('div');
-    overlay.classList.add('overlay');
-    document.getElementById('persona-details').appendChild(overlay);
-
-    // Mostrar el spinner de carga
-    const spinner = document.createElement('div');
-    spinner.classList.add('spinner'); // Usar la clase existente
-    overlay.appendChild(spinner);
-
-    // Realizar la solicitud a la API de eliminación
-    fetch(`/eliminar-documento/${personaId}`, {
-        method: 'DELETE',  // Método HTTP para eliminar
-        headers: {
-            'Content-Type': 'application/json',  // Especificamos que el cuerpo está en formato JSON
-        },
-        body: JSON.stringify({
-            archivoUrl: archivoUrl,  // Enviamos el archivo URL en el cuerpo
-        }),
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                swal('Documento eliminado correctamente');
-                cargarDocumentos(personaId); // Recargar la lista de documentos
-            } else {
-                swal('Error al eliminar el documento: ' + (data.error || 'Error desconocido.'));
+                if (data.success) {
+                    swal('Documento eliminado correctamente');
+                    loadDocuments(currentFolderId, personaId);  // Recargar la lista de documentos
+                } else {
+                    swal(`Error al eliminar el documento: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('Error al eliminar documento:', error);
+                swal('Hubo un problema al eliminar el documento.');
+            } finally {
+                ocultarOverlay();  // Ocultar overlay después de la operación
             }
-        })
-        .catch(error => {
-            console.error('Error al eliminar el documento:', error);
-            swal('Hubo un error al intentar eliminar el documento.');
-        })
-        .finally(() => {
-            // Restablecer el estado de eliminación y ocultar el spinner
-            isDeletingDocument = false; // Restablecer el estado de eliminación
-            disableForm(false); // Habilitar el formulario
-            overlay.remove(); // Eliminar la superposición
+        }
+
+        // Función para cerrar el modal de documentos
+        documentsModal.addEventListener('click', function (e) {
+            if (e.target === documentsModal) {
+                documentsModal.style.display = 'none';
+            }
         });
-}
 
-        // Función para cargar los documentos de la persona
-        function cargarDocumentos(persona_id) {
-            const documentsList = document.getElementById('documents-list');
-            documentsList.innerHTML = ''; // Limpiar la lista antes de cargar nuevos documentos
+        function showDocuments(folderId, personId) {
+            currentFolderId = folderId;
+            currentPersonId = personId;
+            documentsModal.style.display = 'none';
+            documentsView.style.display = 'block';
 
-            const baseUrlDocumento = "https://tjbtusdhxjczmpvwzqzx.supabase.co/storage/v1/object/public/personal-docs/";
+            // Limpiar y mostrar los documentos
+            loadDocuments(folderId, personId);
 
+        }
+        // Función para cargar documentos desde el servidor 
 
+        function loadDocuments(folderId, personId) {
+            console.log("Cargando documentos de carpeta:", folderId, ", Id de la persona seleccionada:", personId);
+            documentsList.innerHTML = '<li>Cargando documentos...</li>';
+            mostrarOverlay();  // Mostrar overlay
 
-
-            // Realizamos la solicitud para obtener los documentos de la persona
-            fetch(`/api/documentos/${persona_id}/`)
+            fetch(`/api/documentos/${personId}/${folderId}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log("Validando datos: ", data)
-                    if (data && data.documentos && Array.isArray(data.documentos)) {
-                        // Verificamos si los documentos están presentes
-                        let documentosHTML = ''; // Variable para almacenar los elementos de la lista
-                        data.documentos.forEach(doc => {
-                            console.log('Validando antes de unificar: ', doc.archivo_url)
-                            const urlFinal = baseUrlDocumento + doc.archivo_url
-                            console.log(doc.archivo_url)
-                            console.log('Ruta de los link: ', urlFinal)
-                            documentosHTML += ` 
-                            <li>
-                                ${doc.nombre_documento}
-
-                                <span>
-                                <button class="delete-button" onclick="borrarDocumento(${doc.persona_id}, '${doc.archivo_url}')">Borrar</button>                                
-                                <button class="download-button" onclick="descargarDocumento('${urlFinal}', '${doc.nombre_documento}')">Descargar</button></span>
-
-                            </li>
-                        `;
-                        });
-
-                        // Insertamos todo el HTML generado en la lista
-                        documentsList.innerHTML = documentosHTML;
-                    } else {
-                        console.log('No se encontraron documentos');
+                    // Validar que `data.documentos` sea un array
+                    if (!data.documentos || !Array.isArray(data.documentos) || data.documentos.length === 0) {
+                        documentsList.innerHTML = '<li>No hay documentos en esta carpeta.</li>';
+                        return;
                     }
+
+
+                    const title = document.getElementById('title')
+
+                    // Limpiar la lista y agregar documentos
+                    documentsList.innerHTML = '';
+                    data.documentos.forEach(doc => {
+                        const linkUrlDescarga = baseUrl + doc.archivo_url;
+                        const li = document.createElement('li');
+                        title.textContent = ''
+
+                        li.innerHTML = `
+                    ${doc.nombre_documento}
+                    <span>
+                    <a class="descargar" href="${linkUrlDescarga}">Descargar</a>
+                    <span class="delete" onclick="deleteDocument('${doc.archivo_url}', '${personId}')">Borrar</span>
+                    </span>
+                `;
+
+
+
+                        documentsList.appendChild(li);
+
+                        title.textContent = ''
+                        if (folderId == 1) {
+                            title.textContent = 'Volantes'
+                        } else if (folderId == 2) {
+                            title.textContent = 'Seguridad Social'
+
+                        }
+
+                        else if (folderId == 3) {
+
+                            title.textContent = 'Documentos'
+
+                        }
+                        else {
+                            title.textContent = 'Documentos'
+
+                        }
+                    });
                 })
                 .catch(error => {
-                    console.error('Error obteniendo los documentos:', error);
-                    swal('Hubo un error al cargar los documentos.');
+                    console.error('Error al cargar documentos:', error);
+                    documentsList.innerHTML = '<li>Error al cargar documentos</li>';
+                })
+                .finally(() => {
+                    ocultarOverlay();  // Ocultar overlay
                 });
         }
 
 
+        uploadButton.addEventListener('click', () => {
+            const files = uploadInput.files;
 
-        // Cerrar el modal cuando se hace clic en el "X"
-        document.querySelector('.close').addEventListener('click', cerrarModalDocumentos);
-
-        // Cerrar el modal si se hace clic fuera del contenido
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('documents-modal');
-            if (event.target === modal) {
-                cerrarModalDocumentos();
-            }
-        });
-
-
-
-        // Cerrar el modal de documentos
-        function cerrarModalDocumentos() {
-            const modal = document.getElementById('documents-modal');
-            modal.style.display = 'none';
-        }
-
-
-        
-
-        // Variable para controlar el estado de carga de documentos
-let isUploadingDocuments = false;
-
-// Función para subir documentos
-document.getElementById('upload-document-button').addEventListener('click', () => {
-    // Comprobar si ya se están subiendo documentos
-    if (isUploadingDocuments) {
-        return; // Si ya se está subiendo, no hacer nada
-    }
-
-    // Obtener el personaId del atributo 'data-persona_id' del botón
-    const personaId = persona.id;
-    console.log('personaId:', personaId);
-
-    // Verificar si personaId es null o indefinido
-    if (!personaId) {
-        console.error('No se encontró el personaId');
-        return;
-    }
-
-    console.log("Se subirá un archivo para el personal con id:", personaId);
-
-    // Obtener el input de archivos y los archivos seleccionados
-    const fileInput = document.getElementById('upload-document-input');
-    const files = fileInput.files;
-
-    // Verificar si se seleccionaron archivos
-    if (files.length === 0) {
-        swal('Por favor selecciona al menos un archivo para subir.');
-        return;
-    }
-
-    // Crear un FormData para enviar los archivos
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-        formData.append('documents', files[i]);  // El nombre "documents" debe coincidir con el nombre usado en el backend
-    }
-
-    // Bloquear la interfaz mientras se suben los documentos
-    isUploadingDocuments = true; // Establecer el estado de carga
-    disableForm(true); // Deshabilitar el formulario
-
-    // Mostrar la superposición para oscurecer la interfaz
-    const overlay = document.createElement('div');
-    overlay.classList.add('overlay');
-    document.getElementById('persona-details').appendChild(overlay);
-
-    // Mostrar el spinner de carga
-    const spinner = document.createElement('div');
-    spinner.classList.add('spinner'); // Usar la clase existente
-    overlay.appendChild(spinner);
-
-    // Enviar los documentos al servidor
-    fetch(`/subir-documentos/${persona.id}`, {
-        method: 'POST',
-        body: formData
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                swal('Documentos subidos exitosamente');
-                cargarDocumentos(persona.id);  // Recargar la lista de documentos
-            } else {
-                swal('Error al subir los documentos');
-            }
-        })
-        .catch(error => {
-            console.error('Error al subir los documentos:', error);
-            swal('Hubo un error al subir los documentos.');
-        })
-        .finally(() => {
-            // Restablecer el estado de carga y ocultar el spinner
-            isUploadingDocuments = false; // Restablecer el estado de carga
-            disableForm(false); // Habilitar el formulario
-            overlay.remove(); // Eliminar la superposición
-        });
-}); 
-        
-        // Cerrar el modal cuando se hace clic en el "X"
-        document.querySelector('.close').addEventListener('click', cerrarModalDocumentos);
-
-        // Cerrar el modal si se hace clic fuera del contenido
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('documents-modal');
-            if (event.target === modal) {
-                cerrarModalDocumentos();
-            }
-        });
-
-        // Variable para controlar el estado de descarga
-let isDownloadingDocument = false;
-
-// Función para descargar un documento
-function descargarDocumento(url, nombreDocumento) {
-    // Comprobar si ya se está descargando un documento
-    if (isDownloadingDocument) {
-        return; // Si ya se está descargando, no hacer nada
-    }
-
-    // Bloquear la interfaz mientras se descarga el documento
-    isDownloadingDocument = true; // Establecer el estado de descarga
-    disableForm(true); // Deshabilitar el formulario
-
-    // Mostrar la superposición para oscurecer la interfaz
-    const overlay = document.createElement('div');
-    overlay.classList.add('overlay');
-    document.body.appendChild(overlay); // Agregar la superposición al body
-
-    // Mostrar el spinner de carga
-    const spinner = document.createElement('div');
-    spinner.classList.add('spinner'); // Usar la clase existente
-    overlay.appendChild(spinner);
-
-    // Hacer una solicitud a la API para obtener el archivo
-    fetch(url)
-        .then(response => {
-            // Verificar si la respuesta es exitosa (código 200)
-            if (!response.ok) {
-                throw new Error('Error al obtener el archivo');
+            if (!files || files.length === 0) {
+                swal('Selecciona al menos un archivo para subir.');
+                return;
             }
 
-            // Si es exitosa, obtener el archivo como Blob
-            return response.blob();  // Esto nos da el archivo como un objeto binario (Blob)
-        })
-        .then(blob => {
-            // Crear un enlace temporal para descargar el archivo
-            const enlace = document.createElement('a');
+            const formData = new FormData();
+            Array.from(files).forEach(file => formData.append('documents', file));
+            formData.append('folderId', currentFolderId);
 
-            // Crear una URL para el archivo Blob
-            const urlBlob = URL.createObjectURL(blob);
+            mostrarOverlay();  // Mostrar overlay
 
-            // Asignar el Blob URL a href
-            enlace.href = urlBlob;
-
-            // Si proporcionamos un nombre para el archivo, lo usamos
-            if (nombreDocumento) {
-                enlace.download = nombreDocumento;  // Establecer el nombre para la descarga
-            }
-
-            // Asegurarse de que el enlace sea accesible (necesario para algunos navegadores)
-            enlace.style.display = 'none';
-            document.body.appendChild(enlace);
-
-            // Simular el clic en el enlace para iniciar la descarga
-            enlace.click();
-
-            // Limpiar el enlace del DOM y revocar la URL Blob
-            document.body.removeChild(enlace);
-            URL.revokeObjectURL(urlBlob);  // Liberar la URL Blob
-        })
-        .catch(error => {
-            console.error('Error en la descarga: ', error);
-            swal('Hubo un error al intentar descargar el archivo.');
-        })
-        .finally(() => {
-            // Restablecer el estado de descarga y ocultar el spinner
-            isDownloadingDocument = false; // Restablecer el estado de descarga
-            disableForm(false); // Habilitar el formulario
-            overlay.remove(); // Eliminar la superposición
-        });
-}
-
-        // Abrir el modal de documentos
-        document.getElementById('view-docs-button').addEventListener('click', function () {
-            const modal = document.getElementById('documents-modal');
-            modal.style.display = 'block';
-        });
-
-        // Cerrar el modal de documentos
-        document.querySelector('.close').addEventListener('click', function () {
-            document.getElementById('documents-modal').style.display = 'none';
+            fetch(`/subir-documentos/${currentPersonId}`, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    // Verificar que el servidor responde con JSON
+                    if (!response.headers.get('content-type')?.includes('application/json')) {
+                        throw new Error('La respuesta no es JSON válida.');
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    if (result.success) {
+                        swal('Documento subido correctamente.');
+                        loadDocuments(currentFolderId, currentPersonId);
+                        uploadInput.value = ''; // Limpiar el input
+                    } else {
+                        swal(`Error al subir documentos: ${result.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al subir documentos:', error);
+                    swal('Hubo un problema al subir los documentos. Intenta de nuevo.');
+                })
+                .finally(() => {
+                    ocultarOverlay();  // Ocultar overlay
+                });
         });
 
 
+        backToFoldersBtn.addEventListener('click', () => {
 
-        // Obtener el modal, el botón para abrirlo y el botón para cerrarlo
-        const modal = document.getElementById("modalRegistro");
-        const documentsModal = document.getElementById("documents-modal");
-        const btnAbrirModal = document.getElementById("btnAbrirModal");
-        const btnCerrarModal = document.getElementById("cerrarModal");
-        const closeModalDocument = document.querySelector(".close");
+            documentsModal.style.display = 'block';
+            documentsView.style.display = 'none';
+        });
 
-        // Selecciona el botón de cierre y el modal
-        const closeModalButton = document.getElementById('closeDocument');
-        const modalCoente = document.querySelector('#documents-modal');
+        document.querySelectorAll('.folder').forEach(folder => {
+            folder.addEventListener('click', () => {
+                const folderId = folder.getAttribute('data-folder-id'); // Cambiar aquí
+                showDocuments(folderId, persona.id);
+                const title = document.getElementById('title')
+                title.textContent = ''
+                if (folderId == 1) {
+                    title.textContent = 'Volantes'
+                } else if (folderId == 2) {
+                    title.textContent = 'Seguridad Social'
 
-        // Evento para cerrar el modal al hacer clic en el botón de cierre
+                }
+
+                else if (folderId == 3) {
+
+                    title.textContent = 'Documentos'
+
+                }
+                else {
+                    title.textContent = 'Documentos'
+
+                }
+            });
+        });
+
+        viewDocsBtn.addEventListener('click', function () {
+            currentPersonId = persona.id; // Asegúrate de que 'persona' esté definido globalmente
+            documentsModal.style.display = 'block';
+        });
+
         closeModalButton.addEventListener('click', () => {
-            modalCoente.style.display = 'none';
+            documentsModal.style.display = 'none';
         });
 
-        // Mostrar el modal cuando el usuario haga clic en el botón "Registrar Personal"
-        btnAbrirModal.onclick = function () {
-            modal.style.display = "block";
+        window.addEventListener('click', (event) => {
+            if (event.target === documentsModal) {
+                documentsModal.style.display = 'none';
+            }
+        });
+
+
+
+        // Función para cerrar modal (si es necesario)
+        function cerrarModalDocumentos() {
+            const documentsModal = document.getElementById('documentsModal');
+            if (documentsModal) {
+                documentsModal.style.display = 'none';
+            }
         }
 
-        // Cerrar el modal cuando el usuario haga clic en el icono de cerrar
-        btnCerrarModal.onclick = function () {
-            modal.style.display = "none";
-        }
 
 
-        // Cerrar el modal si el usuario hace clic fuera del modal
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', cargarPersonalActualizado);
+
+        fotoUploadForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (isUploadingPhoto) return;
+
+            const fileInput = this.querySelector('input[type="file"]');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            isUploadingPhoto = true;
+            disableForm(true);
+            mostrarOverlay();
+
+            optimizeImage(file)
+                .then(optimizedFile => {
+                    const formData = new FormData();
+                    formData.append('file', optimizedFile);
+                    return fetch(`/subir-fotografia/${persona.id}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    swal('Foto subida correctamente');
+                    verDetalles(persona.id);
+                })
+                .catch(error => {
+                    console.error('Error subiendo la foto:', error);
+                    swal('Error al subir la foto');
+                })
+                .finally(() => {
+                    isUploadingPhoto = false;
+                    disableForm(false);
+                    ocultarOverlay();
+                });
+        });
+
+        editForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (isEditingPersona) return;
+
+            const formData = new FormData(this);
+            const updatedPersona = Object.fromEntries(formData.entries());
+
+            isEditingPersona = true;
+            disableForm(true);
+            mostrarOverlay();
+
+            fetch(`/editar-persona/${persona.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedPersona)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    swal('Información actualizada');
+                    verDetalles(persona.id);
+                    cargarPersonalActualizado();
+                })
+                .catch(error => {
+                    console.error('Error editando la persona:', error);
+                    swal('Error al actualizar la información');
+                })
+                .finally(() => {
+                    isEditingPersona = false;
+                    disableForm(false);
+                    ocultarOverlay();
+                });
+        });
+
+        deletePersonaBtn.addEventListener('click', function () {
+            if (isDeletingPersona) return;
+
+            const confirmDelete = confirm('¿Estás seguro de que deseas eliminar esta persona?');
+            if (!confirmDelete) return;
+
+            isDeletingPersona = true;
+            disableForm(true);
+            mostrarOverlay();
+
+            fetch(`/borrar-persona/${persona.id}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(() => {
+                    swal('Persona eliminada');
+                    personaDetails.style.display = 'none';
+
+                    cargarPersonalActualizado();
+                })
+                .catch(error => {
+                    console.error('Error eliminando la persona:', error);
+                    swal('Hubo un error al eliminar la persona.');
+                })
+                .finally(() => {
+                    isDeletingPersona = false;
+                    disableForm(false);
+                    ocultarOverlay();
+                });
+        });
+
+        viewDocsBtn.addEventListener('click', function () {
+
+            documentsModal.style.display = 'block';
+        })
+
+
+        closeModalButton.addEventListener('click', cerrarModalDocumentos);
+
+        window.addEventListener('click', (event) => {
+            if (event.target === documentsModal) {
+                cerrarModalDocumentos();
+            }
+        });
+
+        btnAbrirModal.onclick = () => modalRegistro.style.display = "block";
+        btnCerrarModal.onclick = () => modalRegistro.style.display = "none";
+
         window.onclick = function (event) {
-            if (event.target === modal) {
-                modal.style.display = "none";
+            if (event.target === modalRegistro) {
+                modalRegistro.style.display = "none";
             }
-        }
+        };
 
-        // Enviar el formulario (similar al código anterior)
-        document.getElementById('registroForm').addEventListener('submit', async function (event) {
+        registroForm.addEventListener('submit', async function (event) {
             event.preventDefault();
-
-
-            // Comprobar si ya se está enviando
-
-            if (isSubmitting) {
-
-                return; // Si ya se está enviando, no hacer nada
-
-            }
-
-
-            // Bloquear el formulario y mostrar el spinner
+            if (isSubmitting) return;
 
             isSubmitting = true;
-
-            document.getElementById('loading-spinner').style.display = 'block'; // Mostrar el spinner
-
+            loadingSpinner.style.display = 'block';
+            mostrarOverlay();  // Mostrar overlay
 
             const formData = new FormData(this);
 
@@ -1488,10 +1562,9 @@ function descargarDocumento(url, nombreDocumento) {
 
                 if (response.ok) {
                     swal('Personal registrado correctamente');
-                    modal.style.display = "none";  // Cerrar el modal
-                    this.reset();  // Limpiar el formulario
-                    cargarPersonalActualizado()
-
+                    modalRegistro.style.display = "none";
+                    this.reset();
+                    cargarPersonalActualizado();  // Actualizar la lista de personal
                 } else {
                     swal('Error al registrar el personal: ' + data.error);
                 }
@@ -1499,19 +1572,41 @@ function descargarDocumento(url, nombreDocumento) {
                 console.error('Error al registrar el personal:', error);
                 swal('Error al enviar los datos al servidor.');
             } finally {
-
-                // Restablecer el estado de envío y ocultar el spinner
-
                 isSubmitting = false;
-
-                document.getElementById('loading-spinner').style.display = 'none'; // Ocultar el spinner
-
+                loadingSpinner.style.display = 'none';
+                ocultarOverlay();  // Ocultar overlay
             }
         });
 
 
-    </script>
 
+        document.getElementById('fecha_ingreso').addEventListener('change', calcularTiempoRestante);
+document.getElementById('fecha_terminacion').addEventListener('change', calcularTiempoRestante);
+
+
+        function calcularTiempoRestante() {
+    // Obtener las fechas de ingreso y terminación del contrato
+    const fechaIngreso = new Date(document.getElementById('fecha_ingreso').value);
+    const fechaTerminacion = new Date(document.getElementById('fecha_terminacion').value);
+
+    // Validar si las fechas están correctamente ingresadas
+    if (isNaN(fechaIngreso) || isNaN(fechaTerminacion)) {
+        document.getElementById('tiempo_restante').innerText = "Por favor, ingrese ambas fechas correctamente.";
+        return;
+    }
+
+    // Calcular la diferencia entre las dos fechas en milisegundos
+    const diferencia = fechaTerminacion - fechaIngreso;
+
+    // Convertir la diferencia de milisegundos a días y meses
+    const diasRestantes = Math.floor(diferencia / (1000 * 60 * 60 * 24)); // Milisegundos a días
+    const mesesRestantes = Math.floor(diasRestantes / 30); // Aproximación de meses (30 días promedio)
+
+    // Actualizar el texto con los días y meses restantes
+    const tiempoRestanteText = `${mesesRestantes} meses y ${diasRestantes % 30} días.`;
+    document.getElementById('tiempo_restante').innerText = tiempoRestanteText;
+}
+    </script>
 
 
 </body>

@@ -40,13 +40,16 @@ app.use(express.static(path.join(__dirname, 'public')));
  
 
 
-// Configuración de Express Session
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'defaultsecret', // Usa una clave secreta para firmar la sesión
-  resave: false,  // No vuelve a guardar la sesión si no ha cambiado
-  saveUninitialized: false, // No guarda sesiones sin inicializar
-  cookie: { secure: false, maxAge: 3600000 } // maxAge: 1 hora (en milisegundos)
-}));
+    secret: process.env.SESSION_SECRET || 'defaultsecret', // Clave secreta (asegúrate de que sea robusta)
+    resave: false,  // Evita volver a guardar la sesión si no cambia
+    saveUninitialized: false, // Evita guardar sesiones vacías
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production', // Activa solo en producción (HTTPS)
+      maxAge: 3600000 // Duración de 1 hora
+    }
+  }));
+  
 
  
 // Puerto del servidor
@@ -148,7 +151,12 @@ app.post('/login', async (req, res) => {
       }
 
       // Almacenar la información del usuario en la sesión
-      req.session.user = data;
+      req.session.user = {
+        id: data.id,
+        username: data.username,
+        email: data.email,
+    };
+    
       console.log('Login exitoso', data);
 
       // Responder con éxito y redirigir
@@ -202,6 +210,8 @@ app.post('/api/registrar_personal', upload.single('foto'), async (req, res) => {
         const { nombres, apellidos, cedula, fecha_ingreso, fecha_terminacion, tiempo_trabajo, cargo, eps, arl, caja_compensacion, fondo_pension, correo, celular, direccion } = req.body;
         console.log('Datos del formulario:', req.body);
 
+        const estado_contrato = "activo"
+
         // Insertamos los datos del nuevo personal en la base de datos
         const { data: newPersona, error: insertError } = await supabase
             .from('persona_opera')
@@ -219,7 +229,8 @@ app.post('/api/registrar_personal', upload.single('foto'), async (req, res) => {
                 fondo_pension,
                 correo,
                 celular,
-                direccion
+                direccion,
+                estado_contrato
             }])
             .select('id'); // Obtenemos el 'id' recién creado (lo usamos para la foto)
 
@@ -439,114 +450,7 @@ app.post('/subir-fotografia/:idPersona',
 
 
 
-// app.post('/subir-fotografia/:idPersona', 
-//   upload.single('file'),  // Usamos upload.single para una sola foto
-//   async (req, res) => {
-//       try {
-//           console.log('Datos recibidos en el endpoint /subir-fotografia:', req.body);
 
-//           // Verificar si no se recibe archivo
-//           if (!req.file) {
-//               console.error('Error: No se recibió ninguna fotografía.');
-//               return res.status(400).json({ error: 'No se recibió ninguna fotografía.' });
-//           }
-
-//           const { idPersona } = req.params;
-//           const file = req.file;
-//           console.log('Archivo recibido:', file);
-
-//           // Generar un nombre único para la imagen usando getTime() para control de caché
-//           const timestamp = new Date().getTime(); // Usar timestamp para la caché
-//           const fileName = `persona_${idPersona}/foto/Perfil_${timestamp}_${idPersona}.${file.mimetype.split('/')[1]}`; // Asumimos que el mimetype contiene la extensión
-//           console.log(`Nombre del archivo generado: ${fileName}`);
-
-//           // Verificar si ya existe una foto en Supabase Storage (la carpeta persona_id/foto/)
-//           const { data: existingData, error: fetchError } = await supabase.storage
-//               .from('personal-docs')
-//               .list(`persona_${idPersona}/foto/`);
-
-//           if (fetchError) {
-//               console.error('Error al verificar la foto existente:', fetchError);
-//               return res.status(500).json({ error: 'Error al verificar la foto existente.' });
-//           }
-
-//           // Si existe una foto en la carpeta, borrar la carpeta o los archivos existentes
-//           if (existingData.length > 0) {
-//               // Listamos los archivos y los eliminamos (puedes borrar todos los archivos de la carpeta foto)
-//               const filesToDelete = existingData.map(file => file.name);
-//               console.log('Archivos a eliminar:', filesToDelete);
-//               console.log(`persona_${idPersona}/foto/${filesToDelete}`)
-
-//               // Eliminar los archivos viejos
-//               const { error: deleteError } = await supabase.storage
-//                   .from('personal-docs')
-//                   .remove(`persona_${idPersona}/foto/${filesToDelete}`);
-
-//               if (deleteError) {
-//                   console.error('Error al eliminar la foto existente:', deleteError);
-//                   return res.status(500).json({ error: 'Error al eliminar la foto existente.' });
-//               }
-//               console.log('Fotos existentes eliminadas con éxito.');
-//           } else {
-//               console.log('No existen fotos previas para esta persona.');
-//           }
-
-//           // Subir el archivo nuevo a Supabase Storage
-//           const { data, error: uploadError } = await supabase.storage
-//               .from('personal-docs')  // Asegúrate de tener este bucket creado en Supabase
-//               .upload(fileName, file.buffer, { 
-//                   contentType: file.mimetype,   // Usamos el tipo MIME del archivo original
-//                   cacheControl: '3600',  // Controlar el cache, por ejemplo: 1 hora
-//                   upsert: true           // Permite reemplazar archivos existentes si es necesario
-//               });
-
-//           if (uploadError) {
-//               console.error('Error al subir la foto a Supabase Storage:', uploadError);
-//               return res.status(400).json({ error: uploadError.message });
-//           }
-
-//           // Obtener la URL pública del archivo subido
-//           const fotoUrl = data.Key;
-//           console.log(`Foto subida exitosamente. URL: ${fotoUrl}`);
-
-//           // Actualizar la URL de la foto en la base de datos
-//           const { error: updateError } = await supabase
-//               .from('persona_opera')  // Asegúrate de tener esta tabla en Supabase
-//               .update({ foto_url: fileName })
-//               .eq('id', idPersona);
-
-//           if (updateError) {
-//               console.error('Error al actualizar la URL de la foto en la base de datos:', updateError);
-//               return res.status(400).json({ error: updateError.message });
-//           }
-
-//           // Respuesta exitosa
-//           return res.status(200).json({
-//               success: true,
-//               message: 'Foto subida correctamente',
-//               fotoUrl
-//           });
-
-//       } catch (error) {
-//           // Captura cualquier error inesperado en el proceso
-//           console.error('Error al procesar la subida de la fotografía:', error);
-//           return res.status(500).json({
-//               success: false,
-//               message: 'Error al subir la fotografía al servidor',
-//               error: {
-//                   message: error.message,
-//                   details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-//               }
-//           });
-//       }
-//   }
-// );
-
-
-
-
-
-// Editar información de la persona
 app.put('/editar-persona/:id', async (req, res) => {
   const { id } = req.params;
   const updatedData = req.body;
@@ -573,239 +477,318 @@ app.put('/editar-persona/:id', async (req, res) => {
 });
 
 
+// app.delete('/borrar-persona/:id', async (req, res) => {
+//     const { id } = req.params;
+//     console.log('Iniciando proceso de eliminación para persona con ID:', id); // Depuración
+  
+//     try {
+//         // Primero, obtener los documentos de la persona
+//         const { data: documentos, error: documentosError } = await supabase
+//             .from('documentos_personal')
+//             .select('archivo_url')
+//             .eq('persona_id', id);
+  
+//         if (documentosError) {
+//             console.error('Error al obtener documentos de la persona:', documentosError.message); // Depuración
+//             return res.status(500).json({ error: documentosError.message });
+//         }
+  
+//         if (!documentos || documentos.length === 0) {
+//             console.log('No se encontraron documentos para esta persona.'); // Depuración
+//         } else {
+//             console.log('Documentos encontrados:', documentos); // Depuración
+//         }
+  
+//         // Comprobar si existen documentos para eliminar
+//         if (documentos && documentos.length > 0) {
+//             // Extraemos las URLs de los documentos
+//             const fileUrls = documentos.map(doc => doc.archivo_url);
+//             console.log('URLs de archivos a eliminar:', fileUrls); // Depuración
+  
+//             // Borrar los archivos de Supabase Storage
+//             const { error: deleteFilesError } = await supabase.storage
+//                 .from('personal-docs')
+//                 .remove(fileUrls);
+  
+//             if (deleteFilesError) {
+//                 console.error('Error al eliminar los archivos de Supabase Storage:', deleteFilesError.message); // Depuración
+//                 return res.status(500).json({ error: deleteFilesError.message });
+//             }
+  
+//             console.log('Archivos eliminados exitosamente.'); // Depuración
+//         } else {
+//             console.log('No hay archivos para eliminar en Supabase Storage.');
+//         }
+  
+//         // Borrar los documentos de la base de datos
+//         const { error: deleteDocsError } = await supabase
+//             .from('documentos_personal')
+//             .delete()
+//             .eq('persona_id', id);
+  
+//         if (deleteDocsError) {
+//             console.error('Error al eliminar documentos de la base de datos:', deleteDocsError.message); // Depuración
+//             return res.status(500).json({ error: deleteDocsError.message });
+//         }
+  
+//         console.log('Documentos eliminados de la base de datos.'); // Depuración
+  
+//         // Finalmente, borrar la persona
+//         const { error: deletePersonaError } = await supabase
+//             .from('persona_opera')
+//             .delete()
+//             .eq('id', id);
+  
+//         if (deletePersonaError) {
+//             console.error('Error al eliminar la persona de la base de datos:', deletePersonaError.message); // Depuración
+//             return res.status(500).json({ error: deletePersonaError.message });
+//         }
+  
+//         console.log('Persona eliminada correctamente.'); // Depuración
+//         res.status(200).json({ message: 'Persona eliminada correctamente' });
+//     } catch (err) {
+//         console.error('Error en el proceso de eliminación:', err); // Depuración
+//         return res.status(500).json({ error: 'Hubo un error al eliminar la persona' });
+//     }
+//   });
+  
+  
+
 app.delete('/borrar-persona/:id', async (req, res) => {
     const { id } = req.params;
     console.log('Iniciando proceso de eliminación para persona con ID:', id); // Depuración
-  
+
     try {
-        // Primero, obtener los documentos de la persona
+        // Obtener todos los documentos relacionados con la persona
         const { data: documentos, error: documentosError } = await supabase
             .from('documentos_personal')
             .select('archivo_url')
             .eq('persona_id', id);
-  
+
         if (documentosError) {
-            console.error('Error al obtener documentos de la persona:', documentosError.message); // Depuración
+            console.error('Error al obtener documentos de la persona:', documentosError.message);
             return res.status(500).json({ error: documentosError.message });
         }
-  
-        if (!documentos || documentos.length === 0) {
-            console.log('No se encontraron documentos para esta persona.'); // Depuración
-        } else {
-            console.log('Documentos encontrados:', documentos); // Depuración
-        }
-  
-        // Comprobar si existen documentos para eliminar
+
+        // Eliminar archivos si existen
         if (documentos && documentos.length > 0) {
-            // Extraemos las URLs de los documentos
             const fileUrls = documentos.map(doc => doc.archivo_url);
-            console.log('URLs de archivos a eliminar:', fileUrls); // Depuración
-  
-            // Borrar los archivos de Supabase Storage
+            console.log('Eliminando archivos:', fileUrls);
+
             const { error: deleteFilesError } = await supabase.storage
                 .from('personal-docs')
                 .remove(fileUrls);
-  
+
             if (deleteFilesError) {
-                console.error('Error al eliminar los archivos de Supabase Storage:', deleteFilesError.message); // Depuración
+                console.error('Error al eliminar archivos:', deleteFilesError.message);
                 return res.status(500).json({ error: deleteFilesError.message });
             }
-  
-            console.log('Archivos eliminados exitosamente.'); // Depuración
-        } else {
-            console.log('No hay archivos para eliminar en Supabase Storage.');
+
+            console.log('Archivos eliminados correctamente.');
         }
-  
-        // Borrar los documentos de la base de datos
+
+        // Eliminar carpeta de la persona
+        const folderPath = `persona_${id}/documentos/`; // Ruta de la carpeta en Supabase
+        console.log('Eliminando carpeta:', folderPath);
+
+        const { error: deleteFolderError } = await supabase.storage
+            .from('personal-docs')
+            .remove([folderPath]); // Asegúrate de que la carpeta esté vacía
+
+        if (deleteFolderError) {
+            console.error('Error al eliminar la carpeta:', deleteFolderError.message);
+            return res.status(500).json({ error: deleteFolderError.message });
+        }
+
+        console.log('Carpeta eliminada correctamente.');
+
+        // Eliminar documentos de la base de datos
         const { error: deleteDocsError } = await supabase
             .from('documentos_personal')
             .delete()
             .eq('persona_id', id);
-  
+
         if (deleteDocsError) {
-            console.error('Error al eliminar documentos de la base de datos:', deleteDocsError.message); // Depuración
+            console.error('Error al eliminar documentos de la base de datos:', deleteDocsError.message);
             return res.status(500).json({ error: deleteDocsError.message });
         }
-  
-        console.log('Documentos eliminados de la base de datos.'); // Depuración
-  
-        // Finalmente, borrar la persona
+
+        console.log('Documentos eliminados de la base de datos.');
+
+        // Eliminar a la persona
         const { error: deletePersonaError } = await supabase
             .from('persona_opera')
             .delete()
             .eq('id', id);
-  
+
         if (deletePersonaError) {
-            console.error('Error al eliminar la persona de la base de datos:', deletePersonaError.message); // Depuración
+            console.error('Error al eliminar la persona:', deletePersonaError.message);
             return res.status(500).json({ error: deletePersonaError.message });
         }
-  
-        console.log('Persona eliminada correctamente.'); // Depuración
+
+        console.log('Persona eliminada correctamente.');
         res.status(200).json({ message: 'Persona eliminada correctamente' });
+
     } catch (err) {
-        console.error('Error en el proceso de eliminación:', err); // Depuración
+        console.error('Error en el proceso de eliminación:', err);
         return res.status(500).json({ error: 'Hubo un error al eliminar la persona' });
     }
-  });
-  
+});
+
  
-
-
-  app.post('/subir-documentos/:idPersona', upload.array('documents'), async (req, res) => {
+ // Subir documentos con carpeta seleccionada
+app.post('/subir-documentos/:idPersona', upload.array('documents'), async (req, res) => {
     const { idPersona } = req.params;
-  
-    // Verificamos que se haya subido al menos un documento
+    const { folderId } = req.body; 
+
+    // Validar que se recibieron archivos
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ error: 'No se recibieron documentos.' });
     }
-  
-    try {
-        const uploadedDocs = [];
-  
-        
-        for (let file of req.files) {
-            const timestamp = new Date().getTime();
-            const fileName = `persona_${idPersona}/documentos/${timestamp}_${file.originalname}`;
-  
-            // Subir el archivo a Supabase Storage
-            const { data, error: uploadError } = await supabase.storage
-                .from('personal-docs')
-                .upload(fileName, file.buffer, { contentType: file.mimetype });
-  
-            if (uploadError) {
-                console.error('Error subiendo documento:', uploadError);
-                return res.status(500).json({ error: 'Error al subir el documento.' });
-            }
-  
-            console.log("Archivo subido:", fileName);
-  
-            // Construir la URL pública del archivo
-            const fileUrl = `${fileName}`;
-            const nombreDocumento =  file.originalname
-  
-            // Guardamos la información del documento en la base de datos
-            const { error: dbError } = await supabase
-                .from('documentos_personal')
-                .insert([{
-                    persona_id: idPersona,
-                    nombre_documento: nombreDocumento,
-                    tipo_documento: file.mimetype,
-                    archivo_url: fileUrl,
-                    fecha_subida: new Date()
-                }]);
-  
-            if (dbError) {
-                console.error('Error al registrar documento en la base de datos:', dbError);
-                return res.status(500).json({ error: 'Error al registrar el documento en la base de datos.' });
-            }
-  
-            // Agregar el documento subido a la lista de respuestas
-            uploadedDocs.push({
-                nombre_documento: file.originalname,
-                url: fileUrl
-            });
-        }
-  
-        // Responder con los documentos subidos
-        return res.status(200).json({ success: true, documentos: uploadedDocs });
-  
-    } catch (error) {
-        console.error('Error al procesar la subida de documentos:', error);
-        return res.status(500).json({ error: 'Error interno al procesar los documentos.' });
+
+    // Validar que folderId sea válido
+    if (!folderId) {
+        return res.status(400).json({ error: 'El ID de la carpeta es requerido.' });
     }
-  });
-  
-
-  
-// Ruta para obtener los documentos de una persona
-app.get('/api/documentos/:idPersona', async (req, res) => {
-    const { idPersona } = req.params;
-    console.log(`Solicitando documentos para la persona con ID: ${idPersona}`);  // Depuración
 
     try {
-        const { data, error } = await supabase
-            .from('documentos_personal')
-            .select('*')
-            .eq('persona_id', idPersona);
+        const uploadedDocs = await Promise.all(
+            req.files.map(async (file) => {
+                const timestamp = new Date().getTime();
+                const fileName = `persona_${idPersona}/documentos/${timestamp}_${file.originalname}`;
 
-        if (error) {
-            console.error('Error obteniendo los documentos:', error);  // Depuración
-            return res.status(400).json({ error: error.message });
-        }
- 
+                // Subir archivo a Supabase Storage
+                const { data, error: uploadError } = await supabase.storage
+                    .from('personal-docs')
+                    .upload(fileName, file.buffer, { contentType: file.mimetype });
 
-        console.log('Documentos obtenidos:', data);  // Depuración
-        return res.status(200).json({ documentos: data });
+                if (uploadError) {
+                    throw new Error(`Error al subir el documento: ${file.originalname} - ${uploadError.message}`);
+                }
+
+                // Construir la URL del archivo como en tu lógica
+                const fileUrl = `${fileName}`;
+
+                // Guardar en la base de datos con el ID de la carpeta
+                const { error: dbError } = await supabase
+                    .from('documentos_personal')
+                    .insert([{
+                        persona_id: idPersona,
+                        nombre_documento: file.originalname,
+                        tipo_documento: file.mimetype,
+                        archivo_url: fileUrl,
+                        id_tipo_de_documento: folderId,  
+                        fecha_subida: new Date()
+                    }]);
+
+                if (dbError) {
+                    throw new Error(`Error al registrar en la base de datos: ${file.originalname} - ${dbError.message}`);
+                }
+
+                return {
+                    nombre_documento: file.originalname,
+                    url: fileUrl
+                };
+            })
+        );
+
+        res.status(200).json({ success: true, documentos: uploadedDocs });
     } catch (error) {
-        console.error('Error obteniendo los documentos:', error);  // Depuración
-        return res.status(500).json({ error: 'Error en el servidor' });
+        console.error('Error al procesar la subida de documentos:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
 
 
+// Obtener documentos por persona y carpeta
+app.get('/api/documentos/:personId/:folderId', async (req, res) => {
+    const { personId, folderId } = req.params;
+
+    try {
+        const { data, error } = await supabase
+            .from('documentos_personal')
+            .select('*')
+            .eq('persona_id', personId)
+            .eq('id_tipo_de_documento', folderId);
+
+        if (error) throw error;
+
+        res.status(200).json({ documentos: data || [] });
+    } catch (error) {
+        console.error('Error al obtener documentos:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+     
+
+
+/////
 app.delete('/eliminar-documento/:personaId', async (req, res) => {
-    const { personaId } = req.params;  // Obtener el ID de la persona desde la URL
-    const { archivoUrl } = req.body;  // Obtener la URL del archivo desde el cuerpo de la solicitud
-    console.log(`Solicitando eliminación de documento para la persona con ID: ${personaId} y archivo URL: ${archivoUrl}`);
-  
+    const { personaId } = req.params;
+    const { archivoUrl } = req.body;
+
     if (!archivoUrl) {
         return res.status(400).json({ error: 'El parámetro archivoUrl es obligatorio.' });
     }
-  
+
     try {
-        // Buscar el documento asociado a la persona y su archivo URL
-        const { data, error: dbError } = await supabase
+        // Buscar el documento en la base de datos
+        const { data: documento, error: dbError } = await supabase
             .from('documentos_personal')
             .select('id, archivo_url')
             .eq('persona_id', personaId)
             .eq('archivo_url', archivoUrl)
-            .single();  // Usamos .single() porque esperamos solo un resultado
-  
-        if (dbError || !data) {
-            console.error('Error al obtener el documento o no existe:', dbError);
-            return res.status(404).json({ error: 'Documento no encontrado para este ID de persona y archivo URL.' });
+            .single();
+
+        if (dbError || !documento) {
+            return res.status(404).json({ error: 'Documento no encontrado.' });
         }
-  
-        console.log('Documento encontrado:', data);
-  
-        // Eliminar el archivo desde Supabase Storage
+
+        // Intentar eliminar el archivo del almacenamiento
         const { error: deleteError } = await supabase.storage
-            .from('personal-docs')  // El bucket de almacenamiento
-            .remove([archivoUrl]);  // Usamos el archivo URL guardado en la base de datos
-  
+            .from('personal-docs')
+            .remove([archivoUrl]);
+
         if (deleteError) {
-            console.error('Error al eliminar el archivo de Supabase Storage:', deleteError);
-            return res.status(500).json({ error: 'Error al eliminar el archivo desde el almacenamiento.' });
+            console.warn('Advertencia: El archivo no pudo eliminarse del almacenamiento. Continuando con la eliminación en la base de datos...');
         }
-  
-        console.log('Archivo eliminado correctamente desde Supabase Storage');
-  
-        // Eliminar el registro del documento de la base de datos
+
+        // Eliminar el registro en la base de datos
         const { error: deleteDbError } = await supabase
             .from('documentos_personal')
             .delete()
-            .eq('id', data.id);  // Eliminamos el registro usando el ID del documento
-  
+            .eq('id', documento.id);
+
         if (deleteDbError) {
-            console.error('Error al eliminar el registro en la base de datos:', deleteDbError);
             return res.status(500).json({ error: 'Error al eliminar el registro del documento en la base de datos.' });
         }
-  
-        // Responder con éxito
+
         return res.status(200).json({ success: true, message: 'Documento eliminado correctamente.' });
-  
     } catch (error) {
-        console.error('Error al procesar la eliminación:', error);
+        console.error('Error al procesar la eliminación:', error.message);
         return res.status(500).json({ error: 'Error interno al procesar la eliminación del documento.' });
     }
-  });
-  
+});
+
 
 // Ruta para descargar cualquier archivo
 app.get('/descargar/:filename', (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(__dirname, 'archivos', filename);
+
+    
+    const baseUrl = "https://tjbtusdhxjczmpvwzqzx.supabase.co/storage/v1/object/public/personal-docs/";
+
+
+    const Linkfilename = baseUrl + fileName;
+
+    console.log("Validando informacion recibido para descargar: ", filename, filePath);
+
+
+    console.log("ruta completa: ", Linkfilename);
+
 
     // Asegurarse de que el archivo existe
     if (!fs.existsSync(filePath)) {

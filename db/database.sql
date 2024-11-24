@@ -24,9 +24,24 @@ CREATE TABLE IF NOT EXISTS persona_opera (
     correo VARCHAR(255),
     celular VARCHAR(20),
     direccion TEXT,
+    estado_contrato,
     foto_url TEXT,  -- Para la URL de la fotografía almacenada en Supabase Storage
     created_at TIMESTAMPTZ DEFAULT current_timestamp
 );
+
+
+-- Crear la tabla de tipos de carpetas de documentos
+CREATE TABLE IF NOT EXISTS tipo_de_carpetas_de_documentos (
+    id SERIAL PRIMARY KEY,
+    tipo VARCHAR(255) 
+);
+
+
+-- Insertar los tipos de carpetas
+INSERT INTO tipo_de_carpetas_de_documentos (tipo) VALUES 
+('Volantes'),
+('Seguridad Social'),
+('Documentos');
 
 -- Crear la tabla de documentos relacionados con el personal
 CREATE TABLE IF NOT EXISTS documentos_personal (
@@ -34,7 +49,8 @@ CREATE TABLE IF NOT EXISTS documentos_personal (
     persona_id INT REFERENCES persona_opera(id) ON DELETE CASCADE,
     nombre_documento VARCHAR(255),
     tipo_documento VARCHAR(255),
-    archivo_url TEXT,  -- URL del archivo en el bucket de Supabase Storage
+    archivo_url TEXT, -- URL del archivo en el bucket de Supabase Storage
+    id_tipo_de_documento INT REFERENCES tipo_de_carpetas_de_documentos(id), -- Llave foránea 
     fecha_subida TIMESTAMPTZ DEFAULT current_timestamp
 );
 
