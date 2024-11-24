@@ -1,18 +1,15 @@
 const express = require('express');
 const fs = require('fs');
-const sharp = require('sharp'); 
+const sharp = require('sharp');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
-
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
-
-
-const upload = multer();
+const upload = multer(); // Configuración de Multer
 
 // Cargar variables de entorno desde un archivo .env
 dotenv.config();
@@ -28,7 +25,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); // Usar cookie-parser para manejar cookies
 
-
 // Configura el motor de plantillas EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -36,90 +32,83 @@ app.set('views', path.join(__dirname, 'views'));
 // Sirve archivos estáticos, como CSS y JS
 app.use(express.static(path.join(__dirname, 'public')));
 
-
- 
-
-  app.use(session({
-    secret: process.env.SESSION_SECRET,
+// Configurar almacenamiento de sesiones con cookies
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'mi_secreto_seguro', // Cambiar esto en producción
     resave: false,
     saveUninitialized: true,
     cookie: {
-        maxAge: 2 * 60 * 60 * 1000
-    }
-}));
-  
+      maxAge: 2 * 60 * 60 * 1000, // 2 horas
+      secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
+      httpOnly: true,
+      sameSite: 'strict', // Protección contra CSRF
+    },
+  })
+);
 
- 
 // Puerto del servidor
 const PORT = process.env.PORT || 3000;
 
-
-
-// Middleware para validar sesión de usuario
+// Middleware para validar sesión
 function validateSession(req, res, next) {
-    if (req.session.user) {
-        return next();
-    }
-    res.redirect('/login');
+  if (req.session.user) {
+    return next();
+  }
+  res.redirect('/');
 }
-
-
 
 // Ruta para la página principal
 app.get('/', (req, res) => {
-  console.log('Accediendo a la página principal');  // Depuración
+  console.log('Accediendo a la página principal');
   res.render('index');
 });
 
 // Ruta para la página principal (otra URL, como 'principal')
 app.get('/principal', validateSession, (req, res) => {
-  console.log('Accediendo a la página principal (URL alternativa)');  // Depuración
+  console.log('Accediendo a la página principal');
   res.render('principal');
 });
 
 // Ruta para la página "Personal Opera" (protegida)
 app.get('/personal_opera', validateSession, (req, res) => {
-  console.log('Accediendo a la página "Personal Opera"');  // Depuración
+  console.log('Accediendo a la página "Personal Opera"');
   res.render('personal_opera');
 });
 
 // Ruta para la página "Nosotros" (protegida)
 app.get('/nosotros', (req, res) => {
-  console.log('Accediendo a la página "Nosotros"');  // Depuración
+  console.log('Accediendo a la página "Nosotros"');
   res.render('nosotros');
 });
 
 // Ruta para la página "Documentos Personales" (protegida)
 app.get('/documentos_personal', validateSession, (req, res) => {
-  console.log('Accediendo a la página "Documentos Personales"');  // Depuración
+  console.log('Accediendo a la página "Documentos Personales"');
   res.render('documentos_personal');
 });
-
-
 
 // Ruta para crear un nuevo usuario
 app.post('/crear-usuario', async (req, res) => {
   const { username, password, email } = req.body;
 
-  // Encriptar la contraseña con bcrypt
   const passwordHash = await bcrypt.hash(password, 10);
 
   try {
-      // Insertar el nuevo usuario en la base de datos de Supabase
-      const { data, error } = await supabase
-        .from('users') // Asegúrate de tener esta tabla en tu base de datos
-        .insert([{ username, password_hash: passwordHash, email }]);
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{ username, password_hash: passwordHash, email }]);
 
-      if (error) {
-          console.error('Error al insertar el usuario en Supabase:', error);
-          return res.status(500).json({ error: 'Error interno al crear el usuario' });
-      }
-
-      console.log('Usuario creado:', data);
-      return res.status(201).json({ message: 'Usuario creado exitosamente' });
-  } catch (error) {
-      console.error('Error al crear el usuario:', error);
+    if (error) {
+      console.error('Error al insertar el usuario:', error);
       return res.status(500).json({ error: 'Error interno al crear el usuario' });
+    }
+
+    console.log('Usuario creado:', data);
+    res.status(201).json({ message: 'Usuario creado exitosamente' });
+  } catch (error) {
+    console.error('Error al crear el usuario:', error);
+    res.status(500).json({ error: 'Error interno al crear el usuario' });
   }
 });
 
@@ -127,58 +116,49 @@ app.post('/crear-usuario', async (req, res) => {
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
-  console.log('Datos recibidos para login:', { username, password });
-
   try {
-      // Buscar el usuario por nombre de usuario en la base de datos de Supabase
-      const { data, error } = await supabase
-          .from('users') // Tabla de usuarios en Supabase
-          .select('*')
-          .eq('username', username)
-          .single();
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .single();
 
-      if (error || !data) {
-          console.log('Usuario no encontrado');
-          return res.json({ success: false, message: 'Usuario no encontrado' });
-      }
+    if (error || !data) {
+      return res.status(401).json({ success: false, message: 'Usuario no encontrado' });
+    }
 
-      // Comparar la contraseña ingresada con la contraseña almacenada (bcrypt)
-      const isPasswordValid = await bcrypt.compare(password, data.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, data.password_hash);
 
-      if (!isPasswordValid) {
-          console.log('Contraseña incorrecta');
-          return res.json({ success: false, message: 'Contraseña incorrecta' });
-      }
+    if (!isPasswordValid) {
+      return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+    }
 
-      // Almacenar la información del usuario en la sesión
-      req.session.user = {
-        id: data.id,
-        username: data.username,
-        email: data.email,
+    req.session.user = {
+      id: data.id,
+      username: data.username,
+      email: data.email,
     };
-    
-      console.log('Login exitoso', data);
 
-      // Responder con éxito y redirigir
-      return res.json({
-          success: true,
-          message: 'Login exitoso',
-          redirectTo: '/principal',  // Redirigir a /principal
-      });
+    res.json({
+      success: true,
+      message: 'Login exitoso',
+      redirectTo: '/principal',
+    });
   } catch (error) {
-      console.error('Error al procesar el login:', error);
-      return res.status(500).json({ success: false, message: 'Hubo un error en el servidor', error: error.message });
+    console.error('Error en login:', error);
+    res.status(500).json({ success: false, message: 'Error en el servidor' });
   }
 });
 
 // Ruta para cerrar sesión
-app.post('/logout', (req, res) => {
+app.get('/logout', (req, res) => {
   req.session.destroy((err) => {
-      if (err) {
-          return res.status(500).json({ success: false, message: 'Error al cerrar sesión' });
-      }
-      res.clearCookie('connect.sid');  // Eliminar la cookie de sesión
-      res.json({ success: true, message: 'Sesión cerrada' });
+    if (err) {
+      console.error('Error al cerrar sesión:', err);
+      return res.status(500).send('No se pudo cerrar la sesión.');
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/');
   });
 });
 
