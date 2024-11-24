@@ -65,13 +65,13 @@ app.get('/', (req, res) => {
 });
 
 // Ruta para la página principal (otra URL, como 'principal')
-app.get('/principal', validateSession, (req, res) => {
+app.get('/principal', (req, res) => {
   console.log('Accediendo a la página principal');
   res.render('principal');
 });
 
 // Ruta para la página "Personal Opera" (protegida)
-app.get('/personal_opera', validateSession, (req, res) => {
+app.get('/personal_opera', (req, res) => {
   console.log('Accediendo a la página "Personal Opera"');
   res.render('personal_opera');
 });
@@ -83,7 +83,7 @@ app.get('/nosotros', (req, res) => {
 });
 
 // Ruta para la página "Documentos Personales" (protegida)
-app.get('/documentos_personal', validateSession, (req, res) => {
+app.get('/documentos_personal', (req, res) => {
   console.log('Accediendo a la página "Documentos Personales"');
   res.render('documentos_personal');
 });
