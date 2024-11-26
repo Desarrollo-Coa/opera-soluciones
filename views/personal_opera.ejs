@@ -1202,33 +1202,90 @@
 
 
         async function deleteDocument(archivoUrl, personaId) {
-            try {
-                mostrarOverlay();  // Mostrar overlay antes de realizar la eliminación
+    try {
+        // Mostrar confirmación inicial
+        const confirmDelete = await swal({
+            title: '¿Estás seguro?',
+            text: 'Esto eliminará permanentemente el documento.',
+            icon: 'warning',
+            buttons: ['Cancelar', 'Eliminar'],
+            dangerMode: true,
+        });
 
-                const response = await fetch(`/eliminar-documento/${personaId}`, {
-                    method: 'DELETE',
-                    body: JSON.stringify({ archivoUrl }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
+        if (!confirmDelete) return;
 
-                const data = await response.json();
+        // Mostrar formulario de autenticación
+        const confirmAuth = await swal({
+            title: 'Autenticación requerida',
+            content: {
+                element: 'div',
+                attributes: {
+                    innerHTML: `
+                        <label>Usuario:</label>
+                        <input id="swal-username" class="swal-input" type="text" placeholder="Usuario">
+                        <label>Contraseña:</label>
+                        <input id="swal-password" class="swal-input" type="password" placeholder="Contraseña">
+                    `,
+                },
+            },
+            buttons: ['Cancelar', 'Validar'],
+        });
 
-                if (data.success) {
-                    swal('Documento eliminado correctamente');
-                    loadDocuments(currentFolderId, personaId);  // Recargar la lista de documentos
-                } else {
-                    swal(`Error al eliminar el documento: ${data.error}`);
-                }
-            } catch (error) {
-                console.error('Error al eliminar documento:', error);
-                swal('Hubo un problema al eliminar el documento.');
-            } finally {
-                ocultarOverlay();  // Ocultar overlay después de la operación
-            }
+        if (!confirmAuth) return;
+
+        // Obtener credenciales del formulario de autenticación
+        const username = document.getElementById('swal-username').value;
+        const password = document.getElementById('swal-password').value;
+
+        if (!username || !password) {
+            swal('Error', 'Debes ingresar usuario y contraseña.', 'error');
+            return;
         }
 
+        mostrarOverlay(); // Mostrar overlay antes de realizar las operaciones
+
+        // Validar usuario y contraseña
+        const authResponse = await fetch('/validar-usuario', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
+
+        const authResult = await authResponse.json();
+
+        if (!authResult.success) {
+            ocultarOverlay();
+            swal('Error', authResult.message || 'Credenciales incorrectas.', 'error');
+            return;
+        }
+
+        // Eliminar el documento si la autenticación fue exitosa
+        const response = await fetch(`/eliminar-documento/${personaId}`, {
+            method: 'DELETE',
+            body: JSON.stringify({ archivoUrl }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            swal('Documento eliminado correctamente');
+            loadDocuments(currentFolderId, personaId); // Recargar la lista de documentos
+        } else {
+            swal(`Error al eliminar el documento: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Error al eliminar documento:', error);
+        swal('Hubo un problema al eliminar el documento.');
+    } finally {
+        ocultarOverlay(); // Ocultar overlay después de la operación
+    }
+}
+
+
+ 
         // Función para cerrar el modal de documentos
         documentsModal.addEventListener('click', function (e) {
             if (e.target === documentsModal) {
@@ -1488,37 +1545,131 @@
                 });
         });
 
+        // deletePersonaBtn.addEventListener('click', function () {
+        //     if (isDeletingPersona) return;
+
+        //     const confirmDelete = confirm('¿Estás seguro de que deseas eliminar esta persona?');
+        //     if (!confirmDelete) return;
+
+        //     isDeletingPersona = true;
+        //     disableForm(true);
+        //     mostrarOverlay();
+
+        //     fetch(`/borrar-persona/${persona.id}`, {
+        //         method: 'DELETE'
+        //     })
+        //         .then(response => response.json())
+        //         .then(() => {
+        //             swal('Persona eliminada');
+        //             personaDetails.style.display = 'none';
+
+        //             cargarPersonalActualizado();
+        //         })
+        //         .catch(error => {
+        //             console.error('Error eliminando la persona:', error);
+        //             swal('Hubo un error al eliminar la persona.');
+        //         })
+        //         .finally(() => {
+        //             isDeletingPersona = false;
+        //             disableForm(false);
+        //             ocultarOverlay();
+        //         });
+        // });
+        
+
+
         deletePersonaBtn.addEventListener('click', function () {
-            if (isDeletingPersona) return;
+    if (isDeletingPersona) return;
 
-            const confirmDelete = confirm('¿Estás seguro de que deseas eliminar esta persona?');
-            if (!confirmDelete) return;
+    // Mostrar confirmación inicial
+    swal({
+        title: '¿Estás seguro?',
+        text: 'Esto eliminará permanentemente a esta persona.',
+        icon: 'warning',
+        buttons: ['Cancelar', 'Eliminar'],
+        dangerMode: true,
+    }).then((confirmDelete) => {
+        if (!confirmDelete) return;
 
-            isDeletingPersona = true;
-            disableForm(true);
+        // Mostrar formulario de autenticación
+        swal({
+            title: 'Autenticación requerida',
+            content: {
+                element: 'div',
+                attributes: {
+                    innerHTML: `
+                        <label>Usuario:</label>
+                        <input id="swal-username" class="swal-input" type="text" placeholder="Usuario">
+                        <label>Contraseña:</label>
+                        <input id="swal-password" class="swal-input" type="password" placeholder="Contraseña">
+                    `,
+                },
+            },
+            buttons: ['Cancelar', 'Validar'],
+        }).then(async (confirmAuth) => {
+            if (!confirmAuth) return;
+
+            // Mostrar overlay mientras se realiza la operación
             mostrarOverlay();
 
-            fetch(`/borrar-persona/${persona.id}`, {
-                method: 'DELETE'
-            })
-                .then(response => response.json())
-                .then(() => {
-                    swal('Persona eliminada');
-                    personaDetails.style.display = 'none';
+            // Obtener valores del formulario
+            const username = document.getElementById('swal-username').value;
+            const password = document.getElementById('swal-password').value;
 
-                    cargarPersonalActualizado();
-                })
-                .catch(error => {
-                    console.error('Error eliminando la persona:', error);
-                    swal('Hubo un error al eliminar la persona.');
-                })
-                .finally(() => {
-                    isDeletingPersona = false;
-                    disableForm(false);
-                    ocultarOverlay();
+            if (!username || !password) {
+                ocultarOverlay();
+                swal('Error', 'Debes ingresar usuario y contraseña.', 'error');
+                return;
+            }
+
+            try {
+                // Validar usuario y contraseña
+                const authResponse = await fetch('/validar-usuario', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
                 });
-        });
 
+                const authResult = await authResponse.json();
+
+                if (!authResult.success) {
+                    ocultarOverlay();
+                    swal('Error', authResult.message || 'Credenciales incorrectas.', 'error');
+                    return;
+                }
+
+                // Confirmar eliminación si la autenticación fue exitosa
+                const deleteResponse = await fetch(`/borrar-persona/${persona.id}`, {
+                    method: 'DELETE',
+                });
+
+                const deleteResult = await deleteResponse.json();
+
+                console.log('Respuesta de la API al eliminar:', deleteResult);
+
+                if (deleteResult.success) {
+                    ocultarOverlay();
+                    swal('Éxito', 'Persona eliminada exitosamente.', 'success');
+                    personaDetails.style.display = 'none';
+                    cargarPersonalActualizado(); // Actualizar la lista
+                } else {
+                    ocultarOverlay();
+                    swal('Error', deleteResult.message || 'No se pudo eliminar la persona.', 'error');
+                    console.error('Error reportado por el servidor:', deleteResult);
+                }
+            } catch (error) {
+                ocultarOverlay();
+                console.error('Error en el proceso:', error);
+                swal('Error', 'Hubo un problema con la solicitud.', 'error');
+            } finally {
+                isDeletingPersona = false;
+            }
+        });
+    });
+});
+
+
+        
         viewDocsBtn.addEventListener('click', function () {
 
             documentsModal.style.display = 'block';

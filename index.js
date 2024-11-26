@@ -7,15 +7,16 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
-const session = require('express-session');
+const jwt = require('jsonwebtoken'); // Importar jsonwebtoken
 
-const upload = multer(); // Configuración de Multer
+const upload = multer();
 
 // Cargar variables de entorno desde un archivo .env
 dotenv.config();
 
 // Inicializar el cliente de Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const PORT = process.env.PORT;
 
 // Crear una instancia de la aplicación Express
 const app = express();
@@ -23,143 +24,148 @@ const app = express();
 // Middleware para analizar datos JSON y formularios
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // Usar cookie-parser para manejar cookies
+app.use(cookieParser());
 
 // Configura el motor de plantillas EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Sirve archivos estáticos, como CSS y JS
+// Sirve archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configurar almacenamiento de sesiones con cookies
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'mi_secreto_seguro', // Cambiar esto en producción
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      maxAge: 2 * 60 * 60 * 1000, // 2 horas
-      secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
-      httpOnly: true,
-      sameSite: 'strict', // Protección contra CSRF
-    },
-  })
-);
+// Clave secreta para JWT
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Puerto del servidor
-const PORT = process.env.PORT || 3000;
+// Middleware para validar el token JWT
+const validateJWT = (req, res, next) => {
+    const token = req.cookies.token; // Leer el token de las cookies
+    if (!token) {
+        return res.redirect('/'); // Redirigir si no hay token
+    }
 
-// Middleware para validar sesión
-function validateSession(req, res, next) {
-  if (req.session.user) {
-    return next();
-  }
-  res.redirect('/');
-}
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET); // Verificar el token
+        req.user = decoded; // Almacenar los datos del usuario
+        next(); // Continuar
+    } catch (err) {
+        return res.status(401).json({ success: false, message: 'Token inválido' });
+    }
+};
 
 // Ruta para la página principal
 app.get('/', (req, res) => {
-  console.log('Accediendo a la página principal');
-  res.render('index');
+    res.render('index');
 });
 
-// Ruta para la página principal (otra URL, como 'principal')
-app.get('/principal', (req, res) => {
-  console.log('Accediendo a la página principal');
-  res.render('principal');
+// Rutas protegidas con JWT
+app.get('/principal', validateJWT, (req, res) => {
+    res.render('principal');
 });
 
-// Ruta para la página "Personal Opera" (protegida)
-app.get('/personal_opera', (req, res) => {
-  console.log('Accediendo a la página "Personal Opera"');
-  res.render('personal_opera');
+app.get('/personal_opera', validateJWT, (req, res) => {
+    res.render('personal_opera');
 });
 
-// Ruta para la página "Nosotros" (protegida)
-app.get('/nosotros', (req, res) => {
-  console.log('Accediendo a la página "Nosotros"');
-  res.render('nosotros');
+app.get('/documentos_personal', validateJWT, (req, res) => {
+    res.render('documentos_personal');
 });
 
-// Ruta para la página "Documentos Personales" (protegida)
-app.get('/documentos_personal', (req, res) => {
-  console.log('Accediendo a la página "Documentos Personales"');
-  res.render('documentos_personal');
-});
-
-// Ruta para crear un nuevo usuario
+// Crear un nuevo usuario
 app.post('/crear-usuario', async (req, res) => {
-  const { username, password, email } = req.body;
+    const { username, password, email } = req.body;
 
-  const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{ username, password_hash: passwordHash, email }]);
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .insert([{ username, password_hash: passwordHash, email }]);
 
-    if (error) {
-      console.error('Error al insertar el usuario:', error);
-      return res.status(500).json({ error: 'Error interno al crear el usuario' });
+        if (error) {
+            return res.status(500).json({ error: 'Error al crear el usuario' });
+        }
+
+        return res.status(201).json({ message: 'Usuario creado exitosamente' });
+    } catch (error) {
+        return res.status(500).json({ error: 'Error interno al crear el usuario' });
     }
-
-    console.log('Usuario creado:', data);
-    res.status(201).json({ message: 'Usuario creado exitosamente' });
-  } catch (error) {
-    console.error('Error al crear el usuario:', error);
-    res.status(500).json({ error: 'Error interno al crear el usuario' });
-  }
 });
 
 // Ruta para login
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+    const { username, password } = req.body;
 
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .single();
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .single();
 
-    if (error || !data) {
-      return res.status(401).json({ success: false, message: 'Usuario no encontrado' });
+        if (error || !data) {
+            return res.json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, data.password_hash);
+
+        if (!isPasswordValid) {
+            return res.json({ success: false, message: 'Contraseña incorrecta' });
+        }
+
+        // Generar token JWT
+        const token = jwt.sign(
+            { id: data.id, username: data.username, email: data.email },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        // Enviar el token como cookie
+        res.cookie('token', token, { httpOnly: true, secure: false });
+
+        return res.json({
+            success: true,
+            message: 'Login exitoso',
+            redirectTo: '/principal',
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error en el servidor' });
     }
-
-    const isPasswordValid = await bcrypt.compare(password, data.password_hash);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
-    }
-
-    req.session.user = {
-      id: data.id,
-      username: data.username,
-      email: data.email,
-    };
-
-    res.json({
-      success: true,
-      message: 'Login exitoso',
-      redirectTo: '/principal',
-    });
-  } catch (error) {
-    console.error('Error en login:', error);
-    res.status(500).json({ success: false, message: 'Error en el servidor' });
-  }
 });
 
 // Ruta para cerrar sesión
-app.get('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('Error al cerrar sesión:', err);
-      return res.status(500).send('No se pudo cerrar la sesión.');
+app.post('/logout', (req, res) => {
+    res.clearCookie('token'); // Eliminar la cookie del token
+    res.json({ success: true, message: 'Sesión cerrada' });
+}); 
+
+
+app.post('/validar-usuario', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // Buscar el usuario en la base de datos
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', username)
+            .single();
+
+        if (error || !user) {
+            return res.status(401).json({ success: false, message: 'Usuario no encontrado.' });
+        }
+
+        // Comparar contraseña
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        if (!isPasswordValid) {
+            return res.status(401).json({ success: false, message: 'Contraseña incorrecta.' });
+        }
+
+        // Si las credenciales son correctas
+        res.json({ success: true, message: 'Autenticación exitosa.' });
+    } catch (error) {
+        console.error('Error validando credenciales:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
     }
-    res.clearCookie('connect.sid');
-    res.redirect('/');
-  });
 });
 
 
@@ -457,86 +463,9 @@ app.put('/editar-persona/:id', async (req, res) => {
 });
 
 
-// app.delete('/borrar-persona/:id', async (req, res) => {
-//     const { id } = req.params;
-//     console.log('Iniciando proceso de eliminación para persona con ID:', id); // Depuración
-  
-//     try {
-//         // Primero, obtener los documentos de la persona
-//         const { data: documentos, error: documentosError } = await supabase
-//             .from('documentos_personal')
-//             .select('archivo_url')
-//             .eq('persona_id', id);
-  
-//         if (documentosError) {
-//             console.error('Error al obtener documentos de la persona:', documentosError.message); // Depuración
-//             return res.status(500).json({ error: documentosError.message });
-//         }
-  
-//         if (!documentos || documentos.length === 0) {
-//             console.log('No se encontraron documentos para esta persona.'); // Depuración
-//         } else {
-//             console.log('Documentos encontrados:', documentos); // Depuración
-//         }
-  
-//         // Comprobar si existen documentos para eliminar
-//         if (documentos && documentos.length > 0) {
-//             // Extraemos las URLs de los documentos
-//             const fileUrls = documentos.map(doc => doc.archivo_url);
-//             console.log('URLs de archivos a eliminar:', fileUrls); // Depuración
-  
-//             // Borrar los archivos de Supabase Storage
-//             const { error: deleteFilesError } = await supabase.storage
-//                 .from('personal-docs')
-//                 .remove(fileUrls);
-  
-//             if (deleteFilesError) {
-//                 console.error('Error al eliminar los archivos de Supabase Storage:', deleteFilesError.message); // Depuración
-//                 return res.status(500).json({ error: deleteFilesError.message });
-//             }
-  
-//             console.log('Archivos eliminados exitosamente.'); // Depuración
-//         } else {
-//             console.log('No hay archivos para eliminar en Supabase Storage.');
-//         }
-  
-//         // Borrar los documentos de la base de datos
-//         const { error: deleteDocsError } = await supabase
-//             .from('documentos_personal')
-//             .delete()
-//             .eq('persona_id', id);
-  
-//         if (deleteDocsError) {
-//             console.error('Error al eliminar documentos de la base de datos:', deleteDocsError.message); // Depuración
-//             return res.status(500).json({ error: deleteDocsError.message });
-//         }
-  
-//         console.log('Documentos eliminados de la base de datos.'); // Depuración
-  
-//         // Finalmente, borrar la persona
-//         const { error: deletePersonaError } = await supabase
-//             .from('persona_opera')
-//             .delete()
-//             .eq('id', id);
-  
-//         if (deletePersonaError) {
-//             console.error('Error al eliminar la persona de la base de datos:', deletePersonaError.message); // Depuración
-//             return res.status(500).json({ error: deletePersonaError.message });
-//         }
-  
-//         console.log('Persona eliminada correctamente.'); // Depuración
-//         res.status(200).json({ message: 'Persona eliminada correctamente' });
-//     } catch (err) {
-//         console.error('Error en el proceso de eliminación:', err); // Depuración
-//         return res.status(500).json({ error: 'Hubo un error al eliminar la persona' });
-//     }
-//   });
-  
-  
-
 app.delete('/borrar-persona/:id', async (req, res) => {
     const { id } = req.params;
-    console.log('Iniciando proceso de eliminación para persona con ID:', id); // Depuración
+    console.log('Iniciando proceso de eliminación para persona con ID:', id);
 
     try {
         // Obtener todos los documentos relacionados con la persona
@@ -546,8 +475,12 @@ app.delete('/borrar-persona/:id', async (req, res) => {
             .eq('persona_id', id);
 
         if (documentosError) {
-            console.error('Error al obtener documentos de la persona:', documentosError.message);
-            return res.status(500).json({ error: documentosError.message });
+            console.error('Error al obtener documentos de la persona:', documentosError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al obtener documentos de la persona.',
+                details: documentosError.message || documentosError,
+            });
         }
 
         // Eliminar archivos si existen
@@ -560,24 +493,32 @@ app.delete('/borrar-persona/:id', async (req, res) => {
                 .remove(fileUrls);
 
             if (deleteFilesError) {
-                console.error('Error al eliminar archivos:', deleteFilesError.message);
-                return res.status(500).json({ error: deleteFilesError.message });
+                console.error('Error al eliminar archivos:', deleteFilesError);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error al eliminar archivos asociados.',
+                    details: deleteFilesError.message || deleteFilesError,
+                });
             }
 
             console.log('Archivos eliminados correctamente.');
         }
 
         // Eliminar carpeta de la persona
-        const folderPath = `persona_${id}/documentos/`; // Ruta de la carpeta en Supabase
+        const folderPath = `persona_${id}/documentos/`;
         console.log('Eliminando carpeta:', folderPath);
 
         const { error: deleteFolderError } = await supabase.storage
             .from('personal-docs')
-            .remove([folderPath]); // Asegúrate de que la carpeta esté vacía
+            .remove([folderPath]);
 
         if (deleteFolderError) {
-            console.error('Error al eliminar la carpeta:', deleteFolderError.message);
-            return res.status(500).json({ error: deleteFolderError.message });
+            console.error('Error al eliminar la carpeta:', deleteFolderError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al eliminar la carpeta de documentos.',
+                details: deleteFolderError.message || deleteFolderError,
+            });
         }
 
         console.log('Carpeta eliminada correctamente.');
@@ -589,8 +530,12 @@ app.delete('/borrar-persona/:id', async (req, res) => {
             .eq('persona_id', id);
 
         if (deleteDocsError) {
-            console.error('Error al eliminar documentos de la base de datos:', deleteDocsError.message);
-            return res.status(500).json({ error: deleteDocsError.message });
+            console.error('Error al eliminar documentos de la base de datos:', deleteDocsError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al eliminar documentos de la base de datos.',
+                details: deleteDocsError.message || deleteDocsError,
+            });
         }
 
         console.log('Documentos eliminados de la base de datos.');
@@ -602,18 +547,113 @@ app.delete('/borrar-persona/:id', async (req, res) => {
             .eq('id', id);
 
         if (deletePersonaError) {
-            console.error('Error al eliminar la persona:', deletePersonaError.message);
-            return res.status(500).json({ error: deletePersonaError.message });
+            console.error('Error al eliminar la persona:', deletePersonaError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al eliminar la persona.',
+                details: deletePersonaError.message || deletePersonaError,
+            });
         }
 
         console.log('Persona eliminada correctamente.');
-        res.status(200).json({ message: 'Persona eliminada correctamente' });
+        res.status(200).json({
+            success: true,
+            message: 'Persona eliminada correctamente.',
+        });
 
     } catch (err) {
-        console.error('Error en el proceso de eliminación:', err);
-        return res.status(500).json({ error: 'Hubo un error al eliminar la persona' });
+        console.error('Error inesperado en el proceso de eliminación:', err);
+        return res.status(500).json({
+            success: false,
+            message: 'Hubo un error inesperado al eliminar la persona.',
+            details: err.message || err,
+        });
     }
 });
+  
+
+
+
+// app.delete('/borrar-persona/:id', async (req, res) => {
+//     const { id } = req.params;
+//     console.log('Iniciando proceso de eliminación para persona con ID:', id); // Depuración
+
+//     try {
+//         // Obtener todos los documentos relacionados con la persona
+//         const { data: documentos, error: documentosError } = await supabase
+//             .from('documentos_personal')
+//             .select('archivo_url')
+//             .eq('persona_id', id);
+
+//         if (documentosError) {
+//             console.error('Error al obtener documentos de la persona:', documentosError.message);
+//             return res.status(500).json({ error: documentosError.message });
+//         }
+
+//         // Eliminar archivos si existen
+//         if (documentos && documentos.length > 0) {
+//             const fileUrls = documentos.map(doc => doc.archivo_url);
+//             console.log('Eliminando archivos:', fileUrls);
+
+//             const { error: deleteFilesError } = await supabase.storage
+//                 .from('personal-docs')
+//                 .remove(fileUrls);
+
+//             if (deleteFilesError) {
+//                 console.error('Error al eliminar archivos:', deleteFilesError.message);
+//                 return res.status(500).json({ error: deleteFilesError.message });
+//             }
+
+//             console.log('Archivos eliminados correctamente.');
+//         }
+
+//         // Eliminar carpeta de la persona
+//         const folderPath = `persona_${id}/documentos/`; // Ruta de la carpeta en Supabase
+//         console.log('Eliminando carpeta:', folderPath);
+
+//         const { error: deleteFolderError } = await supabase.storage
+//             .from('personal-docs')
+//             .remove([folderPath]); // Asegúrate de que la carpeta esté vacía
+
+//         if (deleteFolderError) {
+//             console.error('Error al eliminar la carpeta:', deleteFolderError.message);
+//             return res.status(500).json({ error: deleteFolderError.message });
+//         }
+
+//         console.log('Carpeta eliminada correctamente.');
+
+//         // Eliminar documentos de la base de datos
+//         const { error: deleteDocsError } = await supabase
+//             .from('documentos_personal')
+//             .delete()
+//             .eq('persona_id', id);
+
+//         if (deleteDocsError) {
+//             console.error('Error al eliminar documentos de la base de datos:', deleteDocsError.message);
+//             return res.status(500).json({ error: deleteDocsError.message });
+//         }
+
+//         console.log('Documentos eliminados de la base de datos.');
+
+//         // Eliminar a la persona
+//         const { error: deletePersonaError } = await supabase
+//             .from('persona_opera')
+//             .delete()
+//             .eq('id', id);
+
+//         if (deletePersonaError) {
+//             console.error('Error al eliminar la persona:', deletePersonaError.message);
+//             return res.status(500).json({ error: deletePersonaError.message });
+//         }
+
+//         console.log('Persona eliminada correctamente.');
+//         res.status(200).json({ message: 'Persona eliminada correctamente' });
+
+//     } catch (err) {
+//         console.error('Error en el proceso de eliminación:', err);
+//         return res.status(500).json({ error: 'Hubo un error al eliminar la persona' });
+//     }
+// });
 
  
  // Subir documentos con carpeta seleccionada
