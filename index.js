@@ -62,6 +62,13 @@ app.get('/principal', validateJWT, (req, res) => {
     res.render('principal');
 });
 
+
+
+// Rutas protegidas con JWT
+app.get('/nosotros', (req, res) => {
+    res.render('nosotros');
+});
+
 app.get('/personal_opera', validateJWT, (req, res) => {
     res.render('personal_opera');
 });

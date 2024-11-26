@@ -319,6 +319,8 @@ h1 {
     </style>
 
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+
 
 </head>
 <body>
@@ -563,28 +565,90 @@ h1 {
                 documentsContainer.appendChild(card);
             });
         }
-    
-        // Función para eliminar un documento
-        async function deleteDocument(fileUrl) {
-            try {
-                showLoading(); // Muestra el loading y deshabilita los controles
-                const response = await fetch(`/api/v1/eliminar-documento`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ archivoUrl: fileUrl })
-                });
-                if (response.ok) {
-                    fetchDocuments(); // Recargamos los documentos
-                } else {
-                    console.error('Error al eliminar el documento');
-                }
-            } catch (error) {
-                console.error('Error al eliminar el documento:', error);
-            } finally {
-                hideLoading(); // Oculta el loading y habilita los controles
-            }
+
+// Función para eliminar un documento con confirmación y autenticación
+async function deleteDocument(fileUrl) {
+    try {
+        // Confirmación inicial con SweetAlert
+        const confirmDelete = await swal({
+            title: '¿Estás seguro?',
+            text: 'Esto eliminará permanentemente el documento.',
+            icon: 'warning',
+            buttons: ['Cancelar', 'Eliminar'],
+            dangerMode: true,
+        });
+
+        if (!confirmDelete) return; // Si el usuario cancela, salir de la función
+
+        // Mostrar formulario de autenticación
+        const confirmAuth = await swal({
+            title: 'Autenticación requerida',
+            content: {
+                element: 'div',
+                attributes: {
+                    innerHTML: `
+                        <label>Usuario:</label>
+                        <input id="swal-username" class="swal-input" type="text" placeholder="Usuario">
+                        <label>Contraseña:</label>
+                        <input id="swal-password" class="swal-input" type="password" placeholder="Contraseña">
+                    `,
+                },
+            },
+            buttons: ['Cancelar', 'Validar'],
+        });
+
+        if (!confirmAuth) return; // Si el usuario cancela, salir de la función
+
+        // Obtener credenciales del formulario de autenticación
+        const username = document.getElementById('swal-username').value;
+        const password = document.getElementById('swal-password').value;
+
+        if (!username || !password) {
+            swal('Error', 'Debes ingresar usuario y contraseña.', 'error');
+            return;
         }
-    
+
+        showLoading(); // Mostrar indicador de carga
+
+        // Validar usuario y contraseña en el servidor
+        const authResponse = await fetch('/validar-usuario', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
+
+        const authResult = await authResponse.json();
+
+        if (!authResult.success) {
+            hideLoading(); // Ocultar indicador de carga
+            swal('Error', authResult.message || 'Credenciales incorrectas.', 'error');
+            return;
+        }
+
+        // Proceder a eliminar el documento si la autenticación fue exitosa
+        const response = await fetch(`/api/v1/eliminar-documento`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ archivoUrl: fileUrl }),
+        });
+
+        if (response.ok) {
+            swal('Documento eliminado correctamente', '', 'success');
+            fetchDocuments(); // Recargar la lista de documentos
+        } else {
+            const errorData = await response.json();
+            swal('Error', errorData.message || 'No se pudo eliminar el documento.', 'error');
+        }
+    } catch (error) {
+        console.error('Error al eliminar el documento:', error);
+        swal('Error', 'Hubo un problema al eliminar el documento.', 'error');
+    } finally {
+        hideLoading(); // Ocultar indicador de carga al finalizar
+    }
+}
+
+
+
         // Función para buscar documentos (usando los documentos locales)
         function searchDocuments() {
             const searchTerm = searchInput.value.toLowerCase();
