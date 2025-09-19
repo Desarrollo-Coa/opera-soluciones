@@ -3,6 +3,8 @@ import { DashboardStats } from '../types';
 
 export class AusenciaStatsService {
   async obtenerEstadisticas(): Promise<DashboardStats> {
+    console.log("Iniciando obtención de estadísticas...");
+    
     const [
       totalAusencias,
       ausenciasEsteMes,
@@ -23,6 +25,17 @@ export class AusenciaStatsService {
       this.obtenerTendenciaMensual()
     ]);
 
+    console.log("Datos obtenidos:", {
+      totalAusencias,
+      ausenciasEsteMes,
+      colaboradoresAfectados,
+      tiposCount: tiposResult.length,
+      departamentosCount: departamentosResult.length,
+      colaboradoresCount: colaboradoresTopResult.length,
+      tendenciaCount: tendenciaResult.length,
+      tendenciaMensualCount: tendenciaMensualResult.length
+    });
+
     return {
       totalAusencias,
       ausenciasEsteMes,
@@ -36,27 +49,48 @@ export class AusenciaStatsService {
   }
 
   private async obtenerTotalAusencias(): Promise<number> {
-    const result = await executeQuery(
-      'SELECT COUNT(*) as total FROM ausencias WHERE activo = TRUE'
-    ) as Array<{ total: number }>;
-    
-    return result[0].total;
+    try {
+      console.log("Obteniendo total de ausencias...");
+      const result = await executeQuery(
+        'SELECT COUNT(*) as total FROM ausencias WHERE activo = TRUE'
+      ) as Array<{ total: number }>;
+      
+      console.log("Total ausencias resultado:", result);
+      return result[0]?.total || 0;
+    } catch (error) {
+      console.error("Error al obtener total de ausencias:", error);
+      return 0;
+    }
   }
 
   private async obtenerAusenciasEsteMes(): Promise<number> {
-    const result = await executeQuery(
-      'SELECT COUNT(*) as total FROM ausencias WHERE activo = TRUE AND MONTH(fecha_registro) = MONTH(CURRENT_DATE()) AND YEAR(fecha_registro) = YEAR(CURRENT_DATE())'
-    ) as Array<{ total: number }>;
-    
-    return result[0].total;
+    try {
+      console.log("Obteniendo ausencias de este mes...");
+      const result = await executeQuery(
+        'SELECT COUNT(*) as total FROM ausencias WHERE activo = TRUE AND MONTH(fecha_registro) = MONTH(CURRENT_DATE()) AND YEAR(fecha_registro) = YEAR(CURRENT_DATE())'
+      ) as Array<{ total: number }>;
+      
+      console.log("Ausencias este mes resultado:", result);
+      return result[0]?.total || 0;
+    } catch (error) {
+      console.error("Error al obtener ausencias de este mes:", error);
+      return 0;
+    }
   }
 
   private async obtenerColaboradoresAfectados(): Promise<number> {
-    const result = await executeQuery(
-      'SELECT COUNT(DISTINCT id_colaborador) as total FROM ausencias WHERE activo = TRUE'
-    ) as Array<{ total: number }>;
-    
-    return result[0].total;
+    try {
+      console.log("Obteniendo colaboradores afectados...");
+      const result = await executeQuery(
+        'SELECT COUNT(DISTINCT id_colaborador) as total FROM ausencias WHERE activo = TRUE'
+      ) as Array<{ total: number }>;
+      
+      console.log("Colaboradores afectados resultado:", result);
+      return result[0]?.total || 0;
+    } catch (error) {
+      console.error("Error al obtener colaboradores afectados:", error);
+      return 0;
+    }
   }
 
   private async obtenerAusenciasPorTipo(): Promise<Array<{ nombre: string; cantidad: number; porcentaje: number }>> {
