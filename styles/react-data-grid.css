@@ -1,0 +1,114 @@
+/* Estilos para react-data-grid */
+.rdg-light {
+  --rdg-background-color: #ffffff;
+  --rdg-header-background-color: #f8f9fa;
+  --rdg-row-hover-background-color: #f5f5f5;
+  --rdg-border-color: #e0e0e0;
+  --rdg-summary-border-color: #aaa;
+  --rdg-cell-frozen-background-color: #fafafa;
+  --rdg-selection-color: #4a90e2;
+  --rdg-font-size: 14px;
+  --rdg-font-family: inherit;
+}
+
+.rdg-light .rdg-cell {
+  border-right: 1px solid var(--rdg-border-color);
+  border-bottom: 1px solid var(--rdg-border-color);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.rdg-light .rdg-header-cell {
+  background-color: var(--rdg-header-background-color);
+  font-weight: 600;
+  color: #374151;
+  border-right: 1px solid var(--rdg-border-color);
+  border-bottom: 1px solid var(--rdg-border-color);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.rdg-light .rdg-row:hover {
+  background-color: var(--rdg-row-hover-background-color);
+}
+
+.rdg-light .rdg-row.selected {
+  background-color: var(--rdg-selection-color);
+  color: white;
+}
+
+.rdg-light .rdg-cell input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.rdg-light .rdg-cell input:focus {
+  background-color: #fff;
+  box-shadow: 0 0 0 2px #4a90e2;
+  border-radius: 2px;
+}
+
+/* Estilos para botones de acción */
+.rdg-light .rdg-cell .flex {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estilos para números */
+.rdg-light .rdg-cell .text-right {
+  text-align: right;
+  width: 100%;
+}
+
+/* Estilos para fechas */
+.rdg-light .rdg-cell input[type="date"] {
+  color: #374151;
+}
+
+/* Estilos para números */
+.rdg-light .rdg-cell input[type="number"] {
+  text-align: right;
+  color: #374151;
+}
+
+/* Estilos para texto */
+.rdg-light .rdg-cell input[type="text"] {
+  color: #374151;
+}
+
+/* Estilos para el contenedor principal */
+.rdg-light {
+  border: 1px solid var(--rdg-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: var(--rdg-font-family);
+  font-size: var(--rdg-font-size);
+}
+
+/* Estilos para el scrollbar */
+.rdg-light::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rdg-light::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.rdg-light::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.rdg-light::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
