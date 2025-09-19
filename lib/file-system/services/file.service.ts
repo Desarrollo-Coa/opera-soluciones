@@ -1,5 +1,5 @@
 import { executeQuery } from '@/lib/database';
-import { uploadToSpaces } from '@/lib/digitalocean-spaces';
+import { uploadToSpaces, deleteFromSpaces, extractKeyFromUrl } from '@/lib/digitalocean-spaces';
 import { generateSimpleFileName } from '@/lib/file-utils';
 import { FileSystemFile, UploadFileData } from '../types';
 
@@ -121,9 +121,34 @@ export class FileService {
   }
 
   /**
-   * Eliminar archivo (soft delete)
+   * Eliminar archivo (soft delete + eliminación física)
    */
   async eliminar(id: number): Promise<void> {
+    // Primero obtener la información del archivo para eliminar de DigitalOcean
+    const files = await executeQuery(
+      'SELECT file_url FROM file_system_files WHERE id = ? AND is_active = TRUE',
+      [id]
+    ) as any[];
+
+    if (files.length > 0) {
+      const fileUrl = files[0].file_url;
+      
+      // Extraer la clave del archivo de la URL
+      const key = extractKeyFromUrl(fileUrl);
+      
+      if (key) {
+        try {
+          // Eliminar archivo de DigitalOcean Spaces
+          await deleteFromSpaces(key);
+          console.log(`Archivo eliminado de DigitalOcean Spaces: ${key}`);
+        } catch (error) {
+          console.error('Error al eliminar archivo de DigitalOcean Spaces:', error);
+          // Continuar con la eliminación lógica aunque falle la eliminación física
+        }
+      }
+    }
+
+    // Marcar como inactivo en la base de datos
     await executeQuery(
       'UPDATE file_system_files SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [id]

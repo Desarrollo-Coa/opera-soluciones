@@ -22,6 +22,13 @@ import {
   Edit,
   X
 } from 'lucide-react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+  ContextMenuSeparator,
+} from '@/components/ui/context-menu';
 import { FileSystemItem, FileFolder, FileSystemFile } from '@/lib/file-system/types';
 
 interface FileExplorerProps {
@@ -299,6 +306,41 @@ export function FileExplorer({ initialFolderId = null }: FileExplorerProps) {
     }
   };
 
+  const handleDownloadFile = async (item: FileSystemItem) => {
+    if (item.type !== 'file') return;
+
+    try {
+      // Obtener token de las cookies
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth-token='))
+        ?.split('=')[1];
+
+      const response = await fetch(`/api/file-system/files/${item.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const fileData = await response.json();
+        
+        // Crear enlace de descarga
+        const link = document.createElement('a');
+        link.href = fileData.file_url;
+        link.download = fileData.original_name || fileData.name;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        console.error('Error al descargar archivo');
+      }
+    } catch (error) {
+      console.error('Error al descargar archivo:', error);
+    }
+  };
+
   const getFileIcon = (item: FileSystemItem) => {
     if (item.type === 'folder') {
       return <Folder className="w-8 h-8 text-blue-500" />;
@@ -473,66 +515,63 @@ export function FileExplorer({ initialFolderId = null }: FileExplorerProps) {
           </div>
         ) : (
           filteredItems.map((item) => (
-            <Card
-              key={`${item.type}-${item.id}`}
-              className="group hover:shadow-md transition-shadow relative"
-            >
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div 
-                    className="cursor-pointer"
-                    onClick={() => item.type === 'folder' && handleFolderClick(item.id)}
-                  >
-                    {getFileIcon(item)}
-                  </div>
-                  <div className="w-full">
-                    <p 
-                      className="text-sm font-medium truncate cursor-pointer" 
-                      title={item.original_name || item.name}
-                      onClick={() => item.type === 'folder' && handleFolderClick(item.id)}
-                    >
-                      {item.original_name || item.name}
-                    </p>
-                    {item.type === 'file' && item.size_formatted && (
-                      <p className="text-xs text-gray-500">{item.size_formatted}</p>
-                    )}
-                    {item.file_extension && (
-                      <Badge variant="secondary" className="text-xs">
-                        {item.file_extension.toUpperCase()}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {/* Botones de acción */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="flex space-x-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditItem(item);
-                        }}
+            <ContextMenu key={`${item.type}-${item.id}`}>
+              <ContextMenuTrigger asChild>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col items-center text-center space-y-2">
+                      <div 
+                        className="cursor-pointer"
+                        onClick={() => item.type === 'folder' && handleFolderClick(item.id)}
                       >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteItem(item);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        {getFileIcon(item)}
+                      </div>
+                      <div className="w-full">
+                        <p 
+                          className="text-sm font-medium truncate cursor-pointer" 
+                          title={item.original_name || item.name}
+                          onClick={() => item.type === 'folder' && handleFolderClick(item.id)}
+                        >
+                          {item.original_name || item.name}
+                        </p>
+                        {item.type === 'file' && item.size_formatted && (
+                          <p className="text-xs text-gray-500">{item.size_formatted}</p>
+                        )}
+                        {item.file_extension && (
+                          <Badge variant="secondary" className="text-xs">
+                            {item.file_extension.toUpperCase()}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </ContextMenuTrigger>
+              
+              <ContextMenuContent className="w-48">
+                {item.type === 'file' && (
+                  <>
+                    <ContextMenuItem onClick={() => handleDownloadFile(item)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                  </>
+                )}
+                <ContextMenuItem onClick={() => handleEditItem(item)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem 
+                  onClick={() => handleDeleteItem(item)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
           ))
         )}
       </div>
