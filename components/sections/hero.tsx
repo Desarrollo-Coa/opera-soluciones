@@ -7,14 +7,18 @@ export function Hero() {
     <section id="inicio" className="relative min-h-screen flex items-center justify-center text-white overflow-hidden">
       {/* Background with overlay */}
       <div className="absolute inset-0 animated-bg" />
-      <div
-        className="absolute inset-0 opacity-60 blur-sm"
-        style={{
-          backgroundImage: "url(/recursos/banner.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
+      
+      {/* Background Image */}
+      <div className="absolute inset-0 opacity-60 blur-sm">
+        <Image
+          src="/recursos/banner.jpg"
+          alt="Banner de Opera Soluciones"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+        />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
