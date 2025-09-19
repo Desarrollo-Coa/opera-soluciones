@@ -5,10 +5,16 @@ const tipoAusenciaService = new TipoAusenciaService();
 
 export async function GET() {
   try {
+    console.log("Obteniendo tipos de ausencia activos...");
     const tipos = await tipoAusenciaService.obtenerActivos();
+    console.log("Tipos de ausencia obtenidos:", JSON.stringify(tipos, null, 2));
     return NextResponse.json(tipos);
   } catch (error) {
     console.error('Error al obtener tipos de ausencia:', error);
-    return NextResponse.json({ error: 'Error al obtener tipos de ausencia' }, { status: 500 });
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
+    return NextResponse.json({ 
+      error: 'Error al obtener tipos de ausencia',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    }, { status: 500 });
   }
 }

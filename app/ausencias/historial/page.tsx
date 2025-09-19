@@ -505,8 +505,8 @@ export default function HistorialAusenciasPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {todosLosTipos.map((tipo) => (
-                        <SelectItem key={tipo.id_tipo_ausencia} value={tipo.nombre_tipo_ausencia}>
-                          {tipo.nombre_tipo_ausencia}
+                        <SelectItem key={tipo.id} value={tipo.nombre}>
+                          {tipo.nombre}
                         </SelectItem>
                       ))}
                     </SelectContent>

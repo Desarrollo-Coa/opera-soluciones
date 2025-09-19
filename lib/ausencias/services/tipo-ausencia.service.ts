@@ -11,11 +11,18 @@ export class TipoAusenciaService {
   }
 
   async obtenerActivos(): Promise<Array<{ id: number; nombre: string }>> {
-    const rows = await executeQuery(
-      'SELECT id, nombre FROM tipos_ausencia WHERE is_active = TRUE ORDER BY nombre'
-    ) as Array<{ id: number; nombre: string }>;
-    
-    return rows;
+    try {
+      console.log("Ejecutando consulta para obtener tipos de ausencia activos...");
+      const rows = await executeQuery(
+        'SELECT id, nombre FROM tipos_ausencia WHERE is_active = TRUE ORDER BY nombre'
+      ) as Array<{ id: number; nombre: string }>;
+      
+      console.log("Tipos de ausencia obtenidos de BD:", rows);
+      return rows;
+    } catch (error) {
+      console.error("Error al obtener tipos de ausencia activos:", error);
+      throw error;
+    }
   }
 
   async obtenerPorId(id: number): Promise<TipoAusencia | null> {
