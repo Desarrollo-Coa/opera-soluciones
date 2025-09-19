@@ -25,7 +25,7 @@ export function Header() {
       <nav className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <img src="/img/ICON.png" alt="Opera Soluciones" className="h-8 w-auto object-contain" />
+            <img src="/img/ICON.PNG" alt="Opera Soluciones" className="h-8 w-auto object-contain" />
             <Link href="#" className="text-2xl font-extrabold tracking-tight text-blue-700 drop-shadow-sm">
               Opera Soluciones
             </Link>

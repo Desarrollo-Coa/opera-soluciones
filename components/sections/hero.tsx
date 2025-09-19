@@ -19,7 +19,7 @@ export function Hero() {
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
         <div className="mb-8">
           <div className="mx-auto mb-6 flex items-center justify-center">
-            <img src="/img/ICON.png" alt="Opera Soluciones" className="h-24 w-auto object-contain" />
+            <img src="/img/ICON.PNG" alt="Opera Soluciones" className="h-24 w-auto object-contain" />
           </div>
         </div>
 

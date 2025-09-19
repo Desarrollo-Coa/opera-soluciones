@@ -32,7 +32,7 @@ export function About() {
             <Card className="card-hover">
               <CardContent className="p-6">
                 <img
-                  src="/placeholder.svg?height=400&width=400"
+                  src="/placeholder.svg"
                   alt="Equipo de Opera Soluciones"
                   className="w-full h-80 object-cover rounded-lg mb-4"
                 />
