@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "buildCommand": "pnpm build",
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install",
