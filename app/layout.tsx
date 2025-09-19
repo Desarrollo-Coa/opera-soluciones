@@ -21,7 +21,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={inter.className}>
         {/* <header className="w-full flex justify-center py-4">
-          <img src="/img/logopera.jpeg" alt="Opera Soluciones" className="h-12 w-auto" />
+          <img src="/recursos/logopera.jpeg" alt="Opera Soluciones" className="h-12 w-auto" />
         </header> */}
         {children}
         <Toaster />

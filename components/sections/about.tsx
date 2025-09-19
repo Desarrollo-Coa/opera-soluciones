@@ -38,6 +38,7 @@ export function About() {
                   width={400}
                   height={320}
                   className="w-full h-80 object-cover rounded-lg mb-4"
+                  style={{ width: "auto", height: "auto" }}
                 />
                 <h3 className="text-xl font-semibold text-gray-900">Nuestro Equipo</h3>
                 <p className="text-gray-600 mt-2">Profesionales comprometidos con la excelencia</p>

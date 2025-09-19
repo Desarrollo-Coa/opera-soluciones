@@ -27,11 +27,12 @@ export function Header() {
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Image 
-              src="/img/icon.png" 
+              src="/recursos/icon.png" 
               alt="Opera Soluciones" 
               width={32} 
               height={32} 
-              className="h-8 w-auto object-contain" 
+              className="h-8 w-8 object-contain"
+              priority
             />
             <Link href="#" className="text-2xl font-extrabold tracking-tight text-blue-700 drop-shadow-sm">
               Opera Soluciones

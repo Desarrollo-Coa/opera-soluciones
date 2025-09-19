@@ -46,7 +46,7 @@ export default function LoginPage() {
             className="mb-8"
           >
             <Image
-              src="/img/logopera.png"
+              src="/recursos/logopera.png"
               alt="Opera Soluciones"
               width={300}
               height={120}
@@ -82,7 +82,7 @@ export default function LoginPage() {
             className="lg:hidden mb-8 text-center"
           >
             <Image
-              src="/img/logopera.png"
+              src="/recursos/logopera.png"
               alt="Opera Soluciones"
               width={200}
               height={80}

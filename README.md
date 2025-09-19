@@ -190,7 +190,7 @@ sgi-opera-soluciones/
 │   ├── file-utils.ts            # Utilidades de archivos
 │   └── validations.ts           # Validaciones Zod
 ├── public/                      # Archivos estáticos
-│   ├── img/                     # Imágenes del sistema
+│   ├── recursos/                # Imágenes del sistema
 │   └── uploads/                 # Archivos subidos
 ├── styles/                      # Estilos globales
 └── types/                       # Tipos TypeScript globales
