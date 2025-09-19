@@ -1,15 +1,23 @@
 {
-    "framework": "nextjs",
-    "buildCommand": "npm run build",
-    "devCommand": "npm run dev",
-    "installCommand": "npm install",
-    "outputDirectory": ".next",
-    "functions": {
-      "app/api/**/*.ts": {
-        "runtime": "nodejs20.x"
-      }
-    },
-    "env": {
-      "NODE_ENV": "production"
+  "version": 1,
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "functions": {
+    "app/api/**/*": {
+      "maxDuration": 60
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
+  ]
+}
