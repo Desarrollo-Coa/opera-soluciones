@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Users, TrendingUp, FileText, Plus, History, BarChart3, ArrowLeft, Home } from "lucide-react"
+import { CalendarDays, Users, TrendingUp, FileText, Plus, History, BarChart3, ArrowLeft, Home, Download } from "lucide-react"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import {
   Bar,
@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import Link from "next/link"
+import { exportStatsToExcel, exportColaboradoresToExcel } from "@/lib/export-utils"
 
 interface DashboardStats {
   totalAusencias: number
@@ -56,11 +57,15 @@ export default function DashboardPage() {
     const loadStats = async () => {
       try {
         const res = await fetch("/api/ausencias/dashboard/stats");
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         setStats(data);
       } catch (error) {
-        setError("Error al cargar estadísticas");
+        console.error("Error al cargar estadísticas:", error);
+        setError(error instanceof Error ? error.message : "Error al cargar estadísticas");
       } finally {
         setLoading(false);
       }
@@ -68,6 +73,20 @@ export default function DashboardPage() {
     
     loadStats();
   }, [])
+
+  const handleExportStats = async () => {
+    if (stats) {
+      const filename = `estadisticas_ausencias_${new Date().toISOString().split('T')[0]}`;
+      await exportStatsToExcel(stats, filename);
+    }
+  }
+
+  const handleExportColaboradores = async () => {
+    if (stats && stats.colaboradoresConMasAusencias) {
+      const filename = `colaboradores_ausencias_${new Date().toISOString().split('T')[0]}`;
+      await exportColaboradoresToExcel(stats.colaboradoresConMasAusencias, filename);
+    }
+  }
 
   if (loading) {
     return (
@@ -120,6 +139,11 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <Button variant="outline" size="sm" onClick={handleExportStats}>
+                <Download className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Exportar Stats</span>
+                <span className="sm:hidden">Stats</span>
+              </Button>
               <Link href="/ausencias/registro" className="w-full sm:w-auto">
                 <Button className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" />
@@ -283,11 +307,19 @@ export default function DashboardPage() {
           {/* Colaboradores con más ausencias */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
-                Colaboradores con Más Ausencias
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Ranking de colaboradores por cantidad de ausencias</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+                    Colaboradores con Más Ausencias
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Ranking de colaboradores por cantidad de ausencias</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleExportColaboradores}>
+                  <Download className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Exportar</span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">

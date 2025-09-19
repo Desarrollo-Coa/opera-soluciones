@@ -20,6 +20,10 @@ export async function GET() {
     const ausenciasResult = await executeQuery('SELECT COUNT(*) as total FROM ausencias');
     console.log("Total ausencias en BD:", ausenciasResult);
 
+    // Probar consulta de tipos de ausencia
+    const tiposResult = await executeQuery('SELECT * FROM tipos_ausencia WHERE is_active = TRUE');
+    console.log("Tipos de ausencia en BD:", tiposResult);
+
     // Probar consulta de usuarios
     const usuariosResult = await executeQuery('SELECT COUNT(*) as total FROM users');
     console.log("Total usuarios en BD:", usuariosResult);
@@ -28,6 +32,7 @@ export async function GET() {
       success: true,
       testQuery: result,
       totalAusencias: ausenciasResult,
+      tiposAusencia: tiposResult,
       totalUsuarios: usuariosResult,
       env: {
         host: process.env.DB_HOST,

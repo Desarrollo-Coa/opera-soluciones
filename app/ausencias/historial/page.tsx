@@ -11,17 +11,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Search, Filter, Download, Eye, Calendar, FileText, Edit, Upload, X, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { exportAusenciasToExcel } from "@/lib/export-utils"
 
 interface Ausencia {
   id_ausencia: number
   nombre_colaborador: string
   apellido_colaborador: string
-  nombre_negocio: string
+  nombre_departamento: string
   nombre_unidad: string
   nombre_puesto: string
   nombre_tipo_ausencia: string
   fecha_inicio: string
   fecha_fin: string
+  dias_ausencia: number
   descripcion: string
   fecha_registro: string
   archivos: Array<{
@@ -29,6 +31,7 @@ interface Ausencia {
     url_archivo: string
     nombre_archivo: string
   }>
+  activo: boolean
 }
 
 interface EditAusenciaData {
@@ -86,13 +89,16 @@ export default function HistorialAusenciasPage() {
   // Filtros
   const [searchTerm, setSearchTerm] = useState("")
   const [tipoFilter, setTipoFilter] = useState("all")
-  const [negocioFilter, setNegocioFilter] = useState("all")
+  const [departamentoFilter, setDepartamentoFilter] = useState("all")
 
   useEffect(() => {
     const loadData = async () => {
       try {
         // Cargar ausencias
         const ausenciasRes = await fetch("/api/ausencias");
+        if (!ausenciasRes.ok) {
+          throw new Error(`Error ${ausenciasRes.status}: ${ausenciasRes.statusText}`);
+        }
         const ausenciasData = await ausenciasRes.json();
         if (Array.isArray(ausenciasData)) {
           setAusencias(ausenciasData);
@@ -103,13 +109,18 @@ export default function HistorialAusenciasPage() {
 
         // Cargar todos los tipos de ausencia
         const tiposRes = await fetch("/api/ausencias/tipos");
+        if (!tiposRes.ok) {
+          throw new Error(`Error ${tiposRes.status}: ${tiposRes.statusText}`);
+        }
         const tiposData = await tiposRes.json();
         if (Array.isArray(tiposData)) {
           setTodosLosTipos(tiposData);
+        } else {
+          console.warn("Tipos de ausencia no es un array:", tiposData);
         }
       } catch (error) {
-        setError("Error al cargar ausencias");
-        console.error("Error al cargar tipos de ausencia:", error);
+        console.error("Error al cargar datos:", error);
+        setError(error instanceof Error ? error.message : "Error al cargar datos");
       } finally {
         setLoading(false);
       }
@@ -125,8 +136,8 @@ export default function HistorialAusenciasPage() {
       filtered = filtered.filter(
         (a) =>
           `${a.nombre_colaborador} ${a.apellido_colaborador}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          a.nombre_negocio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          a.nombre_puesto.toLowerCase().includes(searchTerm.toLowerCase()),
+          (a.nombre_departamento && a.nombre_departamento.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (a.nombre_puesto && a.nombre_puesto.toLowerCase().includes(searchTerm.toLowerCase())),
       )
     }
 
@@ -134,16 +145,16 @@ export default function HistorialAusenciasPage() {
       filtered = filtered.filter((a) => a.nombre_tipo_ausencia === tipoFilter)
     }
 
-    if (negocioFilter !== "all") {
-      filtered = filtered.filter((a) => a.nombre_negocio === negocioFilter)
+    if (departamentoFilter !== "all") {
+      filtered = filtered.filter((a) => a.nombre_departamento === departamentoFilter)
     }
 
     setFilteredAusencias(filtered)
     setCurrentPage(1) // Reset to first page when filters change
-  }, [searchTerm, tipoFilter, negocioFilter, ausencias])
+  }, [searchTerm, tipoFilter, departamentoFilter, ausencias])
 
-  const tiposUnicos = [...new Set(ausencias.map((a) => a.nombre_tipo_ausencia))]
-  const negociosUnicos = [...new Set(ausencias.map((a) => a.nombre_negocio))]
+  const tiposUnicos = todosLosTipos.map(tipo => tipo.nombre)
+  const departamentosUnicos = [...new Set(ausencias.map((a) => a.nombre_departamento).filter(Boolean))]
 
   // Paginación
   const totalPages = Math.ceil(filteredAusencias.length / ITEMS_PER_PAGE)
@@ -161,6 +172,12 @@ export default function HistorialAusenciasPage() {
       archivos_eliminar: []
     })
     setEditModalOpen(true)
+  }
+
+  const handleExport = async () => {
+    const dataToExport = filteredAusencias.length > 0 ? filteredAusencias : ausencias;
+    const filename = `historial_ausencias_${new Date().toISOString().split('T')[0]}`;
+    await exportAusenciasToExcel(dataToExport, filename);
   }
 
   const handleSaveEdit = async () => {
@@ -271,7 +288,7 @@ export default function HistorialAusenciasPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Exportar</span>
               </Button>
@@ -301,7 +318,7 @@ export default function HistorialAusenciasPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                   <Input
-                    placeholder="Buscar colaborador, negocio..."
+                    placeholder="Buscar colaborador, departamento..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -315,22 +332,22 @@ export default function HistorialAusenciasPage() {
                   <SelectContent>
                     <SelectItem value="all">Todos los tipos</SelectItem>
                     {todosLosTipos.map((tipo) => (
-                      <SelectItem key={tipo.id_tipo_ausencia} value={tipo.nombre_tipo_ausencia}>
-                        {tipo.nombre_tipo_ausencia}
+                      <SelectItem key={tipo.id} value={tipo.nombre}>
+                        {tipo.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select value={negocioFilter} onValueChange={setNegocioFilter}>
+                <Select value={departamentoFilter} onValueChange={setDepartamentoFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Negocio" />
+                    <SelectValue placeholder="Departamento" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos los negocios</SelectItem>
-                    {negociosUnicos.map((negocio) => (
-                      <SelectItem key={negocio} value={negocio}>
-                        {negocio}
+                    <SelectItem value="all">Todos los departamentos</SelectItem>
+                    {departamentosUnicos.map((departamento) => (
+                      <SelectItem key={departamento} value={departamento}>
+                        {departamento}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -341,7 +358,7 @@ export default function HistorialAusenciasPage() {
                   onClick={() => {
                     setSearchTerm("")
                     setTipoFilter("all")
-                    setNegocioFilter("all")
+                    setDepartamentoFilter("all")
                   }}
                 >
                   Limpiar
@@ -379,7 +396,7 @@ export default function HistorialAusenciasPage() {
                       <thead>
                         <tr className="border-b border-slate-200">
                           <th className="text-left py-3 px-4 font-medium text-xs sm:text-sm">Colaborador</th>
-                          <th className="text-left py-3 px-4 font-medium text-xs sm:text-sm">Negocio</th>
+                          <th className="text-left py-3 px-4 font-medium text-xs sm:text-sm">Departamento</th>
                           <th className="text-left py-3 px-4 font-medium text-xs sm:text-sm">Tipo</th>
                           <th className="text-left py-3 px-4 font-medium text-xs sm:text-sm">Período</th>
                           <th className="text-left py-3 px-4 font-medium text-xs sm:text-sm">Duración</th>
@@ -395,7 +412,7 @@ export default function HistorialAusenciasPage() {
                               </div>
                               <div className="text-xs text-slate-500">{ausencia.nombre_puesto}</div>
                             </td>
-                            <td className="py-3 px-4 text-xs sm:text-sm">{ausencia.nombre_negocio}</td>
+                            <td className="py-3 px-4 text-xs sm:text-sm">{ausencia.nombre_departamento || 'N/A'}</td>
                             <td className="py-3 px-4">
                               <Badge className={`text-xs ${getTipoColor(ausencia.nombre_tipo_ausencia)}`}>
                                 {ausencia.nombre_tipo_ausencia}
