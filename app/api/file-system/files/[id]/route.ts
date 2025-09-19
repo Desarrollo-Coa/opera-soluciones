@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { FileService } from '@/lib/file-system/services';
+import { verifyUserPassword, getUserIdFromToken } from '@/lib/auth/password-verifier';
 
 const fileService = new FileService();
 
@@ -53,12 +54,41 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
     const fileId = parseInt(id);
+    
+    // Obtener ID del usuario desde el token
+    const userId = getUserIdFromToken(request);
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Token de autenticación inválido' },
+        { status: 401 }
+      );
+    }
+
+    // Obtener contraseña del body
+    const body = await request.json();
+    const { password } = body;
+
+    if (!password) {
+      return NextResponse.json(
+        { error: 'Contraseña requerida para eliminar' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar contraseña
+    const isPasswordValid = await verifyUserPassword(userId, password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: 'Contraseña incorrecta' },
+        { status: 401 }
+      );
+    }
     
     await fileService.eliminar(fileId);
     

@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,8 @@ import {
   MoreVertical,
   Download,
   Trash2,
-  Edit
+  Edit,
+  X
 } from 'lucide-react';
 import { FileSystemItem, FileFolder, FileSystemFile } from '@/lib/file-system/types';
 
@@ -39,10 +40,22 @@ export function FileExplorer({ initialFolderId = null }: FileExplorerProps) {
   // Estados para modales
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [uploadFileOpen, setUploadFileOpen] = useState(false);
+  const [editItemOpen, setEditItemOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderDescription, setNewFolderDescription] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileDescription, setFileDescription] = useState('');
+  
+  // Estados para edición
+  const [editingItem, setEditingItem] = useState<FileSystemItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  
+  // Estados para eliminación
+  const [deletingItem, setDeletingItem] = useState<FileSystemItem | null>(null);
+  const [password, setPassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -171,6 +184,118 @@ export function FileExplorer({ initialFolderId = null }: FileExplorerProps) {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+    }
+  };
+
+  const handleEditItem = (item: FileSystemItem) => {
+    setEditingItem(item);
+    
+    // Para archivos, extraer solo el nombre sin la extensión
+    if (item.type === 'file' && item.original_name) {
+      const lastDotIndex = item.original_name.lastIndexOf('.');
+      const nameWithoutExtension = lastDotIndex > 0 
+        ? item.original_name.substring(0, lastDotIndex)
+        : item.original_name;
+      setEditName(nameWithoutExtension);
+    } else {
+      setEditName(item.original_name || item.name);
+    }
+    
+    setEditDescription(item.description || '');
+    setEditItemOpen(true);
+  };
+
+  const handleUpdateItem = async () => {
+    if (!editingItem) return;
+
+    try {
+      const url = editingItem.type === 'folder' 
+        ? `/api/file-system/folders/${editingItem.id}`
+        : `/api/file-system/files/${editingItem.id}`;
+
+      // Obtener token de las cookies
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth-token='))
+        ?.split('=')[1];
+
+      // Para archivos, reconstruir el nombre completo con la extensión original
+      let finalName = editName;
+      if (editingItem.type === 'file' && editingItem.original_name) {
+        const lastDotIndex = editingItem.original_name.lastIndexOf('.');
+        if (lastDotIndex > 0) {
+          const extension = editingItem.original_name.substring(lastDotIndex);
+          finalName = editName + extension;
+        }
+      }
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: finalName,
+          description: editDescription
+        })
+      });
+
+      if (response.ok) {
+        setEditItemOpen(false);
+        setEditingItem(null);
+        setEditName('');
+        setEditDescription('');
+        loadData();
+      }
+    } catch (error) {
+      console.error('Error al actualizar item:', error);
+    }
+  };
+
+  const handleDeleteItem = (item: FileSystemItem) => {
+    setDeletingItem(item);
+    setPassword('');
+    setDeleteError('');
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem || !password) return;
+
+    try {
+      const url = deletingItem.type === 'folder' 
+        ? `/api/file-system/folders/${deletingItem.id}`
+        : `/api/file-system/files/${deletingItem.id}`;
+
+      // Obtener token de las cookies
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth-token='))
+        ?.split('=')[1];
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ password })
+      });
+
+      if (response.ok) {
+        setDeleteConfirmOpen(false);
+        setDeletingItem(null);
+        setPassword('');
+        setDeleteError('');
+        loadData();
+      } else {
+        const errorData = await response.json();
+        setDeleteError(errorData.error || 'Error al eliminar');
+      }
+    } catch (error) {
+      console.error('Error al eliminar item:', error);
+      setDeleteError('Error de conexión');
     }
   };
 
@@ -350,14 +475,22 @@ export function FileExplorer({ initialFolderId = null }: FileExplorerProps) {
           filteredItems.map((item) => (
             <Card
               key={`${item.type}-${item.id}`}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => item.type === 'folder' && handleFolderClick(item.id)}
+              className="group hover:shadow-md transition-shadow relative"
             >
               <CardContent className="p-4">
                 <div className="flex flex-col items-center text-center space-y-2">
-                  {getFileIcon(item)}
+                  <div 
+                    className="cursor-pointer"
+                    onClick={() => item.type === 'folder' && handleFolderClick(item.id)}
+                  >
+                    {getFileIcon(item)}
+                  </div>
                   <div className="w-full">
-                    <p className="text-sm font-medium truncate" title={item.original_name || item.name}>
+                    <p 
+                      className="text-sm font-medium truncate cursor-pointer" 
+                      title={item.original_name || item.name}
+                      onClick={() => item.type === 'folder' && handleFolderClick(item.id)}
+                    >
                       {item.original_name || item.name}
                     </p>
                     {item.type === 'file' && item.size_formatted && (
@@ -369,12 +502,130 @@ export function FileExplorer({ initialFolderId = null }: FileExplorerProps) {
                       </Badge>
                     )}
                   </div>
+                  
+                  {/* Botones de acción */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex space-x-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditItem(item);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteItem(item);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))
         )}
       </div>
+
+      {/* Modal de edición */}
+      <Dialog open={editItemOpen} onOpenChange={setEditItemOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Editar {editingItem?.type === 'folder' ? 'Carpeta' : 'Archivo'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">
+                {editingItem?.type === 'file' ? 'Nombre (sin extensión)' : 'Nombre'}
+              </Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder={editingItem?.type === 'file' ? 'Nombre del archivo' : 'Nombre de la carpeta'}
+              />
+              {editingItem?.type === 'file' && editingItem.file_extension && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Extensión: <span className="font-mono">{editingItem.file_extension}</span> (no editable)
+                </p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Descripción (opcional)</Label>
+              <Textarea
+                id="edit-description"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Descripción del item"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setEditItemOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateItem} disabled={!editName.trim()}>
+                Guardar Cambios
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmación de eliminación */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">
+              Confirmar Eliminación
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              ¿Estás seguro de que quieres eliminar{' '}
+              <strong>{deletingItem?.original_name || deletingItem?.name}</strong>?
+              Esta acción no se puede deshacer.
+            </p>
+            <div>
+              <Label htmlFor="delete-password">Contraseña de confirmación</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Ingresa tu contraseña"
+                className={deleteError ? 'border-red-500' : ''}
+              />
+              {deleteError && (
+                <p className="text-sm text-red-600 mt-1">{deleteError}</p>
+              )}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleConfirmDelete} 
+                disabled={!password.trim()}
+              >
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

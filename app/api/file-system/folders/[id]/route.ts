@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { FolderService } from '@/lib/file-system/services';
 import { CreateFolderData } from '@/lib/file-system/types';
+import { verifyUserPassword, getUserIdFromToken } from '@/lib/auth/password-verifier';
 
 const folderService = new FolderService();
 
@@ -61,12 +62,41 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
     const folderId = parseInt(id);
+    
+    // Obtener ID del usuario desde el token
+    const userId = getUserIdFromToken(request);
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Token de autenticación inválido' },
+        { status: 401 }
+      );
+    }
+
+    // Obtener contraseña del body
+    const body = await request.json();
+    const { password } = body;
+
+    if (!password) {
+      return NextResponse.json(
+        { error: 'Contraseña requerida para eliminar' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar contraseña
+    const isPasswordValid = await verifyUserPassword(userId, password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: 'Contraseña incorrecta' },
+        { status: 401 }
+      );
+    }
     
     await folderService.eliminar(folderId);
     

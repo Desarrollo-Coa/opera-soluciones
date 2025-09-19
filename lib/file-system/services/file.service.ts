@@ -102,6 +102,8 @@ export class FileService {
 
     if (data.name) {
       updates.push('name = ?');
+      updates.push('original_name = ?');
+      values.push(data.name);
       values.push(data.name);
     }
     if (data.description !== undefined) {
