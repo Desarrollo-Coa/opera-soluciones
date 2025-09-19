@@ -27,7 +27,7 @@ export function Header() {
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Image 
-              src="/img/ICON.PNG" 
+              src="/img/icon.png" 
               alt="Opera Soluciones" 
               width={32} 
               height={32} 

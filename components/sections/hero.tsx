@@ -10,7 +10,7 @@ export function Hero() {
       <div
         className="absolute inset-0 opacity-60 blur-sm"
         style={{
-          backgroundImage: "url(/img/BANNER.jpg)",
+          backgroundImage: "url(/img/banner.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -21,7 +21,7 @@ export function Hero() {
         <div className="mb-8">
           <div className="mx-auto mb-6 flex items-center justify-center">
             <Image 
-              src="/img/ICON.PNG" 
+              src="/img/icon.png" 
               alt="Opera Soluciones" 
               width={96} 
               height={96} 
