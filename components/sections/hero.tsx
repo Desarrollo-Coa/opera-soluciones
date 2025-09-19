@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import Image from "next/image"
 
 export function Hero() {
   return (
@@ -19,7 +20,13 @@ export function Hero() {
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
         <div className="mb-8">
           <div className="mx-auto mb-6 flex items-center justify-center">
-            <img src="/img/ICON.PNG" alt="Opera Soluciones" className="h-24 w-auto object-contain" />
+            <Image 
+              src="/img/ICON.PNG" 
+              alt="Opera Soluciones" 
+              width={96} 
+              height={96} 
+              className="h-24 w-auto object-contain" 
+            />
           </div>
         </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { NAVIGATION_LINKS } from "@/lib/constants"
@@ -25,7 +26,13 @@ export function Header() {
       <nav className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <img src="/img/ICON.PNG" alt="Opera Soluciones" className="h-8 w-auto object-contain" />
+            <Image 
+              src="/img/ICON.PNG" 
+              alt="Opera Soluciones" 
+              width={32} 
+              height={32} 
+              className="h-8 w-auto object-contain" 
+            />
             <Link href="#" className="text-2xl font-extrabold tracking-tight text-blue-700 drop-shadow-sm">
               Opera Soluciones
             </Link>

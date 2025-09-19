@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
 
 export function About() {
   return (
@@ -31,9 +32,11 @@ export function About() {
           <div className="text-center">
             <Card className="card-hover">
               <CardContent className="p-6">
-                <img
+                <Image
                   src="/placeholder.svg"
                   alt="Equipo de Opera Soluciones"
+                  width={400}
+                  height={320}
                   className="w-full h-80 object-cover rounded-lg mb-4"
                 />
                 <h3 className="text-xl font-semibold text-gray-900">Nuestro Equipo</h3>
