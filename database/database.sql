@@ -428,11 +428,68 @@ ADD CONSTRAINT fk_tipos_ausencia_created_by FOREIGN KEY (created_by) REFERENCES 
 ADD CONSTRAINT fk_tipos_ausencia_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
 
 -- =====================================================
+-- FILE SYSTEM TABLES (TABLAS DEL SISTEMA DE ARCHIVOS)
+-- =====================================================
+
+-- File system folders table
+-- Tabla de carpetas del sistema de archivos
+CREATE TABLE IF NOT EXISTS file_folders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  parent_id INT NULL, -- NULL para carpetas raíz
+  path VARCHAR(1000) NOT NULL, -- Ruta completa de la carpeta
+  description TEXT,
+  created_by INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE,
+  INDEX idx_file_folders_parent (parent_id),
+  INDEX idx_file_folders_path (path),
+  INDEX idx_file_folders_active (is_active),
+  FOREIGN KEY (parent_id) REFERENCES file_folders(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- File system files table
+-- Tabla de archivos del sistema de archivos
+CREATE TABLE IF NOT EXISTS file_system_files (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  folder_id INT NULL, -- NULL para archivos en raíz
+  file_path VARCHAR(1000) NOT NULL, -- Ruta completa del archivo
+  file_url VARCHAR(1000) NOT NULL, -- URL de acceso al archivo
+  file_size BIGINT NOT NULL, -- Tamaño en bytes
+  mime_type VARCHAR(100) NOT NULL, -- Tipo MIME del archivo
+  file_extension VARCHAR(10), -- Extensión del archivo
+  description TEXT,
+  created_by INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT TRUE,
+  INDEX idx_file_system_files_folder (folder_id),
+  INDEX idx_file_system_files_path (file_path),
+  INDEX idx_file_system_files_active (is_active),
+  INDEX idx_file_system_files_mime_type (mime_type),
+  FOREIGN KEY (folder_id) REFERENCES file_folders(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- =====================================================
+-- INITIAL DATA FOR FILE SYSTEM
+-- =====================================================
+
+-- Insert root folder
+-- Insertar carpeta raíz
+INSERT INTO file_folders (name, parent_id, path, description, created_by) VALUES
+('Archivos', NULL, '/', 'Carpeta raíz del sistema de archivos', 1);
+
+-- =====================================================
 -- COMPLETION MESSAGE
 -- =====================================================
 
--- Database initialization completed successfully with absence management
-SELECT 'SGI Opera Soluciones database initialization completed successfully with absence management tables' AS status;
+-- Database initialization completed successfully with absence management and file system
+SELECT 'SGI Opera Soluciones database initialization completed successfully with absence management and file system tables' AS status;
 
 
 

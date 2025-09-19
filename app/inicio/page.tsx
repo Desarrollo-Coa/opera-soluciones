@@ -60,6 +60,7 @@ const MODULES: Module[] = [
     color: "text-purple-600",
     bgColor: "bg-purple-50",
     hoverColor: "hover:bg-purple-100",
+    href: "/inicio/sgi",
   },
 ];
 
