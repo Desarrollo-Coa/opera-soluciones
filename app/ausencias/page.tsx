@@ -107,7 +107,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Link href="/">
+              <Link href="/inicio">
                 <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   <Home className="w-4 h-4 mr-1" />
