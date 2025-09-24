@@ -1,6 +1,5 @@
 # SGI Opera Soluciones
 **Sistema de Gestión Integral para Opera Soluciones**
-
 Plataforma integral de gestión empresarial desarrollada con Next.js 14, TypeScript y MySQL, diseñada para centralizar y optimizar todos los procesos administrativos, de recursos humanos y operativos de la empresa.
 
 ## 🎯 Propósito del Sistema
