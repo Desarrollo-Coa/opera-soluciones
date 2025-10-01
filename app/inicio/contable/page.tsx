@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowLeft, Calculator, FileText, Calendar, Users } from "lucide-react"
 import { SimpleDataGrid } from "@/components/contable/simple-data-grid"
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes"
+import { DiscardChangesDialog } from "@/components/ui/discard-changes-dialog"
 
 interface User {
   id: number
@@ -68,6 +70,7 @@ function ContableContent() {
   const [expenseData, setExpenseData] = useState<ExpenseData[]>([])
   const [transferData, setTransferData] = useState<TransferData[]>([])
   const [dataLoading, setDataLoading] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   // Años disponibles (estáticos)
   const availableYears = [2023, 2024, 2025, 2026, 2027]
@@ -77,6 +80,27 @@ function ContableContent() {
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
     'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
   ]
+
+  // Configurar hook para manejar cambios sin guardar
+  const { 
+    navigateWithConfirmation, 
+    handleStateChange, 
+    showDiscardDialog, 
+    confirmDiscard, 
+    cancelDiscard 
+  } = useUnsavedChanges({
+    hasUnsavedChanges,
+    onConfirmDiscard: () => {
+      setHasUnsavedChanges(false)
+      // Limpiar datos al descartar
+      setPayrollData([])
+      setExpenseData([])
+      setTransferData([])
+    },
+    onCancelDiscard: () => {
+      // No hacer nada, mantener los cambios
+    }
+  })
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -158,15 +182,28 @@ function ContableContent() {
   }
 
   const handleYearSelect = (year: number) => {
-    setSelectedYear(year)
-    setSelectedMonth(null) // Reset month when year changes
-    setPayrollData([])
-    setExpenseData([])
-    setTransferData([])
+    handleStateChange(() => {
+      setSelectedYear(year)
+      setSelectedMonth(null) // Reset month when year changes
+      setPayrollData([])
+      setExpenseData([])
+      setTransferData([])
+      setHasUnsavedChanges(false)
+    })
   }
 
   const handleMonthSelect = (month: string) => {
-    setSelectedMonth(month)
+    handleStateChange(() => {
+      setSelectedMonth(month)
+      setHasUnsavedChanges(false)
+    })
+  }
+
+  const handleModuleChange = (module: 'gastos' | 'facturacion' | 'transferencias') => {
+    handleStateChange(() => {
+      setActiveSection(module)
+      setHasUnsavedChanges(false)
+    })
   }
 
   const formatCurrency = (amount: number) => {
@@ -194,6 +231,7 @@ function ContableContent() {
 
       const result = await response.json()
       setPayrollData(result.data)
+      setHasUnsavedChanges(false)
       return result
     } catch (error) {
       console.error("Error saving payroll data:", error)
@@ -236,6 +274,7 @@ function ContableContent() {
 
       const result = await response.json()
       setExpenseData(result.data)
+      setHasUnsavedChanges(false)
       return result
     } catch (error) {
       console.error("Error saving expense data:", error)
@@ -278,6 +317,7 @@ function ContableContent() {
 
       const result = await response.json()
       setTransferData(result.data)
+      setHasUnsavedChanges(false)
       return result
     } catch (error) {
       console.error("Error saving transfer data:", error)
@@ -336,7 +376,7 @@ function ContableContent() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push('/inicio')}
+            onClick={() => navigateWithConfirmation('/inicio')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
@@ -365,7 +405,7 @@ function ContableContent() {
                   <Button
                     variant={activeSection === 'gastos' ? 'default' : 'outline'}
                     className="w-full justify-start text-xs h-7 px-2"
-                    onClick={() => setActiveSection('gastos')}
+                    onClick={() => handleModuleChange('gastos')}
                   >
                     <Users className="h-3 w-3 mr-1.5" />
                     Libro Gastos Mes a Mes
@@ -373,7 +413,7 @@ function ContableContent() {
                   <Button
                     variant={activeSection === 'facturacion' ? 'default' : 'outline'}
                     className="w-full justify-start text-xs h-7 px-2"
-                    onClick={() => setActiveSection('facturacion')}
+                    onClick={() => handleModuleChange('facturacion')}
                   >
                     <FileText className="h-3 w-3 mr-1.5" />
                     Facturación
@@ -381,7 +421,7 @@ function ContableContent() {
                   <Button
                     variant={activeSection === 'transferencias' ? 'default' : 'outline'}
                     className="w-full justify-start text-xs h-7 px-2"
-                    onClick={() => setActiveSection('transferencias')}
+                    onClick={() => handleModuleChange('transferencias')}
                   >
                     <Calculator className="h-3 w-3 mr-1.5" />
                     Transferencias y Pagos
@@ -467,7 +507,9 @@ function ContableContent() {
                         setPayrollData([])
                         setExpenseData([])
                         setTransferData([])
+                        setHasUnsavedChanges(false)
                       }}
+                      onUnsavedChangesChange={setHasUnsavedChanges}
                       year={selectedYear}
                       mes={selectedMonth}
                       type={activeSection === 'gastos' ? 'payroll' : 
@@ -501,6 +543,14 @@ function ContableContent() {
           </div>
         </div>
       </div>
+
+      {/* Diálogo de confirmación para cambios sin guardar */}
+      <DiscardChangesDialog
+        open={showDiscardDialog}
+        onOpenChange={cancelDiscard}
+        onConfirm={confirmDiscard}
+        onCancel={cancelDiscard}
+      />
     </div>
   )
 }

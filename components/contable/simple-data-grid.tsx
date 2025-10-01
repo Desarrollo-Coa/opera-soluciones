@@ -3,10 +3,10 @@
 import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Save, Trash2, X, AlertTriangle } from "lucide-react"
+import { Plus, Save, Trash2, X, Undo2 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { NumericFormat } from "react-number-format"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { DiscardChangesDialog } from "@/components/ui/discard-changes-dialog"
 
 // Tipos para las filas
 interface BaseRow {
@@ -51,6 +51,7 @@ interface SimpleDataGridProps {
   onSave: (data: any[]) => Promise<void>
   onDelete: (id: number) => Promise<void>
   onCancel?: () => void
+  onUnsavedChangesChange?: (hasChanges: boolean) => void
   year: number
   mes: string
   type: 'payroll' | 'expenses' | 'transfers'
@@ -61,6 +62,7 @@ export function SimpleDataGrid({
   onSave, 
   onDelete, 
   onCancel,
+  onUnsavedChangesChange,
   year, 
   mes, 
   type 
@@ -97,6 +99,11 @@ export function SimpleDataGrid({
     setOriginalData(processedData)
     setHasChanges(false)
   }, [data])
+
+  // Notificar cambios al componente padre
+  useEffect(() => {
+    onUnsavedChangesChange?.(hasChanges)
+  }, [hasChanges, onUnsavedChangesChange])
 
   // Agregar nueva fila
   const addRow = useCallback(() => {
@@ -171,34 +178,50 @@ export function SimpleDataGrid({
   }, [type])
 
   // Eliminar fila
-  const deleteRow = useCallback(async (rowIndex: number) => {
+  const deleteRow = useCallback((rowIndex: number) => {
     const row = rows[rowIndex]
     if (row.id) {
-      try {
-        await onDelete(row.id)
-        setRows(prev => prev.filter((_, i) => i !== rowIndex))
-        toast({
-          title: "Éxito",
-          description: "Registro eliminado correctamente"
-        })
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "No se pudo eliminar el registro",
-          variant: "destructive"
-        })
-      }
+      // Marcar como eliminado pero no eliminar hasta guardar
+      setRows(prev => prev.map((r, i) => 
+        i === rowIndex ? { ...r, isDeleted: true } : r
+      ))
+      setHasChanges(true)
     } else {
+      // Si es una fila nueva, eliminarla directamente
       setRows(prev => prev.filter((_, i) => i !== rowIndex))
     }
-  }, [rows, onDelete])
+  }, [rows])
 
   // Guardar cambios
   const saveChanges = useCallback(async () => {
     try {
-      await onSave(rows)
+      // Separar filas eliminadas de las demás
+      const deletedRows = rows.filter(row => row.isDeleted && row.id)
+      const activeRows = rows.filter(row => !row.isDeleted)
+      
+      // Eliminar registros marcados para eliminación
+      for (const row of deletedRows) {
+        try {
+          await onDelete(row.id)
+        } catch (error) {
+          console.error("Error deleting row:", error)
+          toast({
+            title: "Error",
+            description: `No se pudo eliminar el registro ${row.id}`,
+            variant: "destructive"
+          })
+          throw error
+        }
+      }
+      
+      // Guardar filas activas
+      await onSave(activeRows)
+      
+      // Actualizar estado local
+      setRows(activeRows)
       setHasChanges(false)
-      setOriginalData([...rows])
+      setOriginalData([...activeRows])
+      
       toast({
         title: "Éxito",
         description: "Datos guardados correctamente"
@@ -210,7 +233,7 @@ export function SimpleDataGrid({
         variant: "destructive"
       })
     }
-  }, [rows, onSave])
+  }, [rows, onSave, onDelete])
 
   // Contar cambios sin guardar
   const getUnsavedChangesCount = useCallback(() => {
@@ -219,9 +242,12 @@ export function SimpleDataGrid({
     // Contar filas nuevas
     const newRows = rows.filter(row => row.isNew)
     
+    // Contar filas marcadas para eliminación
+    const deletedRows = rows.filter(row => row.isDeleted && row.id)
+    
     // Contar filas modificadas (que no son nuevas pero han cambiado)
     const modifiedRows = rows.filter(row => {
-      if (row.isNew) return false
+      if (row.isNew || row.isDeleted) return false
       const original = originalData.find(orig => orig.id === row.id)
       if (!original) return false
       
@@ -255,7 +281,7 @@ export function SimpleDataGrid({
       }
     })
     
-    return newRows.length + modifiedRows.length
+    return newRows.length + modifiedRows.length + deletedRows.length
   }, [rows, originalData, hasChanges, type])
 
   // Manejar cancelar
@@ -269,7 +295,9 @@ export function SimpleDataGrid({
 
   // Confirmar cancelar
   const confirmCancel = useCallback(() => {
-    setRows([...originalData])
+    // Restaurar datos originales (sin filas marcadas como eliminadas)
+    const restoredData = originalData.map(row => ({ ...row, isDeleted: false }))
+    setRows(restoredData)
     setHasChanges(false)
     setEditingCell(null)
     setShowCancelDialog(false)
@@ -453,7 +481,10 @@ export function SimpleDataGrid({
             </thead>
             <tbody className="bg-white">
               {rows.map((row, rowIndex) => (
-                <tr key={rowIndex} className="hover:bg-gray-50">
+                <tr 
+                  key={rowIndex} 
+                  className={`hover:bg-gray-50 ${row.isDeleted ? 'bg-red-50 opacity-60' : ''}`}
+                >
                   {columns.map((column) => (
                     <td 
                       key={column.key} 
@@ -467,14 +498,31 @@ export function SimpleDataGrid({
                     >
                       {column.key === 'actions' ? (
                         <div className="flex gap-1 justify-center">
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteRow(rowIndex)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          {row.isDeleted ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                // Restaurar fila eliminada
+                                setRows(prev => prev.map((r, i) => 
+                                  i === rowIndex ? { ...r, isDeleted: false } : r
+                                ))
+                                setHasChanges(true)
+                              }}
+                              className="h-6 w-6 p-0 text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteRow(rowIndex)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         renderCell(row, column.key, rowIndex)
@@ -489,30 +537,15 @@ export function SimpleDataGrid({
       </div>
 
       {/* Diálogo de confirmación para cancelar */}
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              ¿Descartar cambios?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Tienes {getUnsavedChangesCount()} {getUnsavedChangesCount() === 1 ? 'cambio sin guardar' : 'cambios sin guardar'} para el año {year} y mes {mes}.
-              <br />
-              <br />
-              Si continúas, se perderán todos los cambios no guardados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelCancel}>
-              Mantener cambios
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCancel} className="bg-red-600 hover:bg-red-700">
-              Descartar cambios
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DiscardChangesDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        onConfirm={confirmCancel}
+        onCancel={cancelCancel}
+        unsavedChangesCount={getUnsavedChangesCount()}
+        year={year}
+        mes={mes}
+      />
     </div>
   )
 }
