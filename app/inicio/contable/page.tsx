@@ -71,6 +71,11 @@ function ContableContent() {
   const [transferData, setTransferData] = useState<TransferData[]>([])
   const [dataLoading, setDataLoading] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  
+  // Estados para datos en tiempo real (incluyendo cambios no guardados)
+  const [currentPayrollData, setCurrentPayrollData] = useState<PayrollData[]>([])
+  const [currentExpenseData, setCurrentExpenseData] = useState<ExpenseData[]>([])
+  const [currentTransferData, setCurrentTransferData] = useState<TransferData[]>([])
 
   // Años disponibles (estáticos)
   const availableYears = [2023, 2024, 2025, 2026, 2027]
@@ -156,6 +161,7 @@ function ContableContent() {
         if (response.ok) {
           const data = await response.json()
           setPayrollData(data.data || [])
+          setCurrentPayrollData([]) // Limpiar datos en tiempo real
         }
       } else if (activeSection === 'facturacion') {
         const response = await fetch(`/api/contable/expenses?year=${selectedYear}&mes=${selectedMonth}`, {
@@ -164,6 +170,7 @@ function ContableContent() {
         if (response.ok) {
           const data = await response.json()
           setExpenseData(data.data || [])
+          setCurrentExpenseData([]) // Limpiar datos en tiempo real
         }
       } else if (activeSection === 'transferencias') {
         const response = await fetch(`/api/contable/transfers?year=${selectedYear}&mes=${selectedMonth}`, {
@@ -172,6 +179,7 @@ function ContableContent() {
         if (response.ok) {
           const data = await response.json()
           setTransferData(data.data || [])
+          setCurrentTransferData([]) // Limpiar datos en tiempo real
         }
       }
     } catch (error) {
@@ -203,7 +211,22 @@ function ContableContent() {
     handleStateChange(() => {
       setActiveSection(module)
       setHasUnsavedChanges(false)
+      // Limpiar datos en tiempo real al cambiar de módulo
+      setCurrentPayrollData([])
+      setCurrentExpenseData([])
+      setCurrentTransferData([])
     })
+  }
+
+  // Manejar cambios de datos en tiempo real
+  const handleDataChange = (data: any[]) => {
+    if (activeSection === 'gastos') {
+      setCurrentPayrollData(data)
+    } else if (activeSection === 'facturacion') {
+      setCurrentExpenseData(data)
+    } else if (activeSection === 'transferencias') {
+      setCurrentTransferData(data)
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -212,6 +235,42 @@ function ContableContent() {
       currency: 'COP',
       minimumFractionDigits: 0
     }).format(amount)
+  }
+
+  // Calcular totales para cada módulo usando datos en tiempo real
+  const calculateTotals = () => {
+    if (activeSection === 'gastos') {
+      const dataToUse = currentPayrollData.length > 0 ? currentPayrollData : payrollData
+      const total = dataToUse.reduce((sum, row) => {
+        const value = Number(row.total) || 0
+        return sum + value
+      }, 0)
+      return { total, label: 'Total Gastos' }
+    } else if (activeSection === 'facturacion') {
+      const dataToUse = currentExpenseData.length > 0 ? currentExpenseData : expenseData
+      const total = dataToUse.reduce((sum, row) => {
+        const value = Number(row.total) || 0
+        return sum + value
+      }, 0)
+      return { total, label: 'Total Facturación' }
+    } else if (activeSection === 'transferencias') {
+      const dataToUse = currentTransferData.length > 0 ? currentTransferData : transferData
+      const totalEntra = dataToUse.reduce((sum, row) => {
+        const value = Number(row.entra) || 0
+        return sum + value
+      }, 0)
+      const totalSale = dataToUse.reduce((sum, row) => {
+        const value = Number(row.sale) || 0
+        return sum + value
+      }, 0)
+      return { 
+        totalEntra, 
+        totalSale, 
+        label: 'Transferencias y Pagos',
+        isTransfer: true 
+      }
+    }
+    return { total: 0, label: '' }
   }
 
   // Guardar datos de nómina
@@ -435,20 +494,61 @@ function ContableContent() {
           <div className="xl:col-span-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Calendar className="h-4 w-4" />
-                  {activeSection === 'gastos' ? 'Libro Gastos Mes a Mes' : 
-                   activeSection === 'facturacion' ? 'Facturación' : 
-                   'Transferencias y Pagos'}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {activeSection === 'gastos' 
-                    ? 'Gastos con facturas por período' 
-                    : activeSection === 'facturacion'
-                    ? 'Facturación de servicios por período'
-                    : 'Transferencias y pagos por período'
-                  }
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Calendar className="h-4 w-4" />
+                      {activeSection === 'gastos' ? 'Libro Gastos Mes a Mes' : 
+                       activeSection === 'facturacion' ? 'Facturación' : 
+                       'Transferencias y Pagos'}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {activeSection === 'gastos' 
+                        ? 'Gastos con facturas por período' 
+                        : activeSection === 'facturacion'
+                        ? 'Facturación de servicios por período'
+                        : 'Transferencias y pagos por período'
+                      }
+                    </CardDescription>
+                  </div>
+                  
+                  {/* Totales del mes seleccionado */}
+                  {selectedYear && selectedMonth && (
+                    <div className="text-right">
+                      {(() => {
+                        const totals = calculateTotals()
+                        if (totals.isTransfer) {
+                          return (
+                            <div className="space-y-1">
+                              <div className="text-sm font-semibold text-gray-700">
+                                {selectedMonth} {selectedYear}
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="text-xs text-green-600 font-medium">
+                                  Total Entra: {formatCurrency(totals.totalEntra)}
+                                </div>
+                                <div className="text-xs text-red-600 font-medium">
+                                  Total Sale: {formatCurrency(totals.totalSale)}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        } else {
+                          return (
+                            <div className="space-y-1">
+                              <div className="text-sm font-semibold text-gray-700">
+                                {selectedMonth} {selectedYear}
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium">
+                                {totals.label}: {formatCurrency(totals.total || 0)}
+                              </div>
+                            </div>
+                          )
+                        }
+                      })()}
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Year Selector */}
@@ -507,9 +607,13 @@ function ContableContent() {
                         setPayrollData([])
                         setExpenseData([])
                         setTransferData([])
+                        setCurrentPayrollData([])
+                        setCurrentExpenseData([])
+                        setCurrentTransferData([])
                         setHasUnsavedChanges(false)
                       }}
                       onUnsavedChangesChange={setHasUnsavedChanges}
+                      onDataChange={handleDataChange}
                       year={selectedYear}
                       mes={selectedMonth}
                       type={activeSection === 'gastos' ? 'payroll' : 

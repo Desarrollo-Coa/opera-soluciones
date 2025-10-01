@@ -52,6 +52,7 @@ interface SimpleDataGridProps {
   onDelete: (id: number) => Promise<void>
   onCancel?: () => void
   onUnsavedChangesChange?: (hasChanges: boolean) => void
+  onDataChange?: (data: any[]) => void
   year: number
   mes: string
   type: 'payroll' | 'expenses' | 'transfers'
@@ -63,6 +64,7 @@ export function SimpleDataGrid({
   onDelete, 
   onCancel,
   onUnsavedChangesChange,
+  onDataChange,
   year, 
   mes, 
   type 
@@ -104,6 +106,11 @@ export function SimpleDataGrid({
   useEffect(() => {
     onUnsavedChangesChange?.(hasChanges)
   }, [hasChanges, onUnsavedChangesChange])
+
+  // Notificar cambios de datos para actualizar totales en tiempo real
+  useEffect(() => {
+    onDataChange?.(rows)
+  }, [rows, onDataChange])
 
   // Agregar nueva fila
   const addRow = useCallback(() => {
@@ -457,7 +464,7 @@ export function SimpleDataGrid({
           {onCancel && (
             <Button onClick={handleCancel} size="sm" variant="outline">
               <X className="h-4 w-4 mr-2" />
-              Cancelar
+              Cerrar
             </Button>
           )}
         </div>

@@ -20,7 +20,7 @@ export function DiscardChangesDialog({
   onOpenChange,
   onConfirm,
   onCancel,
-  title = "¿Descartar cambios?",
+  title = "¿Cerrar tabla?",
   description,
   unsavedChangesCount,
   year,
@@ -33,7 +33,7 @@ export function DiscardChangesDialog({
       return `Tienes ${unsavedChangesCount} ${unsavedChangesCount === 1 ? 'cambio sin guardar' : 'cambios sin guardar'} para el año ${year} y mes ${mes}.\n\nSi continúas, se perderán todos los cambios no guardados.`
     }
     
-    return "Tienes cambios sin guardar.\n\nSi continúas, se perderán todos los cambios no guardados."
+    return "Tienes cambios sin guardar.\n\nSi cierras la tabla, se perderán todos los cambios no guardados."
   }
 
   return (
@@ -53,7 +53,7 @@ export function DiscardChangesDialog({
             Mantener cambios
           </AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-red-600 hover:bg-red-700">
-            Descartar cambios
+            Cerrar tabla
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
