@@ -343,11 +343,11 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm px-1 overflow-hidden text-ellipsis"
+            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1 overflow-hidden text-ellipsis"
             style={{ minWidth: '120px', maxWidth: '120px', textOverflow: 'ellipsis' }}
             autoFocus
           />
-        )
+        ) 
       } else if (['debe', 'haber', 'saldo', 'valor', 'iva', 'valor_neto', 'total', 'sale', 'entra'].includes(columnKey)) {
         return (
           <NumericFormat
@@ -370,7 +370,7 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-right text-sm px-1 overflow-hidden text-ellipsis"
+            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1 overflow-hidden text-ellipsis"
             style={{ minWidth: '130px', maxWidth: '130px', textOverflow: 'ellipsis' }}
             autoFocus
           />
@@ -390,7 +390,7 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm px-1 overflow-hidden text-ellipsis"
+            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1 overflow-hidden text-ellipsis"
             style={{ textOverflow: 'ellipsis' }}
             autoFocus
           />
@@ -405,7 +405,7 @@ export function SimpleDataGrid({
         )
       }
       return (
-        <div className="h-8 flex items-center text-sm px-1 overflow-hidden text-ellipsis whitespace-nowrap" title={value}>
+        <div className="h-8 flex items-center text-sm px-1 overflow-hidden text-ellipsis whitespace-nowrap text-left" title={value}>
           {value}
         </div>
       )
@@ -510,7 +510,7 @@ export function SimpleDataGrid({
                   {columns.map((column) => (
                     <td 
                       key={column.key} 
-                      className="px-2 py-2 align-top border border-gray-300"
+                      className="px-2 py-2 align-top border border-gray-300 text-left"
                       style={{ width: column.width, minWidth: column.width, maxWidth: column.width, height: '48px' }}
                       onClick={() => {
                         if (column.key !== 'actions') {
