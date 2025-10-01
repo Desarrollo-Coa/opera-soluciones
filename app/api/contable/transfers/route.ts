@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyTokenEdge } from "@/lib/auth/token-verifier"
 import { executeQuery } from "@/lib/database"
 
-// GET - Obtener datos de gastos/facturación por año y mes
+// GET - Obtener datos de transferencias por año y mes
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -35,20 +35,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener datos de la base de datos
-    console.log(`Fetching expenses data for year: ${year}, mes: ${mes}`)
+    console.log(`Fetching transfers data for year: ${year}, mes: ${mes}`)
     
     const rows = await executeQuery(
-      `SELECT id, year, mes, numero_facturacion, fecha, cliente, servicio, nit, valor, iva, total 
-       FROM libro_gastos_facturacion 
+      `SELECT id, year, mes, fecha, actividad, sale, entra, concepto 
+       FROM transferencias_pagos 
        WHERE year = ? AND mes = ? 
        ORDER BY fecha DESC, id DESC`,
       [parseInt(year), mes]
     )
 
-    console.log(`Found ${(rows as any[]).length} expense records`)
+    console.log(`Found ${(rows as any[]).length} transfer records`)
     return NextResponse.json({ data: rows })
   } catch (error) {
-    console.error("Error fetching expenses data:", error)
+    console.error("Error fetching transfers data:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Crear o actualizar datos de gastos/facturación
+// POST - Crear o actualizar datos de transferencias
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticación
@@ -94,20 +94,17 @@ export async function POST(request: NextRequest) {
       if (row.isNew) {
         // Insertar nueva fila
         const result = await executeQuery(
-          `INSERT INTO libro_gastos_facturacion 
-           (year, mes, numero_facturacion, fecha, cliente, servicio, nit, valor, iva, total, created_by) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO transferencias_pagos 
+           (year, mes, fecha, actividad, sale, entra, concepto, created_by) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             row.year,
             row.mes,
-            row.numero_facturacion,
             row.fecha,
-            row.cliente,
-            row.servicio,
-            row.nit,
-            row.valor,
-            row.iva,
-            row.total,
+            row.actividad,
+            row.sale,
+            row.entra,
+            row.concepto,
             userId
           ]
         )
@@ -115,18 +112,15 @@ export async function POST(request: NextRequest) {
       } else if (row.id) {
         // Actualizar fila existente
         await executeQuery(
-          `UPDATE libro_gastos_facturacion 
-           SET numero_facturacion = ?, fecha = ?, cliente = ?, servicio = ?, nit = ?, valor = ?, iva = ?, total = ?, updated_by = ?
+          `UPDATE transferencias_pagos 
+           SET fecha = ?, actividad = ?, sale = ?, entra = ?, concepto = ?, updated_by = ?
            WHERE id = ?`,
           [
-            row.numero_facturacion,
             row.fecha,
-            row.cliente,
-            row.servicio,
-            row.nit,
-            row.valor,
-            row.iva,
-            row.total,
+            row.actividad,
+            row.sale,
+            row.entra,
+            row.concepto,
             userId,
             row.id
           ]
@@ -141,7 +135,7 @@ export async function POST(request: NextRequest) {
       message: "Datos guardados correctamente"
     })
   } catch (error) {
-    console.error("Error saving expenses data:", error)
+    console.error("Error saving transfers data:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -149,7 +143,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - Eliminar registro de gastos/facturación
+// DELETE - Eliminar registro de transferencias
 export async function DELETE(request: NextRequest) {
   try {
     // Verificar autenticación
@@ -182,7 +176,7 @@ export async function DELETE(request: NextRequest) {
 
     // Eliminar registro
     await executeQuery(
-      "DELETE FROM libro_gastos_facturacion WHERE id = ?",
+      "DELETE FROM transferencias_pagos WHERE id = ?",
       [parseInt(id)]
     )
 
@@ -191,7 +185,7 @@ export async function DELETE(request: NextRequest) {
       message: "Registro eliminado correctamente"
     })
   } catch (error) {
-    console.error("Error deleting expenses data:", error)
+    console.error("Error deleting transfers data:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

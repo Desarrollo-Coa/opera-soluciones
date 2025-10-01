@@ -149,37 +149,59 @@ CREATE TABLE IF NOT EXISTS documents (
 -- NOMINA AND ACCOUNTING TABLES (TABLAS DE NÓMINA Y CONTABILIDAD)
 -- =====================================================
 
--- Mes a Mes table (tabla simple para datos de Excel)
--- Tabla para datos de nómina mes a mes desde Excel
+-- Libro Gastos Mes a Mes table (tabla para gastos con facturas)
+-- Tabla para datos de gastos mes a mes con facturas
 CREATE TABLE IF NOT EXISTS payroll_mes_a_mes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   year INT NOT NULL, -- Año para agrupación y filtrado (2023, 2024, 2025, etc.)
   mes VARCHAR(20) NOT NULL, -- Mes para agrupación y filtrado (ENERO, FEBRERO, MARZO, etc.)
+  numero_factura VARCHAR(50) NOT NULL, -- Número de factura
   fecha DATE NOT NULL, -- Fecha real del movimiento
-  empleado VARCHAR(255) NOT NULL, -- Nombre del empleado
-  concepto VARCHAR(255) NOT NULL, -- Concepto de la liquidación
-  debe DECIMAL(12,2) DEFAULT 0.00, -- Valor en debe
-  haber DECIMAL(12,2) DEFAULT 0.00, -- Valor en haber
-  saldo DECIMAL(12,2) DEFAULT 0.00, -- Saldo acumulado
+  proveedor VARCHAR(255) NOT NULL, -- Nombre del proveedor
+  nit VARCHAR(50) NOT NULL, -- NIT del proveedor
+  pago VARCHAR(100) NOT NULL, -- Forma de pago
+  objeto VARCHAR(255) NOT NULL, -- Descripción del objeto/gasto
+  valor_neto DECIMAL(12,2) NOT NULL, -- Valor neto (sin IVA)
+  iva DECIMAL(12,2) DEFAULT 0.00, -- Valor del IVA
+  obra VARCHAR(255) NOT NULL, -- Obra o proyecto
+  total DECIMAL(12,2) NOT NULL, -- Valor total (valor_neto + iva)
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   updated_by INT
 );
 
--- Libro de Gastos / Facturación table (tabla simple para datos de Excel)
--- Tabla para datos de gastos y facturación desde Excel
+-- Facturación table (tabla para facturación de servicios)
+-- Tabla para datos de facturación de servicios
 CREATE TABLE IF NOT EXISTS libro_gastos_facturacion (
   id INT AUTO_INCREMENT PRIMARY KEY,
   year INT NOT NULL, -- Año para agrupación y filtrado (2023, 2024, 2025, etc.)
   mes VARCHAR(20) NOT NULL, -- Mes para agrupación y filtrado (ENERO, FEBRERO, MARZO, etc.)
+  numero_facturacion VARCHAR(50) NOT NULL, -- Número de facturación
   fecha DATE NOT NULL, -- Fecha real del movimiento  
-  proveedor_cliente VARCHAR(255) NOT NULL, -- Nombre del proveedor o cliente
-  objeto VARCHAR(255) NOT NULL, -- Descripción del objeto/gasto
-  nit VARCHAR(50) NOT NULL, -- NIT del proveedor/cliente
+  cliente VARCHAR(255) NOT NULL, -- Nombre del cliente
+  servicio VARCHAR(255) NOT NULL, -- Descripción del servicio
+  nit VARCHAR(50) NOT NULL, -- NIT del cliente
   valor DECIMAL(12,2) NOT NULL, -- Valor base (sin IVA)
   iva DECIMAL(12,2) DEFAULT 0.00, -- Valor del IVA
   total DECIMAL(12,2) NOT NULL, -- Valor total (valor + iva)
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_by INT NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_by INT
+);
+
+-- Transferencias y Pagos table (tabla para transferencias y pagos)
+-- Tabla para datos de transferencias y pagos
+CREATE TABLE IF NOT EXISTS transferencias_pagos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  year INT NOT NULL, -- Año para agrupación y filtrado (2023, 2024, 2025, etc.)
+  mes VARCHAR(20) NOT NULL, -- Mes para agrupación y filtrado (ENERO, FEBRERO, MARZO, etc.)
+  fecha DATE NOT NULL, -- Fecha real del movimiento
+  actividad VARCHAR(255) NOT NULL, -- Descripción de la actividad
+  sale DECIMAL(12,2) DEFAULT 0.00, -- Valor que sale
+  entra DECIMAL(12,2) DEFAULT 0.00, -- Valor que entra
+  concepto VARCHAR(255) NOT NULL, -- Concepto del movimiento
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -214,24 +236,29 @@ INSERT INTO document_types (name, description, created_by) VALUES
 ('Exámenes médicos', 'Certificados médicos y exámenes de salud ocupacional', 1),
 ('Seguridad social', 'Documentos de afiliación y aportes a seguridad social', 1);
 
--- Insert sample data for payroll_mes_a_mes (ejemplo de datos de Excel)
--- Insertar datos de ejemplo para mes a mes
-INSERT INTO payroll_mes_a_mes (year, mes, fecha, empleado, concepto, debe, haber, saldo, created_by) VALUES
-(2023, 'ENERO', '2023-01-15', 'Nombre Apellido', 'Sueldo', 2000000, 0, 2000000, 1),
-(2023, 'ENERO', '2023-01-20', 'Nombre Apellido', 'Dotación', 150000, 0, 2150000, 1),
-(2023, 'FEBRERO', '2023-02-15', 'Nombre Apellido', 'Sueldo', 2000000, 0, 2000000, 1),
-(2023, 'FEBRERO', '2023-02-20', 'Nombre Apellido', 'Dotación', 150000, 0, 2150000, 1),
-(2024, 'ENERO', '2024-01-15', 'María García', 'Sueldo', 2500000, 0, 2500000, 1),
-(2024, 'ENERO', '2024-01-25', 'María García', 'Bonificación', 300000, 0, 2800000, 1);
+-- Insert sample data for payroll_mes_a_mes (ejemplo de datos de gastos)
+-- Insertar datos de ejemplo para libro gastos mes a mes
+INSERT INTO payroll_mes_a_mes (year, mes, numero_factura, fecha, proveedor, nit, pago, objeto, valor_neto, iva, obra, total, created_by) VALUES
+(2023, 'ENERO', 'FAC-001', '2023-01-15', 'Proveedor ABC', '12345678-9', 'Efectivo', 'Materiales de construcción', 500000, 95000, 'Obra Principal', 595000, 1),
+(2023, 'ENERO', 'FAC-002', '2023-01-20', 'Proveedor XYZ', '87654321-0', 'Transferencia', 'Herramientas', 300000, 57000, 'Obra Secundaria', 357000, 1),
+(2023, 'FEBRERO', 'FAC-003', '2023-02-15', 'Proveedor DEF', '11223344-5', 'Cheque', 'Equipos', 800000, 152000, 'Obra Principal', 952000, 1),
+(2024, 'ENERO', 'FAC-004', '2024-01-15', 'Proveedor GHI', '99887766-3', 'Efectivo', 'Servicios', 400000, 76000, 'Obra Nueva', 476000, 1);
 
--- Insert sample data for libro_gastos_facturacion (ejemplo de datos de Excel)
--- Insertar datos de ejemplo para libro de gastos
-INSERT INTO libro_gastos_facturacion (year, mes, fecha, proveedor_cliente, objeto, nit, valor, iva, total, created_by) VALUES
-(2023, 'ENERO', '2023-01-15', 'Proveedor X', 'Compra EPP', '12345678', 400000, 76000, 476000, 1),
-(2023, 'ENERO', '2023-01-20', 'Proveedor Y', 'Materiales', '87654321', 200000, 38000, 238000, 1),
-(2023, 'FEBRERO', '2023-02-10', 'Proveedor Z', 'Servicios', '11223344', 300000, 57000, 357000, 1),
-(2024, 'ENERO', '2024-01-05', 'Proveedor A', 'Equipos', '11111111', 500000, 95000, 595000, 1),
-(2025, 'AGOSTO', '2024-08-18', 'Proveedor B', 'Servicios 2024', '99999999', 100000, 19000, 119000, 1);
+-- Insert sample data for libro_gastos_facturacion (ejemplo de datos de facturación)
+-- Insertar datos de ejemplo para facturación
+INSERT INTO libro_gastos_facturacion (year, mes, numero_facturacion, fecha, cliente, servicio, nit, valor, iva, total, created_by) VALUES
+(2023, 'ENERO', 'FACT-001', '2023-01-15', 'Cliente ABC S.A.S', 'Servicio de consultoría', '900123456-7', 1000000, 190000, 1190000, 1),
+(2023, 'ENERO', 'FACT-002', '2023-01-20', 'Cliente XYZ Ltda', 'Servicio de mantenimiento', '900876543-2', 500000, 95000, 595000, 1),
+(2023, 'FEBRERO', 'FACT-003', '2023-02-10', 'Cliente DEF S.A', 'Servicio de instalación', '900112233-4', 800000, 152000, 952000, 1),
+(2024, 'ENERO', 'FACT-004', '2024-01-05', 'Cliente GHI S.A.S', 'Servicio de capacitación', '900998877-6', 300000, 57000, 357000, 1);
+
+-- Insert sample data for transferencias_pagos (ejemplo de datos de transferencias)
+-- Insertar datos de ejemplo para transferencias y pagos
+INSERT INTO transferencias_pagos (year, mes, fecha, actividad, sale, entra, concepto, created_by) VALUES
+(2023, 'ENERO', '2023-01-15', 'Pago a proveedores', 500000, 0, 'Pago materiales', 1),
+(2023, 'ENERO', '2023-01-20', 'Cobro de factura', 0, 1000000, 'Cobro servicio consultoría', 1),
+(2023, 'FEBRERO', '2023-02-10', 'Transferencia bancaria', 200000, 0, 'Transferencia a cuenta ahorros', 1),
+(2024, 'ENERO', '2024-01-05', 'Ingreso por ventas', 0, 1500000, 'Venta de servicios', 1);
 
 -- =====================================================
 -- INDEXES (ÍNDICES)
@@ -267,15 +294,22 @@ CREATE INDEX idx_payroll_mes_a_mes_year ON payroll_mes_a_mes(year);
 CREATE INDEX idx_payroll_mes_a_mes_mes ON payroll_mes_a_mes(mes);
 CREATE INDEX idx_payroll_mes_a_mes_year_mes ON payroll_mes_a_mes(year, mes);
 CREATE INDEX idx_payroll_mes_a_mes_fecha ON payroll_mes_a_mes(fecha);
-CREATE INDEX idx_payroll_mes_a_mes_empleado ON payroll_mes_a_mes(empleado);
-CREATE INDEX idx_payroll_mes_a_mes_concepto ON payroll_mes_a_mes(concepto);
+CREATE INDEX idx_payroll_mes_a_mes_proveedor ON payroll_mes_a_mes(proveedor);
+CREATE INDEX idx_payroll_mes_a_mes_nit ON payroll_mes_a_mes(nit);
+CREATE INDEX idx_payroll_mes_a_mes_obra ON payroll_mes_a_mes(obra);
 CREATE INDEX idx_libro_gastos_year ON libro_gastos_facturacion(year);
 CREATE INDEX idx_libro_gastos_mes ON libro_gastos_facturacion(mes);
 CREATE INDEX idx_libro_gastos_year_mes ON libro_gastos_facturacion(year, mes);
 CREATE INDEX idx_libro_gastos_fecha ON libro_gastos_facturacion(fecha);
-CREATE INDEX idx_libro_gastos_proveedor ON libro_gastos_facturacion(proveedor_cliente);
+CREATE INDEX idx_libro_gastos_cliente ON libro_gastos_facturacion(cliente);
 CREATE INDEX idx_libro_gastos_nit ON libro_gastos_facturacion(nit);
-CREATE INDEX idx_libro_gastos_objeto ON libro_gastos_facturacion(objeto);
+CREATE INDEX idx_libro_gastos_servicio ON libro_gastos_facturacion(servicio);
+CREATE INDEX idx_transferencias_year ON transferencias_pagos(year);
+CREATE INDEX idx_transferencias_mes ON transferencias_pagos(mes);
+CREATE INDEX idx_transferencias_year_mes ON transferencias_pagos(year, mes);
+CREATE INDEX idx_transferencias_fecha ON transferencias_pagos(fecha);
+CREATE INDEX idx_transferencias_actividad ON transferencias_pagos(actividad);
+CREATE INDEX idx_transferencias_concepto ON transferencias_pagos(concepto);
 
 -- =====================================================
 -- FOREIGN KEY CONSTRAINTS (RESTRICCIONES DE CLAVE FORÁNEA)
@@ -437,14 +471,14 @@ CREATE TABLE IF NOT EXISTS file_folders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   parent_id INT NULL, -- NULL para carpetas raíz
-  path VARCHAR(1000) NOT NULL, -- Ruta completa de la carpeta
+  path VARCHAR(500) NOT NULL, -- Ruta completa de la carpeta (reducido para evitar error de índice)
   description TEXT,
   created_by INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE,
   INDEX idx_file_folders_parent (parent_id),
-  INDEX idx_file_folders_path (path),
+  INDEX idx_file_folders_path (path(191)), -- Índice parcial para evitar error de longitud
   INDEX idx_file_folders_active (is_active),
   FOREIGN KEY (parent_id) REFERENCES file_folders(id) ON DELETE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id)
@@ -457,8 +491,8 @@ CREATE TABLE IF NOT EXISTS file_system_files (
   name VARCHAR(255) NOT NULL,
   original_name VARCHAR(255) NOT NULL,
   folder_id INT NULL, -- NULL para archivos en raíz
-  file_path VARCHAR(1000) NOT NULL, -- Ruta completa del archivo
-  file_url VARCHAR(1000) NOT NULL, -- URL de acceso al archivo
+  file_path VARCHAR(500) NOT NULL, -- Ruta completa del archivo (reducido para evitar error de índice)
+  file_url VARCHAR(500) NOT NULL, -- URL de acceso al archivo (reducido para evitar error de índice)
   file_size BIGINT NOT NULL, -- Tamaño en bytes
   mime_type VARCHAR(100) NOT NULL, -- Tipo MIME del archivo
   file_extension VARCHAR(10), -- Extensión del archivo
@@ -468,7 +502,7 @@ CREATE TABLE IF NOT EXISTS file_system_files (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE,
   INDEX idx_file_system_files_folder (folder_id),
-  INDEX idx_file_system_files_path (file_path),
+  INDEX idx_file_system_files_path (file_path(191)), -- Índice parcial para evitar error de longitud
   INDEX idx_file_system_files_active (is_active),
   INDEX idx_file_system_files_mime_type (mime_type),
   FOREIGN KEY (folder_id) REFERENCES file_folders(id) ON DELETE CASCADE,

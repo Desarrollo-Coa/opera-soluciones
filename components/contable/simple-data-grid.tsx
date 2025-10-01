@@ -18,20 +18,32 @@ interface BaseRow {
 }
 
 interface PayrollRow extends BaseRow {
-  empleado: string
-  concepto: string
-  debe: number
-  haber: number
-  saldo: number
+  numero_factura: string
+  proveedor: string
+  nit: string
+  pago: string
+  objeto: string
+  valor_neto: number
+  iva: number
+  obra: string
+  total: number
 }
 
 interface ExpenseRow extends BaseRow {
-  proveedor_cliente: string
-  objeto: string
+  numero_facturacion: string
+  cliente: string
+  servicio: string
   nit: string
   valor: number
   iva: number
   total: number
+}
+
+interface TransferRow extends BaseRow {
+  actividad: string
+  sale: number
+  entra: number
+  concepto: string
 }
 
 interface SimpleDataGridProps {
@@ -41,7 +53,7 @@ interface SimpleDataGridProps {
   onCancel?: () => void
   year: number
   mes: string
-  type: 'payroll' | 'expenses'
+  type: 'payroll' | 'expenses' | 'transfers'
 }
 
 export function SimpleDataGrid({ 
@@ -93,25 +105,41 @@ export function SimpleDataGrid({
           year,
           mes,
           fecha: new Date().toISOString().split('T')[0],
-          empleado: '',
-          concepto: '',
-          debe: 0,
-          haber: 0,
-          saldo: 0,
+          numero_factura: '',
+          proveedor: '',
+          nit: '',
+          pago: '',
+          objeto: '',
+          valor_neto: 0,
+          iva: 0,
+          obra: '',
+          total: 0,
           isNew: true
         } as PayrollRow
-      : {
+      : type === 'expenses'
+      ? {
           year,
           mes,
           fecha: new Date().toISOString().split('T')[0],
-          proveedor_cliente: '',
-          objeto: '',
+          numero_facturacion: '',
+          cliente: '',
+          servicio: '',
           nit: '',
           valor: 0,
           iva: 0,
           total: 0,
           isNew: true
         } as ExpenseRow
+      : {
+          year,
+          mes,
+          fecha: new Date().toISOString().split('T')[0],
+          actividad: '',
+          sale: 0,
+          entra: 0,
+          concepto: '',
+          isNew: true
+        } as TransferRow
 
     setRows(prev => [...prev, newRow])
     setHasChanges(true)
@@ -123,11 +151,17 @@ export function SimpleDataGrid({
       const newRows = [...prev]
       newRows[rowIndex] = { ...newRows[rowIndex], [columnKey]: value }
       
-      // Calcular total para gastos
-      if (type === 'expenses' && (columnKey === 'valor' || columnKey === 'iva')) {
-        const valor = columnKey === 'valor' ? value : newRows[rowIndex].valor
-        const iva = columnKey === 'iva' ? value : newRows[rowIndex].iva
-        newRows[rowIndex].total = valor + iva
+      // Calcular total para gastos y facturación
+      if ((type === 'expenses' || type === 'payroll') && (columnKey === 'valor' || columnKey === 'iva' || columnKey === 'valor_neto')) {
+        if (type === 'expenses') {
+          const valor = columnKey === 'valor' ? value : newRows[rowIndex].valor
+          const iva = columnKey === 'iva' ? value : newRows[rowIndex].iva
+          newRows[rowIndex].total = valor + iva
+        } else if (type === 'payroll') {
+          const valor_neto = columnKey === 'valor_neto' ? value : newRows[rowIndex].valor_neto
+          const iva = columnKey === 'iva' ? value : newRows[rowIndex].iva
+          newRows[rowIndex].total = valor_neto + iva
+        }
       }
       
       return newRows
@@ -193,19 +227,30 @@ export function SimpleDataGrid({
       
       // Comparar campos relevantes según el tipo
       if (type === 'payroll') {
-        return row.empleado !== original.empleado ||
-               row.concepto !== original.concepto ||
-               row.debe !== original.debe ||
-               row.haber !== original.haber ||
-               row.saldo !== original.saldo ||
-               row.fecha !== original.fecha
-      } else {
-        return row.proveedor_cliente !== original.proveedor_cliente ||
+        return row.numero_factura !== original.numero_factura ||
+               row.proveedor !== original.proveedor ||
+               row.nit !== original.nit ||
+               row.pago !== original.pago ||
                row.objeto !== original.objeto ||
+               row.valor_neto !== original.valor_neto ||
+               row.iva !== original.iva ||
+               row.obra !== original.obra ||
+               row.total !== original.total ||
+               row.fecha !== original.fecha
+      } else if (type === 'expenses') {
+        return row.numero_facturacion !== original.numero_facturacion ||
+               row.cliente !== original.cliente ||
+               row.servicio !== original.servicio ||
                row.nit !== original.nit ||
                row.valor !== original.valor ||
                row.iva !== original.iva ||
                row.total !== original.total ||
+               row.fecha !== original.fecha
+      } else {
+        return row.actividad !== original.actividad ||
+               row.sale !== original.sale ||
+               row.entra !== original.entra ||
+               row.concepto !== original.concepto ||
                row.fecha !== original.fecha
       }
     })
@@ -262,7 +307,7 @@ export function SimpleDataGrid({
             autoFocus
           />
         )
-      } else if (['debe', 'haber', 'saldo', 'valor', 'iva'].includes(columnKey)) {
+      } else if (['debe', 'haber', 'saldo', 'valor', 'iva', 'valor_neto', 'total', 'sale', 'entra'].includes(columnKey)) {
         return (
           <NumericFormat
             thousandSeparator="."
@@ -311,7 +356,7 @@ export function SimpleDataGrid({
         )
       }
     } else {
-      if (['debe', 'haber', 'saldo', 'valor', 'iva', 'total'].includes(columnKey)) {
+      if (['debe', 'haber', 'saldo', 'valor', 'iva', 'total', 'valor_neto', 'sale', 'entra'].includes(columnKey)) {
         return (
           <div className="text-right h-8 flex items-center justify-end text-sm px-1">
             {formatCurrency(value)}
@@ -330,21 +375,35 @@ export function SimpleDataGrid({
   const columns = type === 'payroll' 
     ? [
         { key: 'fecha', name: 'Fecha', width: 120 },
-        { key: 'empleado', name: 'Empleado', width: 200 },
-        { key: 'concepto', name: 'Concepto', width: 250 },
-        { key: 'debe', name: 'Debe', width: 130 },
-        { key: 'haber', name: 'Haber', width: 130 },
-        { key: 'saldo', name: 'Saldo', width: 130 },
+        { key: 'numero_factura', name: 'N° Factura', width: 120 },
+        { key: 'proveedor', name: 'Proveedor', width: 200 },
+        { key: 'nit', name: 'NIT', width: 120 },
+        { key: 'pago', name: 'Pago', width: 100 },
+        { key: 'objeto', name: 'Objeto', width: 200 },
+        { key: 'valor_neto', name: 'Valor Neto', width: 130 },
+        { key: 'iva', name: 'IVA', width: 130 },
+        { key: 'obra', name: 'Obra', width: 150 },
+        { key: 'total', name: 'Total', width: 130 },
         { key: 'actions', name: 'Acciones', width: 100 }
       ]
-    : [
+    : type === 'expenses'
+    ? [
         { key: 'fecha', name: 'Fecha', width: 120 },
-        { key: 'proveedor_cliente', name: 'Proveedor / Cliente', width: 200 },
-        { key: 'objeto', name: 'Objeto', width: 250 },
+        { key: 'numero_facturacion', name: 'N° Facturación', width: 120 },
+        { key: 'cliente', name: 'Cliente', width: 200 },
+        { key: 'servicio', name: 'Servicio', width: 200 },
         { key: 'nit', name: 'NIT', width: 120 },
         { key: 'valor', name: 'Valor', width: 130 },
         { key: 'iva', name: 'IVA', width: 130 },
         { key: 'total', name: 'Total', width: 130 },
+        { key: 'actions', name: 'Acciones', width: 100 }
+      ]
+    : [
+        { key: 'fecha', name: 'Fecha', width: 120 },
+        { key: 'actividad', name: 'Actividad', width: 200 },
+        { key: 'sale', name: 'Sale', width: 130 },
+        { key: 'entra', name: 'Entra', width: 130 },
+        { key: 'concepto', name: 'Concepto', width: 250 },
         { key: 'actions', name: 'Acciones', width: 100 }
       ]
 
@@ -352,7 +411,9 @@ export function SimpleDataGrid({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">
-          {type === 'payroll' ? 'Nómina Mes a Mes' : 'Libro de Gastos / Facturación'}
+          {type === 'payroll' ? 'Libro Gastos Mes a Mes' : 
+           type === 'expenses' ? 'Facturación' : 
+           'Transferencias y Pagos'}
         </h3>
         <div className="flex gap-2">
           <Button onClick={addRow} size="sm">

@@ -20,36 +20,53 @@ interface PayrollData {
   id: number
   year: number
   mes: string
+  numero_factura: string
   fecha: string
-  empleado: string
-  concepto: string
-  debe: number
-  haber: number
-  saldo: number
+  proveedor: string
+  nit: string
+  pago: string
+  objeto: string
+  valor_neto: number
+  iva: number
+  obra: string
+  total: number
 }
 
 interface ExpenseData {
   id: number
   year: number
   mes: string
+  numero_facturacion: string
   fecha: string
-  proveedor_cliente: string
-  objeto: string
+  cliente: string
+  servicio: string
   nit: string
   valor: number
   iva: number
   total: number
 }
 
+interface TransferData {
+  id: number
+  year: number
+  mes: string
+  fecha: string
+  actividad: string
+  sale: number
+  entra: number
+  concepto: string
+}
+
 function ContableContent() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeSection, setActiveSection] = useState<'nomina' | 'gastos'>('nomina')
+  const [activeSection, setActiveSection] = useState<'gastos' | 'facturacion' | 'transferencias'>('gastos')
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
   const [payrollData, setPayrollData] = useState<PayrollData[]>([])
   const [expenseData, setExpenseData] = useState<ExpenseData[]>([])
+  const [transferData, setTransferData] = useState<TransferData[]>([])
   const [dataLoading, setDataLoading] = useState(false)
 
   // Años disponibles (estáticos)
@@ -108,7 +125,7 @@ function ContableContent() {
 
     setDataLoading(true)
     try {
-      if (activeSection === 'nomina') {
+      if (activeSection === 'gastos') {
         const response = await fetch(`/api/contable/payroll?year=${selectedYear}&mes=${selectedMonth}`, {
           credentials: 'include'
         })
@@ -116,13 +133,21 @@ function ContableContent() {
           const data = await response.json()
           setPayrollData(data.data || [])
         }
-      } else {
+      } else if (activeSection === 'facturacion') {
         const response = await fetch(`/api/contable/expenses?year=${selectedYear}&mes=${selectedMonth}`, {
           credentials: 'include'
         })
         if (response.ok) {
           const data = await response.json()
           setExpenseData(data.data || [])
+        }
+      } else if (activeSection === 'transferencias') {
+        const response = await fetch(`/api/contable/transfers?year=${selectedYear}&mes=${selectedMonth}`, {
+          credentials: 'include'
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setTransferData(data.data || [])
         }
       }
     } catch (error) {
@@ -137,6 +162,7 @@ function ContableContent() {
     setSelectedMonth(null) // Reset month when year changes
     setPayrollData([])
     setExpenseData([])
+    setTransferData([])
   }
 
   const handleMonthSelect = (month: string) => {
@@ -235,6 +261,48 @@ function ContableContent() {
     }
   }
 
+  // Guardar datos de transferencias
+  const saveTransferData = async (data: any[]) => {
+    try {
+      const response = await fetch('/api/contable/transfers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Error al guardar datos')
+      }
+
+      const result = await response.json()
+      setTransferData(result.data)
+      return result
+    } catch (error) {
+      console.error("Error saving transfer data:", error)
+      throw error
+    }
+  }
+
+  // Eliminar registro de transferencias
+  const deleteTransferRecord = async (id: number) => {
+    try {
+      const response = await fetch(`/api/contable/transfers?id=${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar registro')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error("Error deleting transfer record:", error)
+      throw error
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -295,20 +363,28 @@ function ContableContent() {
                 <p className="text-xs text-gray-600">Selecciona el módulo</p>
                 <div className="space-y-1">
                   <Button
-                    variant={activeSection === 'nomina' ? 'default' : 'outline'}
+                    variant={activeSection === 'gastos' ? 'default' : 'outline'}
                     className="w-full justify-start text-xs h-7 px-2"
-                    onClick={() => setActiveSection('nomina')}
+                    onClick={() => setActiveSection('gastos')}
                   >
                     <Users className="h-3 w-3 mr-1.5" />
                     Libro Gastos Mes a Mes
                   </Button>
                   <Button
-                    variant={activeSection === 'gastos' ? 'default' : 'outline'}
+                    variant={activeSection === 'facturacion' ? 'default' : 'outline'}
                     className="w-full justify-start text-xs h-7 px-2"
-                    onClick={() => setActiveSection('gastos')}
+                    onClick={() => setActiveSection('facturacion')}
                   >
                     <FileText className="h-3 w-3 mr-1.5" />
                     Facturación
+                  </Button>
+                  <Button
+                    variant={activeSection === 'transferencias' ? 'default' : 'outline'}
+                    className="w-full justify-start text-xs h-7 px-2"
+                    onClick={() => setActiveSection('transferencias')}
+                  >
+                    <Calculator className="h-3 w-3 mr-1.5" />
+                    Transferencias y Pagos
                   </Button>
                 </div>
               </div>
@@ -321,12 +397,16 @@ function ContableContent() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Calendar className="h-4 w-4" />
-                  {activeSection === 'nomina' ? 'Libro Gastos Mes a Mes' : 'Facturación'}
+                  {activeSection === 'gastos' ? 'Libro Gastos Mes a Mes' : 
+                   activeSection === 'facturacion' ? 'Facturación' : 
+                   'Transferencias y Pagos'}
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  {activeSection === 'nomina' 
-                    ? 'Liquidaciones de nómina por período' 
-                    : 'Gastos y facturación por período'
+                  {activeSection === 'gastos' 
+                    ? 'Gastos con facturas por período' 
+                    : activeSection === 'facturacion'
+                    ? 'Facturación de servicios por período'
+                    : 'Transferencias y pagos por período'
                   }
                 </CardDescription>
               </CardHeader>
@@ -352,7 +432,9 @@ function ContableContent() {
                 {/* Data Table - SIEMPRE VISIBLE */}
                 <div>
                   <h3 className="text-sm font-semibold mb-2">
-                    Tabla: {activeSection === 'nomina' ? 'Libro Gastos Mes a Mes' : 'Facturación'}
+                    Tabla: {activeSection === 'gastos' ? 'Libro Gastos Mes a Mes' : 
+                           activeSection === 'facturacion' ? 'Facturación' : 
+                           'Transferencias y Pagos'}
                   </h3>
                   
                   {!selectedYear || !selectedMonth ? (
@@ -370,18 +452,27 @@ function ContableContent() {
                     </div>
                   ) : (
                     <SimpleDataGrid
-                      data={activeSection === 'nomina' ? payrollData : expenseData}
-                      onSave={activeSection === 'nomina' ? savePayrollData : saveExpenseData}
-                      onDelete={activeSection === 'nomina' ? deletePayrollRecord : deleteExpenseRecord}
+                      data={activeSection === 'gastos' ? payrollData : 
+                            activeSection === 'facturacion' ? expenseData : 
+                            transferData}
+                      onSave={activeSection === 'gastos' ? savePayrollData : 
+                             activeSection === 'facturacion' ? saveExpenseData : 
+                             saveTransferData}
+                      onDelete={activeSection === 'gastos' ? deletePayrollRecord : 
+                               activeSection === 'facturacion' ? deleteExpenseRecord : 
+                               deleteTransferRecord}
                       onCancel={() => {
                         setSelectedYear(null)
                         setSelectedMonth(null)
                         setPayrollData([])
                         setExpenseData([])
+                        setTransferData([])
                       }}
                       year={selectedYear}
                       mes={selectedMonth}
-                      type={activeSection === 'nomina' ? 'payroll' : 'expenses'}
+                      type={activeSection === 'gastos' ? 'payroll' : 
+                            activeSection === 'facturacion' ? 'expenses' : 
+                            'transfers'}
                     />
                   )}
                 </div>

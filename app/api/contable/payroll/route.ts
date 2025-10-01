@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     console.log(`Fetching payroll data for year: ${year}, mes: ${mes}`)
     
     const rows = await executeQuery(
-      `SELECT id, year, mes, fecha, empleado, concepto, debe, haber, saldo 
+      `SELECT id, year, mes, numero_factura, fecha, proveedor, nit, pago, objeto, valor_neto, iva, obra, total 
        FROM payroll_mes_a_mes 
        WHERE year = ? AND mes = ? 
        ORDER BY fecha DESC, id DESC`,
@@ -95,17 +95,21 @@ export async function POST(request: NextRequest) {
         // Insertar nueva fila
         const result = await executeQuery(
           `INSERT INTO payroll_mes_a_mes 
-           (year, mes, fecha, empleado, concepto, debe, haber, saldo, created_by) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (year, mes, numero_factura, fecha, proveedor, nit, pago, objeto, valor_neto, iva, obra, total, created_by) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             row.year,
             row.mes,
+            row.numero_factura,
             row.fecha,
-            row.empleado,
-            row.concepto,
-            row.debe,
-            row.haber,
-            row.saldo,
+            row.proveedor,
+            row.nit,
+            row.pago,
+            row.objeto,
+            row.valor_neto,
+            row.iva,
+            row.obra,
+            row.total,
             userId
           ]
         )
@@ -114,15 +118,19 @@ export async function POST(request: NextRequest) {
         // Actualizar fila existente
         await executeQuery(
           `UPDATE payroll_mes_a_mes 
-           SET fecha = ?, empleado = ?, concepto = ?, debe = ?, haber = ?, saldo = ?, updated_by = ?
+           SET numero_factura = ?, fecha = ?, proveedor = ?, nit = ?, pago = ?, objeto = ?, valor_neto = ?, iva = ?, obra = ?, total = ?, updated_by = ?
            WHERE id = ?`,
           [
+            row.numero_factura,
             row.fecha,
-            row.empleado,
-            row.concepto,
-            row.debe,
-            row.haber,
-            row.saldo,
+            row.proveedor,
+            row.nit,
+            row.pago,
+            row.objeto,
+            row.valor_neto,
+            row.iva,
+            row.obra,
+            row.total,
             userId,
             row.id
           ]
