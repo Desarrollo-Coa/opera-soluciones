@@ -74,6 +74,7 @@ export function SimpleDataGrid({
   const [editingCell, setEditingCell] = useState<{rowIndex: number, columnKey: string} | null>(null)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [originalData, setOriginalData] = useState<any[]>([])
+  const [isSaving, setIsSaving] = useState(false)
 
   // Función para formatear fecha
   const formatDateForInput = (date: string | Date) => {
@@ -201,6 +202,9 @@ export function SimpleDataGrid({
 
   // Guardar cambios
   const saveChanges = useCallback(async () => {
+    if (isSaving) return // Prevenir doble clic
+    
+    setIsSaving(true)
     try {
       // Separar filas eliminadas de las demás
       const deletedRows = rows.filter(row => row.isDeleted && row.id)
@@ -239,8 +243,10 @@ export function SimpleDataGrid({
         description: "No se pudieron guardar los datos",
         variant: "destructive"
       })
+    } finally {
+      setIsSaving(false)
     }
-  }, [rows, onSave, onDelete])
+  }, [rows, onSave, onDelete, isSaving])
 
   // Contar cambios sin guardar
   const getUnsavedChangesCount = useCallback(() => {
@@ -451,14 +457,23 @@ export function SimpleDataGrid({
            'Transferencias y Pagos'}
         </h3>
         <div className="flex gap-2">
-          <Button onClick={addRow} size="sm">
+          <Button 
+            onClick={addRow} 
+            size="sm"
+            disabled={isSaving}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Agregar Fila
           </Button>
           {hasChanges && (
-            <Button onClick={saveChanges} size="sm" variant="default">
+            <Button 
+              onClick={saveChanges} 
+              size="sm" 
+              variant="default"
+              disabled={isSaving}
+            >
               <Save className="h-4 w-4 mr-2" />
-              Guardar
+              {isSaving ? 'Guardando...' : 'Guardar'}
             </Button>
           )}
           {onCancel && (
