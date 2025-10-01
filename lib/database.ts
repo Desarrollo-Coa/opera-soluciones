@@ -62,8 +62,8 @@ class DatabaseConnectionPool {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'sgi_opera_soluciones',
       waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
+      connectionLimit: 20,                    // Aumentar límite de conexiones
+      queueLimit: 50,                        // Límite en cola para evitar sobrecarga
     });
   }
 
@@ -76,16 +76,32 @@ class DatabaseConnectionPool {
 
   async getConnection(): Promise<DatabaseConnection> {
     try {
+      console.log(`[DB Pool] Getting connection...`);
+      
       const connection = await this.pool.getConnection();
+      console.log(`[DB Pool] Connection acquired successfully`);
       return new MySQLConnection(connection);
     } catch (error) {
-      console.error('Database connection error:', error);
+      console.error('[DB Pool] Database connection error:', error);
       throw new Error(ERROR_MESSAGES.DATABASE_ERROR);
     }
   }
 
   async end(): Promise<void> {
     await this.pool.end();
+  }
+
+  /**
+   * Get pool statistics for monitoring
+   * Obtener estadísticas del pool para monitoreo
+   */
+  getPoolStats() {
+    return {
+      connectionLimit: 20,
+      queueLimit: 50,
+      status: 'active',
+      timestamp: new Date().toISOString()
+    };
   }
 }
 
@@ -101,16 +117,43 @@ export async function getConnection(): Promise<DatabaseConnection> {
 }
 
 /**
- * Execute a database query with parameters
- * Ejecutar consulta de base de datos con parámetros
+ * Execute a database query with parameters and retry mechanism
+ * Ejecutar consulta de base de datos con parámetros y mecanismo de reintento
  */
-export async function executeQuery(query: string, params: any[] = []): Promise<any> {
-  const connection = await getConnection();
-  try {
-    return await connection.execute(query, params);
-  } finally {
-    connection.release();
+export async function executeQuery(query: string, params: any[] = [], maxRetries: number = 3): Promise<any> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const connection = await getConnection();
+    try {
+      console.log(`[DB Query] Executing query (attempt ${attempt}/${maxRetries}):`, query.substring(0, 100) + '...');
+      const startTime = Date.now();
+      
+      const result = await connection.execute(query, params);
+      
+      const duration = Date.now() - startTime;
+      console.log(`[DB Query] Query completed in ${duration}ms`);
+      
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`[DB Query] Query failed (attempt ${attempt}/${maxRetries}):`, error);
+      
+      // Si es el último intento, no reintentar
+      if (attempt === maxRetries) {
+        break;
+      }
+      
+      // Esperar antes del siguiente intento (backoff exponencial)
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+      console.log(`[DB Query] Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    } finally {
+      connection.release();
+    }
   }
+  
+  throw lastError || new Error(ERROR_MESSAGES.DATABASE_ERROR);
 }
 
 /**
@@ -140,6 +183,14 @@ export async function executeTransaction<T>(
  */
 export async function closeDatabaseConnections(): Promise<void> {
   await dbPool.end();
+}
+
+/**
+ * Get database pool statistics
+ * Obtener estadísticas del pool de base de datos
+ */
+export function getPoolStats() {
+  return dbPool.getPoolStats();
 }
 
 // Export the pool instance for advanced usage

@@ -61,20 +61,29 @@ export default function EmployeesPage() {
   const [deleteEmployeeId, setDeleteEmployeeId] = useState<number | null>(null)
 
   useEffect(() => {
-    // Fetch user data and employees in parallel
-    const fetchData = async () => {
+    // Fetch user data and employees in parallel with retry mechanism
+    const fetchData = async (retryCount = 0) => {
       try {
         setLoading(true)
+        console.log(`[Employees] Fetching data (attempt ${retryCount + 1})`)
         
         // Fetch user data and employees in parallel
         const [userResponse, employeesResponse] = await Promise.all([
           fetch('/api/auth/me', {
             method: 'GET',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
           }),
           fetch('/api/employees', {
             method: 'GET',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
           })
         ])
         
@@ -86,22 +95,44 @@ export default function EmployeesPage() {
             role: userData.role,
             email: userData.email
           })
+          console.log('[Employees] User data fetched successfully')
         } else {
-          console.error("Error fetching user data:", userResponse.status)
+          console.error("Error fetching user data:", userResponse.status, userResponse.statusText)
+          if (userResponse.status === 401) {
+            // Token expired, redirect to login
+            window.location.href = '/login'
+            return
+          }
         }
         
         // Handle employees data
         if (employeesResponse.ok) {
           const data = await employeesResponse.json()
-          console.log('Fetched employees data:', data.employees)
+          console.log('[Employees] Fetched employees data:', data.employees?.length || 0, 'employees')
           setEmployees(data.employees || [])
         } else {
-          console.error('Error response:', employeesResponse.status, employeesResponse.statusText)
+          console.error('[Employees] Error response:', employeesResponse.status, employeesResponse.statusText)
+          
+          // Retry logic for database connection issues
+          if (employeesResponse.status >= 500 && retryCount < 3) {
+            console.log(`[Employees] Retrying in ${1000 * (retryCount + 1)}ms...`)
+            setTimeout(() => fetchData(retryCount + 1), 1000 * (retryCount + 1))
+            return
+          }
         }
       } catch (error) {
-        console.error("Error fetching data:", error)
+        console.error("[Employees] Error fetching data:", error)
+        
+        // Retry logic for network errors
+        if (retryCount < 3) {
+          console.log(`[Employees] Network error, retrying in ${1000 * (retryCount + 1)}ms...`)
+          setTimeout(() => fetchData(retryCount + 1), 1000 * (retryCount + 1))
+          return
+        }
       } finally {
-        setLoading(false)
+        if (retryCount === 0 || retryCount >= 3) {
+          setLoading(false)
+        }
       }
     }
 
