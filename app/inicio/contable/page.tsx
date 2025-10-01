@@ -492,7 +492,7 @@ function ContableContent() {
 
           {/* Main Content */}
           <div className="xl:col-span-4">
-            <Card>
+            <Card className="relative">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
@@ -512,44 +512,74 @@ function ContableContent() {
                     </CardDescription>
                   </div>
                   
-                  {/* Totales del mes seleccionado */}
-                  {selectedYear && selectedMonth && (
-                    <div className="text-right">
-                      {(() => {
-                        const totals = calculateTotals()
-                        if (totals.isTransfer) {
-                          return (
-                            <div className="space-y-1">
-                              <div className="text-sm font-semibold text-gray-700">
-                                {selectedMonth} {selectedYear}
-                              </div>
-                              <div className="space-y-0.5">
-                                <div className="text-xs text-green-600 font-medium">
-                                  Total Entra: {formatCurrency(totals.totalEntra)}
-                                </div>
-                                <div className="text-xs text-red-600 font-medium">
-                                  Total Sale: {formatCurrency(totals.totalSale)}
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        } else {
-                          return (
-                            <div className="space-y-1">
-                              <div className="text-sm font-semibold text-gray-700">
-                                {selectedMonth} {selectedYear}
-                              </div>
-                              <div className="text-xs text-blue-600 font-medium">
-                                {totals.label}: {formatCurrency(totals.total || 0)}
-                              </div>
-                            </div>
-                          )
-                        }
-                      })()}
-                    </div>
-                  )}
                 </div>
               </CardHeader>
+              
+              {/* Totales del mes seleccionado - Overlay absoluto fuera del CardHeader */}
+              {selectedYear && selectedMonth && (
+                <div className="absolute top-4 right-4 z-10 flex gap-3">
+                  {(() => {
+                    const totals = calculateTotals()
+                    if (totals.isTransfer) {
+                      return (
+                        <>
+                          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg shadow-xl min-w-[130px] backdrop-blur-sm">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs font-medium opacity-90">Total Entra</p>
+                                <p className="text-sm font-bold">{formatCurrency(totals.totalEntra)}</p>
+                              </div>
+                              <div className="bg-blue-400 bg-opacity-30 p-1.5 rounded-full">
+                                <ArrowLeft className="h-3 w-3" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-3 rounded-lg shadow-xl min-w-[130px] backdrop-blur-sm">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs font-medium opacity-90">Total Sale</p>
+                                <p className="text-sm font-bold">{formatCurrency(totals.totalSale)}</p>
+                              </div>
+                              <div className="bg-gray-500 bg-opacity-30 p-1.5 rounded-full">
+                                <ArrowLeft className="h-3 w-3 rotate-180" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="bg-gradient-to-r from-slate-500 to-slate-600 text-white p-3 rounded-lg shadow-xl min-w-[130px] backdrop-blur-sm">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs font-medium opacity-90">Diferencia</p>
+                                <p className={`text-sm font-bold ${totals.totalEntra - totals.totalSale >= 0 ? 'text-blue-200' : 'text-gray-200'}`}>
+                                  {formatCurrency(totals.totalEntra - totals.totalSale)}
+                                </p>
+                              </div>
+                              <div className="bg-slate-400 bg-opacity-30 p-1.5 rounded-full">
+                                <Calculator className="h-3 w-3" />
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )
+                    } else {
+                      return (
+                        <div className="bg-gradient-to-r from-slate-600 to-slate-700 text-white p-3 rounded-lg shadow-xl min-w-[180px] backdrop-blur-sm">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-medium opacity-90">{totals.label}</p>
+                              <p className="text-lg font-bold">{formatCurrency(totals.total || 0)}</p>
+                              <p className="text-xs opacity-75">{selectedMonth} {selectedYear}</p>
+                            </div>
+                            <div className="bg-slate-500 bg-opacity-30 p-2 rounded-full">
+                              <Calculator className="h-4 w-4" />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                  })()}
+                </div>
+              )}
+              
               <CardContent className="space-y-4">
                 {/* Year Selector */}
                 <div>
