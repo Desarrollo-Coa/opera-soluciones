@@ -302,7 +302,7 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border-0 bg-transparent focus:outline-none text-sm px-1 overflow-hidden text-ellipsis"
+            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm px-1 overflow-hidden text-ellipsis"
             style={{ minWidth: '120px', maxWidth: '120px', textOverflow: 'ellipsis' }}
             autoFocus
           />
@@ -329,7 +329,7 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border-0 bg-transparent focus:outline-none text-right text-sm px-1 overflow-hidden text-ellipsis"
+            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-right text-sm px-1 overflow-hidden text-ellipsis"
             style={{ minWidth: '130px', maxWidth: '130px', textOverflow: 'ellipsis' }}
             autoFocus
           />
@@ -349,7 +349,7 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border-0 bg-transparent focus:outline-none text-sm px-1 overflow-hidden text-ellipsis"
+            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm px-1 overflow-hidden text-ellipsis"
             style={{ textOverflow: 'ellipsis' }}
             autoFocus
           />
@@ -435,15 +435,15 @@ export function SimpleDataGrid({
         </div>
       </div>
       
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+          <table className="w-full border-collapse">
+            <thead className="bg-blue-800">
               <tr>
                 {columns.map((column) => (
                   <th 
                     key={column.key} 
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-900"
+                    className="px-4 py-3 text-left text-sm font-medium text-white border border-gray-300"
                     style={{ width: column.width }}
                   >
                     {column.name}
@@ -451,13 +451,13 @@ export function SimpleDataGrid({
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white">
               {rows.map((row, rowIndex) => (
                 <tr key={rowIndex} className="hover:bg-gray-50">
                   {columns.map((column) => (
                     <td 
                       key={column.key} 
-                      className="px-2 py-2 align-top"
+                      className="px-2 py-2 align-top border border-gray-300"
                       style={{ width: column.width, minWidth: column.width, maxWidth: column.width, height: '48px' }}
                       onClick={() => {
                         if (column.key !== 'actions') {
