@@ -300,7 +300,7 @@ function ContableContent() {
                     onClick={() => setActiveSection('nomina')}
                   >
                     <Users className="h-3 w-3 mr-1.5" />
-                    Libro de Mes a Mes
+                    Libro Gastos Mes a Mes
                   </Button>
                   <Button
                     variant={activeSection === 'gastos' ? 'default' : 'outline'}
@@ -308,7 +308,7 @@ function ContableContent() {
                     onClick={() => setActiveSection('gastos')}
                   >
                     <FileText className="h-3 w-3 mr-1.5" />
-                    Libro de Gastos / Facturación
+                    Facturación
                   </Button>
                 </div>
               </div>
@@ -321,7 +321,7 @@ function ContableContent() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Calendar className="h-4 w-4" />
-                  {activeSection === 'nomina' ? 'Libro de Mes a Mes' : 'Libro de Gastos / Facturación'}
+                  {activeSection === 'nomina' ? 'Libro Gastos Mes a Mes' : 'Facturación'}
                 </CardTitle>
                 <CardDescription className="text-xs">
                   {activeSection === 'nomina' 
@@ -352,7 +352,7 @@ function ContableContent() {
                 {/* Data Table - SIEMPRE VISIBLE */}
                 <div>
                   <h3 className="text-sm font-semibold mb-2">
-                    Tabla: {activeSection === 'nomina' ? 'Libro de Mes a Mes' : 'Libro de Gastos / Facturación'}
+                    Tabla: {activeSection === 'nomina' ? 'Libro Gastos Mes a Mes' : 'Facturación'}
                   </h3>
                   
                   {!selectedYear || !selectedMonth ? (
