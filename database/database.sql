@@ -201,6 +201,7 @@ CREATE TABLE IF NOT EXISTS transferencias_pagos (
   actividad VARCHAR(255) NOT NULL, -- Descripción de la actividad
   sale DECIMAL(12,2) DEFAULT 0.00, -- Valor que sale
   entra DECIMAL(12,2) DEFAULT 0.00, -- Valor que entra
+  saldo DECIMAL(12,2) DEFAULT 0.00, -- Saldo calculado (entra - sale)
   concepto VARCHAR(255) NOT NULL, -- Concepto del movimiento
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
@@ -254,11 +255,11 @@ INSERT INTO libro_gastos_facturacion (year, mes, numero_facturacion, fecha, clie
 
 -- Insert sample data for transferencias_pagos (ejemplo de datos de transferencias)
 -- Insertar datos de ejemplo para transferencias y pagos
-INSERT INTO transferencias_pagos (year, mes, fecha, actividad, sale, entra, concepto, created_by) VALUES
-(2023, 'ENERO', '2023-01-15', 'Pago a proveedores', 500000, 0, 'Pago materiales', 1),
-(2023, 'ENERO', '2023-01-20', 'Cobro de factura', 0, 1000000, 'Cobro servicio consultoría', 1),
-(2023, 'FEBRERO', '2023-02-10', 'Transferencia bancaria', 200000, 0, 'Transferencia a cuenta ahorros', 1),
-(2024, 'ENERO', '2024-01-05', 'Ingreso por ventas', 0, 1500000, 'Venta de servicios', 1);
+INSERT INTO transferencias_pagos (year, mes, fecha, actividad, sale, entra, saldo, concepto, created_by) VALUES
+(2023, 'ENERO', '2023-01-15', 'Pago a proveedores', 500000, 0, -500000, 'Pago materiales', 1),
+(2023, 'ENERO', '2023-01-20', 'Cobro de factura', 0, 1000000, 1000000, 'Cobro servicio consultoría', 1),
+(2023, 'FEBRERO', '2023-02-10', 'Transferencia bancaria', 200000, 0, -200000, 'Transferencia a cuenta ahorros', 1),
+(2024, 'ENERO', '2024-01-05', 'Ingreso por ventas', 0, 1500000, 1500000, 'Venta de servicios', 1);
 
 -- =====================================================
 -- INDEXES (ÍNDICES)

@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     console.log(`Fetching transfers data for year: ${year}, mes: ${mes}`)
     
     const rows = await executeQuery(
-      `SELECT id, year, mes, fecha, actividad, sale, entra, concepto 
+      `SELECT id, year, mes, fecha, actividad, sale, entra, saldo, concepto 
        FROM transferencias_pagos 
        WHERE year = ? AND mes = ? 
        ORDER BY fecha DESC, id DESC`,
@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
         // Insertar nueva fila
         const result = await executeQuery(
           `INSERT INTO transferencias_pagos 
-           (year, mes, fecha, actividad, sale, entra, concepto, created_by) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (year, mes, fecha, actividad, sale, entra, saldo, concepto, created_by) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             row.year,
             row.mes,
@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
             row.actividad,
             row.sale,
             row.entra,
+            row.saldo,
             row.concepto,
             userId
           ]
@@ -113,13 +114,14 @@ export async function POST(request: NextRequest) {
         // Actualizar fila existente
         await executeQuery(
           `UPDATE transferencias_pagos 
-           SET fecha = ?, actividad = ?, sale = ?, entra = ?, concepto = ?, updated_by = ?
+           SET fecha = ?, actividad = ?, sale = ?, entra = ?, saldo = ?, concepto = ?, updated_by = ?
            WHERE id = ?`,
           [
             row.fecha,
             row.actividad,
             row.sale,
             row.entra,
+            row.saldo,
             row.concepto,
             userId,
             row.id

@@ -43,6 +43,7 @@ interface TransferRow extends BaseRow {
   actividad: string
   sale: number
   entra: number
+  saldo: number
   concepto: string
 }
 
@@ -85,18 +86,27 @@ export function SimpleDataGrid({
 
   // Función para formatear moneda usando react-number-format
   const formatCurrency = (amount: number) => {
+    const validAmount = isNaN(amount) || amount === null || amount === undefined ? 0 : amount
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0
-    }).format(amount)
+    }).format(validAmount)
   }
 
   // Procesar datos cuando cambien
   useEffect(() => {
     const processedData = data.map(row => ({
       ...row,
-      fecha: formatDateForInput(row.fecha)
+      fecha: formatDateForInput(row.fecha),
+      // Asegurar que los campos numéricos tengan valores válidos
+      saldo: row.saldo || 0,
+      sale: row.sale || 0,
+      entra: row.entra || 0,
+      valor: row.valor || 0,
+      iva: row.iva || 0,
+      valor_neto: row.valor_neto || 0,
+      total: row.total || 0
     }))
     setRows(processedData)
     setOriginalData(processedData)
@@ -152,6 +162,7 @@ export function SimpleDataGrid({
           actividad: '',
           sale: 0,
           entra: 0,
+          saldo: 0,
           concepto: '',
           isNew: true
         } as TransferRow
@@ -178,6 +189,7 @@ export function SimpleDataGrid({
           newRows[rowIndex].total = valor_neto + iva
         }
       }
+      
       
       return newRows
     })
@@ -289,6 +301,7 @@ export function SimpleDataGrid({
         return row.actividad !== original.actividad ||
                row.sale !== original.sale ||
                row.entra !== original.entra ||
+               row.saldo !== original.saldo ||
                row.concepto !== original.concepto ||
                row.fecha !== original.fecha
       }
@@ -415,8 +428,8 @@ export function SimpleDataGrid({
   // Configuración de columnas
   const columns = type === 'payroll' 
     ? [
-        { key: 'fecha', name: 'Fecha', width: 120 },
         { key: 'numero_factura', name: 'N° Factura', width: 120 },
+        { key: 'fecha', name: 'Fecha', width: 120 },
         { key: 'proveedor', name: 'Proveedor', width: 200 },
         { key: 'nit', name: 'NIT', width: 120 },
         { key: 'pago', name: 'Pago', width: 100 },
@@ -429,8 +442,8 @@ export function SimpleDataGrid({
       ]
     : type === 'expenses'
     ? [
-        { key: 'fecha', name: 'Fecha', width: 120 },
         { key: 'numero_facturacion', name: 'N° Facturación', width: 120 },
+        { key: 'fecha', name: 'Fecha', width: 120 },
         { key: 'cliente', name: 'Cliente', width: 200 },
         { key: 'servicio', name: 'Servicio', width: 200 },
         { key: 'nit', name: 'NIT', width: 120 },
@@ -444,6 +457,7 @@ export function SimpleDataGrid({
         { key: 'actividad', name: 'Actividad', width: 200 },
         { key: 'sale', name: 'Sale', width: 130 },
         { key: 'entra', name: 'Entra', width: 130 },
+        { key: 'saldo', name: 'Saldo', width: 130 },
         { key: 'concepto', name: 'Concepto', width: 250 },
         { key: 'actions', name: 'Acciones', width: 100 }
       ]
