@@ -76,6 +76,9 @@ function ContableContent() {
   const [currentPayrollData, setCurrentPayrollData] = useState<PayrollData[]>([])
   const [currentExpenseData, setCurrentExpenseData] = useState<ExpenseData[]>([])
   const [currentTransferData, setCurrentTransferData] = useState<TransferData[]>([])
+  
+  // Estados para filtros activos
+  const [hasActiveFilters, setHasActiveFilters] = useState(false)
 
   // Años disponibles (estáticos)
   const availableYears = [2023, 2024, 2025, 2026, 2027]
@@ -215,6 +218,8 @@ function ContableContent() {
       setCurrentPayrollData([])
       setCurrentExpenseData([])
       setCurrentTransferData([])
+      // Limpiar estado de filtros activos
+      setHasActiveFilters(false)
     })
   }
 
@@ -229,6 +234,11 @@ function ContableContent() {
     }
   }
 
+  // Manejar cambios en el estado de filtros activos
+  const handleFiltersActiveChange = (hasActiveFilters: boolean) => {
+    setHasActiveFilters(hasActiveFilters)
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -237,9 +247,10 @@ function ContableContent() {
     }).format(amount)
   }
 
-  // Calcular totales para cada módulo usando datos en tiempo real
+  // Calcular totales para cada módulo usando datos filtrados en tiempo real
   const calculateTotals = () => {
     if (activeSection === 'gastos') {
+      // Usar datos filtrados (currentPayrollData contiene los datos filtrados)
       const dataToUse = currentPayrollData.length > 0 ? currentPayrollData : payrollData
       const total = dataToUse.reduce((sum, row) => {
         const value = Number(row.total) || 0
@@ -247,6 +258,7 @@ function ContableContent() {
       }, 0)
       return { total, label: 'Total Gastos' }
     } else if (activeSection === 'facturacion') {
+      // Usar datos filtrados (currentExpenseData contiene los datos filtrados)
       const dataToUse = currentExpenseData.length > 0 ? currentExpenseData : expenseData
       const total = dataToUse.reduce((sum, row) => {
         const value = Number(row.total) || 0
@@ -254,6 +266,7 @@ function ContableContent() {
       }, 0)
       return { total, label: 'Total Facturación' }
     } else if (activeSection === 'transferencias') {
+      // Usar datos filtrados (currentTransferData contiene los datos filtrados)
       const dataToUse = currentTransferData.length > 0 ? currentTransferData : transferData
       const totalEntra = dataToUse.reduce((sum, row) => {
         const value = Number(row.entra) || 0
@@ -520,13 +533,16 @@ function ContableContent() {
                 <div className="absolute top-4 right-4 z-10 flex gap-3">
                   {(() => {
                     const totals = calculateTotals()
+                    
                     if (totals.isTransfer) {
                       return (
                         <>
                           <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg shadow-xl min-w-[130px] backdrop-blur-sm">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-xs font-medium opacity-90">Total Entra</p>
+                                <p className="text-xs font-medium opacity-90">
+                                  Total Entra {hasActiveFilters && <span className="text-blue-200">(Filtrado)</span>}
+                                </p>
                                 <p className="text-sm font-bold">{formatCurrency(totals.totalEntra)}</p>
                               </div>
                               <div className="bg-blue-400 bg-opacity-30 p-1.5 rounded-full">
@@ -537,7 +553,9 @@ function ContableContent() {
                           <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-3 rounded-lg shadow-xl min-w-[130px] backdrop-blur-sm">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-xs font-medium opacity-90">Total Sale</p>
+                                <p className="text-xs font-medium opacity-90">
+                                  Total Sale {hasActiveFilters && <span className="text-gray-200">(Filtrado)</span>}
+                                </p>
                                 <p className="text-sm font-bold">{formatCurrency(totals.totalSale)}</p>
                               </div>
                               <div className="bg-gray-500 bg-opacity-30 p-1.5 rounded-full">
@@ -548,7 +566,9 @@ function ContableContent() {
                           <div className="bg-gradient-to-r from-slate-500 to-slate-600 text-white p-3 rounded-lg shadow-xl min-w-[130px] backdrop-blur-sm">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-xs font-medium opacity-90">Diferencia</p>
+                                <p className="text-xs font-medium opacity-90">
+                                  Diferencia {hasActiveFilters && <span className="text-slate-200">(Filtrado)</span>}
+                                </p>
                                 <p className={`text-sm font-bold ${totals.totalEntra - totals.totalSale >= 0 ? 'text-blue-200' : 'text-gray-200'}`}>
                                   {formatCurrency(totals.totalEntra - totals.totalSale)}
                                 </p>
@@ -565,7 +585,9 @@ function ContableContent() {
                         <div className="bg-gradient-to-r from-slate-600 to-slate-700 text-white p-3 rounded-lg shadow-xl min-w-[180px] backdrop-blur-sm">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-xs font-medium opacity-90">{totals.label}</p>
+                              <p className="text-xs font-medium opacity-90">
+                                {totals.label} {hasActiveFilters && <span className="text-slate-200">(Filtrado)</span>}
+                              </p>
                               <p className="text-lg font-bold">{formatCurrency(totals.total || 0)}</p>
                               <p className="text-xs opacity-75">{selectedMonth} {selectedYear}</p>
                             </div>
@@ -644,6 +666,7 @@ function ContableContent() {
                       }}
                       onUnsavedChangesChange={setHasUnsavedChanges}
                       onDataChange={handleDataChange}
+                      onFiltersActiveChange={handleFiltersActiveChange}
                       year={selectedYear}
                       mes={selectedMonth}
                       type={activeSection === 'gastos' ? 'payroll' : 

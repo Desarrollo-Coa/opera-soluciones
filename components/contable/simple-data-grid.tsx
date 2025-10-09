@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Save, Trash2, X, Undo2 } from "lucide-react"
+import { Plus, Save, Trash2, X, Undo2, Filter, Search } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { NumericFormat } from "react-number-format"
 import { DiscardChangesDialog } from "@/components/ui/discard-changes-dialog"
@@ -54,6 +54,7 @@ interface SimpleDataGridProps {
   onCancel?: () => void
   onUnsavedChangesChange?: (hasChanges: boolean) => void
   onDataChange?: (data: any[]) => void
+  onFiltersActiveChange?: (hasActiveFilters: boolean) => void
   year: number
   mes: string
   type: 'payroll' | 'expenses' | 'transfers'
@@ -66,16 +67,20 @@ export function SimpleDataGrid({
   onCancel,
   onUnsavedChangesChange,
   onDataChange,
+  onFiltersActiveChange,
   year, 
   mes, 
   type 
 }: SimpleDataGridProps) {
   const [rows, setRows] = useState<any[]>([])
+  const [filteredRows, setFilteredRows] = useState<any[]>([])
   const [hasChanges, setHasChanges] = useState(false)
   const [editingCell, setEditingCell] = useState<{rowIndex: number, columnKey: string} | null>(null)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [originalData, setOriginalData] = useState<any[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [filters, setFilters] = useState<Record<string, string>>({})
+  const [showFilters, setShowFilters] = useState(false)
 
   // Función para formatear fecha
   const formatDateForInput = (date: string | Date) => {
@@ -93,6 +98,33 @@ export function SimpleDataGrid({
       minimumFractionDigits: 0
     }).format(validAmount)
   }
+
+  // Función para aplicar filtros
+  const applyFilters = useCallback((dataToFilter: any[]) => {
+    if (Object.keys(filters).length === 0) {
+      return dataToFilter
+    }
+
+    return dataToFilter.filter(row => {
+      return Object.entries(filters).every(([columnKey, filterValue]) => {
+        if (!filterValue.trim()) return true
+        
+        const cellValue = row[columnKey]
+        if (cellValue === null || cellValue === undefined) return false
+        
+        // Para campos numéricos, buscar coincidencia exacta o parcial
+        if (['valor', 'iva', 'total', 'valor_neto', 'sale', 'entra', 'saldo'].includes(columnKey)) {
+          const numericValue = parseFloat(cellValue)
+          const filterNumeric = parseFloat(filterValue.replace(/[^\d.-]/g, ''))
+          return !isNaN(numericValue) && !isNaN(filterNumeric) && 
+                 numericValue.toString().includes(filterNumeric.toString())
+        }
+        
+        // Para otros campos, búsqueda de texto (case insensitive)
+        return cellValue.toString().toLowerCase().includes(filterValue.toLowerCase())
+      })
+    })
+  }, [filters])
 
   // Procesar datos cuando cambien
   useEffect(() => {
@@ -113,6 +145,12 @@ export function SimpleDataGrid({
     setHasChanges(false)
   }, [data])
 
+  // Aplicar filtros cuando cambien los datos o filtros
+  useEffect(() => {
+    const filtered = applyFilters(rows)
+    setFilteredRows(filtered)
+  }, [rows, applyFilters])
+
   // Notificar cambios al componente padre
   useEffect(() => {
     onUnsavedChangesChange?.(hasChanges)
@@ -120,8 +158,28 @@ export function SimpleDataGrid({
 
   // Notificar cambios de datos para actualizar totales en tiempo real
   useEffect(() => {
-    onDataChange?.(rows)
-  }, [rows, onDataChange])
+    // Enviar datos filtrados para el cálculo de totales
+    onDataChange?.(filteredRows)
+  }, [filteredRows, onDataChange])
+
+  // Notificar cuando hay filtros activos
+  useEffect(() => {
+    const hasActiveFilters = Object.values(filters).some(filterValue => filterValue.trim() !== '')
+    onFiltersActiveChange?.(hasActiveFilters)
+  }, [filters, onFiltersActiveChange])
+
+  // Manejar cambios en filtros
+  const handleFilterChange = useCallback((columnKey: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [columnKey]: value
+    }))
+  }, [])
+
+  // Limpiar todos los filtros
+  const clearAllFilters = useCallback(() => {
+    setFilters({})
+  }, [])
 
   // Agregar nueva fila
   const addRow = useCallback(() => {
@@ -472,6 +530,14 @@ export function SimpleDataGrid({
         </h3>
         <div className="flex gap-2">
           <Button 
+            onClick={() => setShowFilters(!showFilters)} 
+            size="sm"
+            variant={showFilters ? "default" : "outline"}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+          </Button>
+          <Button 
             onClick={addRow} 
             size="sm"
             disabled={isSaving}
@@ -503,6 +569,7 @@ export function SimpleDataGrid({
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead className="bg-blue-800">
+              {/* Fila de encabezados */}
               <tr>
                 {columns.map((column) => (
                   <th 
@@ -514,9 +581,45 @@ export function SimpleDataGrid({
                   </th>
                 ))}
               </tr>
+              
+              {/* Fila de filtros */}
+              {showFilters && (
+                <tr className="bg-blue-700">
+                  {columns.map((column) => (
+                    <th 
+                      key={`filter-${column.key}`} 
+                      className="px-2 py-2 border border-gray-300"
+                      style={{ width: column.width }}
+                    >
+                      {column.key === 'actions' ? (
+                        <div className="flex justify-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={clearAllFilters}
+                            className="h-6 px-2 text-xs bg-white text-gray-700 hover:bg-gray-50"
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Limpiar
+                          </Button>
+                        </div>
+                      ) : (
+                        <Input
+                          type="text"
+                          placeholder={`Filtrar ${column.name.toLowerCase()}...`}
+                          value={filters[column.key] || ''}
+                          onChange={(e) => handleFilterChange(column.key, e.target.value)}
+                          className="h-7 text-xs bg-white border-gray-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                          style={{ width: '100%', minWidth: '80px' }}
+                        />
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              )}
             </thead>
             <tbody className="bg-white">
-              {rows.map((row, rowIndex) => (
+              {filteredRows.map((row, rowIndex) => (
                 <tr 
                   key={rowIndex} 
                   className={`hover:bg-gray-50 ${row.isDeleted ? 'bg-red-50 opacity-60' : ''}`}
