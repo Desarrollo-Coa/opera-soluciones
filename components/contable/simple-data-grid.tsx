@@ -18,15 +18,17 @@ interface BaseRow {
 }
 
 interface PayrollRow extends BaseRow {
-  numero_factura: string
+  fecha: string
   proveedor: string
-  nit: string
-  pago: string
+  pago: number
   objeto: string
   valor_neto: number
   iva: number
-  obra: string
+  retencion: number
   total: number
+  nit: string
+  numero_factura: string
+  obra: string
 }
 
 interface ExpenseRow extends BaseRow {
@@ -138,6 +140,8 @@ export function SimpleDataGrid({
       valor: row.valor || 0,
       iva: row.iva || 0,
       valor_neto: row.valor_neto || 0,
+      retencion: row.retencion || 0,
+      pago: row.pago || 0,
       total: row.total || 0
     }))
     setRows(processedData)
@@ -188,15 +192,16 @@ export function SimpleDataGrid({
           year,
           mes,
           fecha: new Date().toISOString().split('T')[0],
-          numero_factura: '',
           proveedor: '',
-          nit: '',
-          pago: '',
+          pago: 0,
           objeto: '',
           valor_neto: 0,
           iva: 0,
-          obra: '',
+          retencion: 0,
           total: 0,
+          nit: '',
+          numero_factura: '',
+          obra: '',
           isNew: true
         } as PayrollRow
       : type === 'expenses'
@@ -235,8 +240,8 @@ export function SimpleDataGrid({
       const newRows = [...prev]
       newRows[rowIndex] = { ...newRows[rowIndex], [columnKey]: value }
       
-      // Calcular total para gastos y facturación
-      if ((type === 'expenses' || type === 'payroll') && (columnKey === 'valor' || columnKey === 'iva' || columnKey === 'valor_neto')) {
+      // Calcular total para gastos y facturación (NO para transferencias - saldo es manual)
+      if ((type === 'expenses' || type === 'payroll') && (columnKey === 'valor' || columnKey === 'iva' || columnKey === 'valor_neto' || columnKey === 'retencion')) {
         if (type === 'expenses') {
           const valor = columnKey === 'valor' ? value : newRows[rowIndex].valor
           const iva = columnKey === 'iva' ? value : newRows[rowIndex].iva
@@ -244,9 +249,12 @@ export function SimpleDataGrid({
         } else if (type === 'payroll') {
           const valor_neto = columnKey === 'valor_neto' ? value : newRows[rowIndex].valor_neto
           const iva = columnKey === 'iva' ? value : newRows[rowIndex].iva
-          newRows[rowIndex].total = valor_neto + iva
+          const retencion = columnKey === 'retencion' ? value : newRows[rowIndex].retencion
+          newRows[rowIndex].total = valor_neto + iva - retencion
         }
       }
+      
+      // Para transferencias, el saldo es manual - NO calcular automáticamente
       
       
       return newRows
@@ -336,16 +344,17 @@ export function SimpleDataGrid({
       
       // Comparar campos relevantes según el tipo
       if (type === 'payroll') {
-        return row.numero_factura !== original.numero_factura ||
+        return row.fecha !== original.fecha ||
                row.proveedor !== original.proveedor ||
-               row.nit !== original.nit ||
                row.pago !== original.pago ||
                row.objeto !== original.objeto ||
                row.valor_neto !== original.valor_neto ||
                row.iva !== original.iva ||
-               row.obra !== original.obra ||
+               row.retencion !== original.retencion ||
                row.total !== original.total ||
-               row.fecha !== original.fecha
+               row.nit !== original.nit ||
+               row.numero_factura !== original.numero_factura ||
+               row.obra !== original.obra
       } else if (type === 'expenses') {
         return row.numero_facturacion !== original.numero_facturacion ||
                row.cliente !== original.cliente ||
@@ -356,12 +365,12 @@ export function SimpleDataGrid({
                row.total !== original.total ||
                row.fecha !== original.fecha
       } else {
-        return row.actividad !== original.actividad ||
+        return row.fecha !== original.fecha ||
+               row.actividad !== original.actividad ||
                row.sale !== original.sale ||
                row.entra !== original.entra ||
                row.saldo !== original.saldo ||
-               row.concepto !== original.concepto ||
-               row.fecha !== original.fecha
+               row.concepto !== original.concepto
       }
     })
     
@@ -419,7 +428,7 @@ export function SimpleDataGrid({
             autoFocus
           />
         ) 
-      } else if (['debe', 'haber', 'saldo', 'valor', 'iva', 'valor_neto', 'total', 'sale', 'entra'].includes(columnKey)) {
+      } else if (['debe', 'haber', 'saldo', 'valor', 'iva', 'valor_neto', 'total', 'sale', 'entra', 'retencion', 'pago'].includes(columnKey)) {
         return (
           <NumericFormat
             thousandSeparator="."
@@ -468,7 +477,7 @@ export function SimpleDataGrid({
         )
       }
     } else {
-      if (['debe', 'haber', 'saldo', 'valor', 'iva', 'total', 'valor_neto', 'sale', 'entra'].includes(columnKey)) {
+      if (['debe', 'haber', 'saldo', 'valor', 'iva', 'total', 'valor_neto', 'sale', 'entra', 'retencion', 'pago'].includes(columnKey)) {
         return (
           <div className="text-right h-8 flex items-center justify-end text-sm px-1">
             {formatCurrency(value)}
@@ -486,16 +495,17 @@ export function SimpleDataGrid({
   // Configuración de columnas
   const columns = type === 'payroll' 
     ? [
-        { key: 'numero_factura', name: 'N° Factura', width: 120 },
         { key: 'fecha', name: 'Fecha', width: 120 },
         { key: 'proveedor', name: 'Proveedor', width: 200 },
-        { key: 'nit', name: 'NIT', width: 120 },
-        { key: 'pago', name: 'Pago', width: 100 },
+        { key: 'pago', name: 'Pago', width: 130 },
         { key: 'objeto', name: 'Objeto', width: 200 },
         { key: 'valor_neto', name: 'Valor Neto', width: 130 },
         { key: 'iva', name: 'IVA', width: 130 },
-        { key: 'obra', name: 'Obra', width: 150 },
+        { key: 'retencion', name: 'Retención', width: 130 },
         { key: 'total', name: 'Total', width: 130 },
+        { key: 'nit', name: 'NIT', width: 120 },
+        { key: 'numero_factura', name: 'N° de Factura', width: 120 },
+        { key: 'obra', name: 'Obra', width: 150 },
         { key: 'actions', name: 'Acciones', width: 100 }
       ]
     : type === 'expenses'
@@ -526,7 +536,7 @@ export function SimpleDataGrid({
         <h3 className="text-lg font-semibold">
           {type === 'payroll' ? 'Libro Gastos Mes a Mes' : 
            type === 'expenses' ? 'Facturación' : 
-           'Transferencias y Pagos'}
+           'Transferencias y Pagos (Saldo Manual)'}
         </h3>
         <div className="flex gap-2">
           <Button 

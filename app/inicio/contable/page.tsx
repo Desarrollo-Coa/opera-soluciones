@@ -22,16 +22,17 @@ interface PayrollData {
   id: number
   year: number
   mes: string
-  numero_factura: string
   fecha: string
   proveedor: string
-  nit: string
-  pago: string
+  pago: number
   objeto: string
   valor_neto: number
   iva: number
-  obra: string
+  retencion: number
   total: number
+  nit: string
+  numero_factura: string
+  obra: string
 }
 
 interface ExpenseData {

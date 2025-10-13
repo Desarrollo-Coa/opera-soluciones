@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     console.log(`Fetching payroll data for year: ${year}, mes: ${mes}`)
     
     const rows = await executeQuery(
-      `SELECT id, year, mes, numero_factura, fecha, proveedor, nit, pago, objeto, valor_neto, iva, obra, total 
+      `SELECT id, year, mes, fecha, proveedor, pago, objeto, valor_neto, iva, retencion, total, nit, numero_factura, obra 
        FROM payroll_mes_a_mes 
        WHERE year = ? AND mes = ? 
        ORDER BY fecha DESC, id DESC`,
@@ -95,21 +95,22 @@ export async function POST(request: NextRequest) {
         // Insertar nueva fila
         const result = await executeQuery(
           `INSERT INTO payroll_mes_a_mes 
-           (year, mes, numero_factura, fecha, proveedor, nit, pago, objeto, valor_neto, iva, obra, total, created_by) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (year, mes, fecha, proveedor, pago, objeto, valor_neto, iva, retencion, total, nit, numero_factura, obra, created_by) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             row.year,
             row.mes,
-            row.numero_factura,
             row.fecha,
             row.proveedor,
-            row.nit,
             row.pago,
             row.objeto,
             row.valor_neto,
             row.iva,
-            row.obra,
+            row.retencion,
             row.total,
+            row.nit,
+            row.numero_factura,
+            row.obra,
             userId
           ]
         )
@@ -118,19 +119,20 @@ export async function POST(request: NextRequest) {
         // Actualizar fila existente
         await executeQuery(
           `UPDATE payroll_mes_a_mes 
-           SET numero_factura = ?, fecha = ?, proveedor = ?, nit = ?, pago = ?, objeto = ?, valor_neto = ?, iva = ?, obra = ?, total = ?, updated_by = ?
+           SET fecha = ?, proveedor = ?, pago = ?, objeto = ?, valor_neto = ?, iva = ?, retencion = ?, total = ?, nit = ?, numero_factura = ?, obra = ?, updated_by = ?
            WHERE id = ?`,
           [
-            row.numero_factura,
             row.fecha,
             row.proveedor,
-            row.nit,
             row.pago,
             row.objeto,
             row.valor_neto,
             row.iva,
-            row.obra,
+            row.retencion,
             row.total,
+            row.nit,
+            row.numero_factura,
+            row.obra,
             userId,
             row.id
           ]

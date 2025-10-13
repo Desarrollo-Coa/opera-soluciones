@@ -155,16 +155,17 @@ CREATE TABLE IF NOT EXISTS payroll_mes_a_mes (
   id INT AUTO_INCREMENT PRIMARY KEY,
   year INT NOT NULL, -- Año para agrupación y filtrado (2023, 2024, 2025, etc.)
   mes VARCHAR(20) NOT NULL, -- Mes para agrupación y filtrado (ENERO, FEBRERO, MARZO, etc.)
-  numero_factura VARCHAR(50) NOT NULL, -- Número de factura
   fecha DATE NOT NULL, -- Fecha real del movimiento
   proveedor VARCHAR(255) NOT NULL, -- Nombre del proveedor
-  nit VARCHAR(50) NOT NULL, -- NIT del proveedor
-  pago VARCHAR(100) NOT NULL, -- Forma de pago
+  pago DECIMAL(12,2) NOT NULL, -- Monto del pago
   objeto VARCHAR(255) NOT NULL, -- Descripción del objeto/gasto
   valor_neto DECIMAL(12,2) NOT NULL, -- Valor neto (sin IVA)
   iva DECIMAL(12,2) DEFAULT 0.00, -- Valor del IVA
+  retencion DECIMAL(12,2) DEFAULT 0.00, -- Valor de retención aplicada
+  total DECIMAL(12,2) NOT NULL, -- Valor total (valor_neto + iva - retencion)
+  nit VARCHAR(50) NOT NULL, -- NIT del proveedor
+  numero_factura VARCHAR(50) NOT NULL, -- Número de factura
   obra VARCHAR(255) NOT NULL, -- Obra o proyecto
-  total DECIMAL(12,2) NOT NULL, -- Valor total (valor_neto + iva)
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -201,7 +202,7 @@ CREATE TABLE IF NOT EXISTS transferencias_pagos (
   actividad VARCHAR(255) NOT NULL, -- Descripción de la actividad
   sale DECIMAL(12,2) DEFAULT 0.00, -- Valor que sale
   entra DECIMAL(12,2) DEFAULT 0.00, -- Valor que entra
-  saldo DECIMAL(12,2) DEFAULT 0.00, -- Saldo calculado (entra - sale)
+  saldo DECIMAL(12,2) DEFAULT 0.00, -- Saldo manual (ingresado por el usuario)
   concepto VARCHAR(255) NOT NULL, -- Concepto del movimiento
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
@@ -239,11 +240,11 @@ INSERT INTO document_types (name, description, created_by) VALUES
 
 -- Insert sample data for payroll_mes_a_mes (ejemplo de datos de gastos)
 -- Insertar datos de ejemplo para libro gastos mes a mes
-INSERT INTO payroll_mes_a_mes (year, mes, numero_factura, fecha, proveedor, nit, pago, objeto, valor_neto, iva, obra, total, created_by) VALUES
-(2023, 'ENERO', 'FAC-001', '2023-01-15', 'Proveedor ABC', '12345678-9', 'Efectivo', 'Materiales de construcción', 500000, 95000, 'Obra Principal', 595000, 1),
-(2023, 'ENERO', 'FAC-002', '2023-01-20', 'Proveedor XYZ', '87654321-0', 'Transferencia', 'Herramientas', 300000, 57000, 'Obra Secundaria', 357000, 1),
-(2023, 'FEBRERO', 'FAC-003', '2023-02-15', 'Proveedor DEF', '11223344-5', 'Cheque', 'Equipos', 800000, 152000, 'Obra Principal', 952000, 1),
-(2024, 'ENERO', 'FAC-004', '2024-01-15', 'Proveedor GHI', '99887766-3', 'Efectivo', 'Servicios', 400000, 76000, 'Obra Nueva', 476000, 1);
+INSERT INTO payroll_mes_a_mes (year, mes, fecha, proveedor, pago, objeto, valor_neto, iva, retencion, total, nit, numero_factura, obra, created_by) VALUES
+(2023, 'ENERO', '2023-01-15', 'Proveedor ABC', 595000, 'Materiales de construcción', 500000, 95000, 0, 595000, '12345678-9', 'FAC-001', 'Obra Principal', 1),
+(2023, 'ENERO', '2023-01-20', 'Proveedor XYZ', 357000, 'Herramientas', 300000, 57000, 0, 357000, '87654321-0', 'FAC-002', 'Obra Secundaria', 1),
+(2023, 'FEBRERO', '2023-02-15', 'Proveedor DEF', 952000, 'Equipos', 800000, 152000, 0, 952000, '11223344-5', 'FAC-003', 'Obra Principal', 1),
+(2024, 'ENERO', '2024-01-15', 'Proveedor GHI', 476000, 'Servicios', 400000, 76000, 0, 476000, '99887766-3', 'FAC-004', 'Obra Nueva', 1);
 
 -- Insert sample data for libro_gastos_facturacion (ejemplo de datos de facturación)
 -- Insertar datos de ejemplo para facturación
@@ -256,10 +257,10 @@ INSERT INTO libro_gastos_facturacion (year, mes, numero_facturacion, fecha, clie
 -- Insert sample data for transferencias_pagos (ejemplo de datos de transferencias)
 -- Insertar datos de ejemplo para transferencias y pagos
 INSERT INTO transferencias_pagos (year, mes, fecha, actividad, sale, entra, saldo, concepto, created_by) VALUES
-(2023, 'ENERO', '2023-01-15', 'Pago a proveedores', 500000, 0, -500000, 'Pago materiales', 1),
-(2023, 'ENERO', '2023-01-20', 'Cobro de factura', 0, 1000000, 1000000, 'Cobro servicio consultoría', 1),
-(2023, 'FEBRERO', '2023-02-10', 'Transferencia bancaria', 200000, 0, -200000, 'Transferencia a cuenta ahorros', 1),
-(2024, 'ENERO', '2024-01-05', 'Ingreso por ventas', 0, 1500000, 1500000, 'Venta de servicios', 1);
+(2023, 'ENERO', '2023-01-01', 'Pasan', 0, 0, 81241825.03, 'Saldo inicial', 1),
+(2023, 'ENERO', '2023-01-09', 'ABONO INTERESES AHORROS', 0, 2003, 81243828.25, 'Intereses de ahorros', 1),
+(2023, 'ENERO', '2023-01-10', 'IMPTO GOBIERNO 4*1000', 57, 0, 81243771.45, 'Impuesto gobierno', 1),
+(2023, 'ENERO', '2023-01-10', 'CUOTA DE MANEJO TARJETO DEBIT', 14200, 0, 81229571.45, 'Cuota manejo tarjeta', 1);
 
 -- =====================================================
 -- INDEXES (ÍNDICES)
@@ -350,7 +351,7 @@ SELECT 'SGI Opera Soluciones simplified database initialization completed succes
 
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `password_hash`, `document_type`, `document_number`, `birth_date`, `gender`, `marital_status`, `emergency_contact_name`, `emergency_contact_phone`, `phone`, `address`, `position`, `salary`, `hire_date`, `termination_date`, `work_schedule`, `department`, `manager_id`, `employment_type`, `eps_id`, `arl_id`, `pension_fund_id`, `compensation_fund_id`, `bank_name`, `account_number`, `account_type`, `profile_picture`, `notes`, `is_active`, `role_id`, `contract_status_id`, `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
 (1, 'Juan Manuel', 'Administrador', 'juanmanuel@operasoluciones.com', '$2a$12$UH3BnGQSh6mHS2dKRz0j.OpO6jEe7tVSIOjgJofbIGtL23k3mITdm', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, 1, 1, '2025-09-18 12:20:41', 1, '2025-09-18 12:20:41', NULL, NULL, NULL),
-(2, 'DAASDNK', 'KJDNASKJDN', 'asdasanueasdal@operasoluciones.com', '$2a$12$1A/jF1I6fG1MjUekPAlb4Ohq1qG3L/1AaIUh74h69Ek.9P11HlIny', 'CC', '3189139831', '2025-06-01', 'M', 'Soltero', '213123123', '13311414', '1219831938', 'ASJKDNADSN', 'Viviente', 1349999.00, '2025-08-30', '2025-11-16', '8  a.m -  5 p.m.', 'dadad', NULL, 'Tiempo Completo', 'eps', 'arl', 'fp', 'cjc', 'BANCOLOMBIA', '13131444', 'Ahorros', 'https://sgiopera-prod-files.nyc3.digitaloceanspaces.com/profile-pictures/profile_1_e19faec6-5514-4e98-844d-7fa9f4ee15eb_454756.jpg', 'AOKSDMAKSDNKAJSDNAKJSDN', 1, 1, 1, '2025-09-18 12:27:07', 1, '2025-09-18 12:27:37', 1, NULL, NULL);
+(2, 'Daniel', 'Ramirez', 'asdasanueasdal@operasoluciones.com', '$2a$12$1A/jF1I6fG1MjUekPAlb4Ohq1qG3L/1AaIUh74h69Ek.9P11HlIny', 'CC', '3189139831', '2025-06-01', 'M', 'Soltero', '213123123', '13311414', '1219831938', 'ASJKDNADSN', 'Viviente', 1349999.00, '2025-08-30', '2025-11-16', '8  a.m -  5 p.m.', 'dadad', NULL, 'Tiempo Completo', 'eps', 'arl', 'fp', 'cjc', 'BANCOLOMBIA', '13131444', 'Ahorros', 'https://sgiopera-prod-files.nyc3.digitaloceanspaces.com/profile-pictures/profile_1_e19faec6-5514-4e98-844d-7fa9f4ee15eb_454756.jpg', 'AOKSDMAKSDNKAJSDNAKJSDN', 1, 1, 1, '2025-09-18 12:27:07', 1, '2025-09-18 12:27:37', 1, NULL, NULL);
 
 -- =====================================================
 -- ABSENCE MANAGEMENT TABLES (TABLAS DE GESTIÓN DE AUSENCIAS)
