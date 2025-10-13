@@ -536,7 +536,7 @@ export function SimpleDataGrid({
         <h3 className="text-lg font-semibold">
           {type === 'payroll' ? 'Libro Gastos Mes a Mes' : 
            type === 'expenses' ? 'Facturación' : 
-           'Transferencias y Pagos (Saldo Manual)'}
+           'Transferencias y Pagos'}
         </h3>
         <div className="flex gap-2">
           <Button 
