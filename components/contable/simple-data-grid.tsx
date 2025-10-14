@@ -83,6 +83,7 @@ export function SimpleDataGrid({
   const [isSaving, setIsSaving] = useState(false)
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [showFilters, setShowFilters] = useState(false)
+  const [expandedCell, setExpandedCell] = useState<{rowIndex: number, columnKey: string, value: string} | null>(null)
 
   // Función para formatear fecha
   const formatDateForInput = (date: string | Date) => {
@@ -423,8 +424,8 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1 overflow-hidden text-ellipsis"
-            style={{ minWidth: '120px', maxWidth: '120px', textOverflow: 'ellipsis' }}
+            className="w-full min-h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1"
+            style={{ minWidth: '120px', maxWidth: '120px' }}
             autoFocus
           />
         ) 
@@ -450,8 +451,8 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1 overflow-hidden text-ellipsis"
-            style={{ minWidth: '130px', maxWidth: '130px', textOverflow: 'ellipsis' }}
+            className="w-full min-h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1"
+            style={{ minWidth: '130px', maxWidth: '130px' }}
             autoFocus
           />
         )
@@ -470,8 +471,7 @@ export function SimpleDataGrid({
                 setEditingCell(null)
               }
             }}
-            className="w-full h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1 overflow-hidden text-ellipsis"
-            style={{ textOverflow: 'ellipsis' }}
+            className="w-full min-h-8 border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-left text-sm px-1"
             autoFocus
           />
         )
@@ -479,13 +479,13 @@ export function SimpleDataGrid({
     } else {
       if (['debe', 'haber', 'saldo', 'valor', 'iva', 'total', 'valor_neto', 'sale', 'entra', 'retencion', 'pago'].includes(columnKey)) {
         return (
-          <div className="text-right h-8 flex items-center justify-end text-sm px-1">
+          <div className="text-right min-h-8 flex items-center justify-end text-sm px-1">
             {formatCurrency(value)}
           </div>
         )
       }
       return (
-        <div className="h-8 flex items-center text-sm px-1 overflow-hidden text-ellipsis whitespace-nowrap text-left" title={value}>
+        <div className="min-h-8 flex items-start text-sm px-1 text-left break-words" title={value} style={{ wordWrap: 'break-word', whiteSpace: 'normal' }}>
           {value}
         </div>
       )
@@ -532,12 +532,7 @@ export function SimpleDataGrid({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">
-          {type === 'payroll' ? 'Libro Gastos Mes a Mes' : 
-           type === 'expenses' ? 'Facturación' : 
-           'Transferencias y Pagos'}
-        </h3>
+      <div className="flex justify-end items-center">
         <div className="flex gap-2">
           <Button 
             onClick={() => setShowFilters(!showFilters)} 
@@ -638,7 +633,7 @@ export function SimpleDataGrid({
                     <td 
                       key={column.key} 
                       className="px-2 py-2 align-top border border-gray-300 text-left"
-                      style={{ width: column.width, minWidth: column.width, maxWidth: column.width, height: '48px' }}
+                      style={{ width: column.width, minWidth: column.width, maxWidth: column.width }}
                       onClick={() => {
                         if (column.key !== 'actions') {
                           setEditingCell({ rowIndex, columnKey: column.key })

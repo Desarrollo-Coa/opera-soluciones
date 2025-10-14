@@ -64,7 +64,7 @@ function ContableContent() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeSection, setActiveSection] = useState<'gastos' | 'facturacion' | 'transferencias'>('gastos')
+  const [activeSection, setActiveSection] = useState<'gastos' | 'facturacion' | 'bancos'>('gastos')
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
   const [payrollData, setPayrollData] = useState<PayrollData[]>([])
@@ -176,7 +176,7 @@ function ContableContent() {
           setExpenseData(data.data || [])
           setCurrentExpenseData([]) // Limpiar datos en tiempo real
         }
-      } else if (activeSection === 'transferencias') {
+      } else if (activeSection === 'bancos') {
         const response = await fetch(`/api/contable/transfers?year=${selectedYear}&mes=${selectedMonth}`, {
           credentials: 'include'
         })
@@ -211,7 +211,7 @@ function ContableContent() {
     })
   }
 
-  const handleModuleChange = (module: 'gastos' | 'facturacion' | 'transferencias') => {
+  const handleModuleChange = (module: 'gastos' | 'facturacion' | 'bancos') => {
     handleStateChange(() => {
       setActiveSection(module)
       setHasUnsavedChanges(false)
@@ -230,7 +230,7 @@ function ContableContent() {
       setCurrentPayrollData(data)
     } else if (activeSection === 'facturacion') {
       setCurrentExpenseData(data)
-    } else if (activeSection === 'transferencias') {
+    } else if (activeSection === 'bancos') {
       setCurrentTransferData(data)
     }
   }
@@ -266,7 +266,7 @@ function ContableContent() {
         return sum + value
       }, 0)
       return { total, label: 'Total Facturación' }
-    } else if (activeSection === 'transferencias') {
+    } else if (activeSection === 'bancos') {
       // Usar datos filtrados (currentTransferData contiene los datos filtrados)
       const dataToUse = currentTransferData.length > 0 ? currentTransferData : transferData
       const totalEntra = dataToUse.reduce((sum, row) => {
@@ -280,7 +280,7 @@ function ContableContent() {
       return { 
         totalEntra, 
         totalSale, 
-        label: 'Transferencias y Pagos',
+        label: 'Bancos',
         isTransfer: true 
       }
     }
@@ -492,12 +492,12 @@ function ContableContent() {
                     Facturación
                   </Button>
                   <Button
-                    variant={activeSection === 'transferencias' ? 'default' : 'outline'}
+                    variant={activeSection === 'bancos' ? 'default' : 'outline'}
                     className="w-full justify-start text-xs h-7 px-2"
-                    onClick={() => handleModuleChange('transferencias')}
+                    onClick={() => handleModuleChange('bancos')}
                   >
                     <Calculator className="h-3 w-3 mr-1.5" />
-                    Transferencias y Pagos
+                    Bancos
                   </Button>
                 </div>
               </div>
@@ -510,20 +510,7 @@ function ContableContent() {
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Calendar className="h-4 w-4" />
-                      {activeSection === 'gastos' ? 'Libro Gastos Mes a Mes' : 
-                       activeSection === 'facturacion' ? 'Facturación' : 
-                       'Transferencias y Pagos'}
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      {activeSection === 'gastos' 
-                        ? 'Gastos con facturas por período' 
-                        : activeSection === 'facturacion'
-                        ? 'Facturación de servicios por período'
-                        : 'Transferencias y pagos por período'
-                      }
-                    </CardDescription>
+                    {/* Sin títulos redundantes */}
                   </div>
                   
                 </div>
@@ -624,11 +611,6 @@ function ContableContent() {
 
                 {/* Data Table - SIEMPRE VISIBLE */}
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">
-                    Tabla: {activeSection === 'gastos' ? 'Libro Gastos Mes a Mes' : 
-                           activeSection === 'facturacion' ? 'Facturación' : 
-                           'Transferencias y Pagos'}
-                  </h3>
                   
                   {!selectedYear || !selectedMonth ? (
                     <div className="border rounded-lg overflow-hidden min-h-[320px] bg-gray-50 flex items-center justify-center">
