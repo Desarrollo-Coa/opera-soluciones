@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, Calculator, FileText, Calendar, Users } from "lucide-react"
+import { ArrowLeft, Calculator, FileText, Calendar, Users, ChevronLeft, ChevronRight } from "lucide-react"
 import { SimpleDataGrid } from "@/components/contable/simple-data-grid"
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes"
 import { DiscardChangesDialog } from "@/components/ui/discard-changes-dialog"
@@ -81,8 +81,11 @@ function ContableContent() {
   // Estados para filtros activos
   const [hasActiveFilters, setHasActiveFilters] = useState(false)
 
-  // Años disponibles (estáticos)
-  const availableYears = [2023, 2024, 2025, 2026, 2027]
+  // Estado para el año central del selector (navegación infinita)
+  const [centerYear, setCenterYear] = useState<number>(new Date().getFullYear())
+  
+  // Generar años dinámicamente basados en el año central
+  const generateYears = (center: number) => [center - 1, center, center + 1]
   
   // Meses disponibles (estáticos)
   const availableMonths = [
@@ -146,6 +149,14 @@ function ContableContent() {
     fetchUserData()
   }, [router])
 
+  // Seleccionar año actual automáticamente al cargar la página
+  useEffect(() => {
+    const currentYear = new Date().getFullYear()
+    if (!selectedYear) {
+      setSelectedYear(currentYear)
+    }
+  }, [selectedYear])
+
   // Cargar datos cuando cambie la selección
   useEffect(() => {
     if (selectedYear && selectedMonth) {
@@ -202,6 +213,26 @@ function ContableContent() {
       setTransferData([])
       setHasUnsavedChanges(false)
     })
+  }
+
+  // Navegar al año anterior
+  const navigateToPreviousYear = () => {
+    const newCenterYear = centerYear - 1
+    setCenterYear(newCenterYear)
+    // Si el año seleccionado es el año central anterior, mantenerlo seleccionado
+    if (selectedYear === centerYear) {
+      setSelectedYear(newCenterYear)
+    }
+  }
+
+  // Navegar al año siguiente
+  const navigateToNextYear = () => {
+    const newCenterYear = centerYear + 1
+    setCenterYear(newCenterYear)
+    // Si el año seleccionado es el año central siguiente, mantenerlo seleccionado
+    if (selectedYear === centerYear) {
+      setSelectedYear(newCenterYear)
+    }
   }
 
   const handleMonthSelect = (month: string) => {
@@ -594,18 +625,43 @@ function ContableContent() {
                 {/* Year Selector */}
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Seleccionar Año</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {availableYears.map((year) => (
-                      <Button
-                        key={year}
-                        variant={selectedYear === year ? 'default' : 'outline'}
-                        size="sm"
-                        className="text-xs h-7 px-2"
-                        onClick={() => handleYearSelect(year)}
-                      >
-                        {year}
-                      </Button>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    {/* Botón para retroceder año */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={navigateToPreviousYear}
+                      className="h-7 w-7 p-0"
+                      title="Año anterior"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Años disponibles (dinámicos) */}
+                    <div className="flex gap-1.5">
+                      {generateYears(centerYear).map((year) => (
+                        <Button
+                          key={year}
+                          variant={selectedYear === year ? 'default' : 'outline'}
+                          size="sm"
+                          className="text-xs h-7 px-2 min-w-[60px]"
+                          onClick={() => handleYearSelect(year)}
+                        >
+                          {year}
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    {/* Botón para avanzar año */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={navigateToNextYear}
+                      className="h-7 w-7 p-0"
+                      title="Año siguiente"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
