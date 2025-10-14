@@ -91,6 +91,38 @@ export async function POST(request: NextRequest) {
     const results = []
 
     for (const row of data) {
+      // Validar datos requeridos (permitir cadenas vacías pero no null/undefined)
+      if (!row.year || !row.mes || !row.fecha || 
+          row.actividad === undefined || row.actividad === null ||
+          row.concepto === undefined || row.concepto === null) {
+        console.log("Validation error - missing required fields:", {
+          year: row.year,
+          mes: row.mes,
+          fecha: row.fecha,
+          actividad: row.actividad,
+          concepto: row.concepto
+        })
+        return NextResponse.json(
+          { error: "Faltan campos requeridos" },
+          { status: 400 }
+        )
+      }
+
+      // Validar fecha
+      const fecha = new Date(row.fecha)
+      if (isNaN(fecha.getTime())) {
+        console.log("Validation error - invalid date:", row.fecha)
+        return NextResponse.json(
+          { error: "Fecha inválida" },
+          { status: 400 }
+        )
+      }
+
+      // Validar valores numéricos
+      const sale = Number(row.sale) || 0
+      const entra = Number(row.entra) || 0
+      const saldo = Number(row.saldo) || 0
+
       if (row.isNew) {
         // Insertar nueva fila
         const result = await executeQuery(
@@ -102,9 +134,9 @@ export async function POST(request: NextRequest) {
             row.mes,
             row.fecha,
             row.actividad,
-            row.sale,
-            row.entra,
-            row.saldo,
+            sale,
+            entra,
+            saldo,
             row.concepto,
             userId
           ]
@@ -119,9 +151,9 @@ export async function POST(request: NextRequest) {
           [
             row.fecha,
             row.actividad,
-            row.sale,
-            row.entra,
-            row.saldo,
+            sale,
+            entra,
+            saldo,
             row.concepto,
             userId,
             row.id

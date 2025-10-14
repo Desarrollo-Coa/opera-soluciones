@@ -91,6 +91,46 @@ export async function POST(request: NextRequest) {
     const results = []
 
     for (const row of data) {
+      // Validar datos requeridos (permitir cadenas vacías pero no null/undefined)
+      if (!row.year || !row.mes || !row.fecha || 
+          row.proveedor === undefined || row.proveedor === null ||
+          row.objeto === undefined || row.objeto === null ||
+          row.nit === undefined || row.nit === null ||
+          row.numero_factura === undefined || row.numero_factura === null ||
+          row.obra === undefined || row.obra === null) {
+        console.log("Validation error - missing required fields:", {
+          year: row.year,
+          mes: row.mes,
+          fecha: row.fecha,
+          proveedor: row.proveedor,
+          objeto: row.objeto,
+          nit: row.nit,
+          numero_factura: row.numero_factura,
+          obra: row.obra
+        })
+        return NextResponse.json(
+          { error: "Faltan campos requeridos" },
+          { status: 400 }
+        )
+      }
+
+      // Validar fecha
+      const fecha = new Date(row.fecha)
+      if (isNaN(fecha.getTime())) {
+        console.log("Validation error - invalid date:", row.fecha)
+        return NextResponse.json(
+          { error: "Fecha inválida" },
+          { status: 400 }
+        )
+      }
+
+      // Validar valores numéricos
+      const pago = Number(row.pago) || 0
+      const valor_neto = Number(row.valor_neto) || 0
+      const iva = Number(row.iva) || 0
+      const retencion = Number(row.retencion) || 0
+      const total = Number(row.total) || 0
+
       if (row.isNew) {
         // Insertar nueva fila
         const result = await executeQuery(
@@ -102,12 +142,12 @@ export async function POST(request: NextRequest) {
             row.mes,
             row.fecha,
             row.proveedor,
-            row.pago,
+            pago,
             row.objeto,
-            row.valor_neto,
-            row.iva,
-            row.retencion,
-            row.total,
+            valor_neto,
+            iva,
+            retencion,
+            total,
             row.nit,
             row.numero_factura,
             row.obra,
@@ -124,12 +164,12 @@ export async function POST(request: NextRequest) {
           [
             row.fecha,
             row.proveedor,
-            row.pago,
+            pago,
             row.objeto,
-            row.valor_neto,
-            row.iva,
-            row.retencion,
-            row.total,
+            valor_neto,
+            iva,
+            retencion,
+            total,
             row.nit,
             row.numero_factura,
             row.obra,

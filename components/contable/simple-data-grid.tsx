@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Save, Trash2, X, Undo2, Filter, Search } from "lucide-react"
@@ -60,9 +60,19 @@ interface SimpleDataGridProps {
   year: number
   mes: string
   type: 'payroll' | 'expenses' | 'transfers'
+  // Props para botones externos
+  showFilters?: boolean
+  setShowFilters?: (show: boolean) => void
+  isSaving?: boolean
+  setIsSaving?: (saving: boolean) => void
+  hasChanges?: boolean
+  setHasChanges?: (hasChanges: boolean) => void
+  addRow?: () => void
+  saveChanges?: () => void
+  handleCancel?: () => void
 }
 
-export function SimpleDataGrid({ 
+export const SimpleDataGrid = forwardRef<any, SimpleDataGridProps>(({ 
   data, 
   onSave, 
   onDelete, 
@@ -72,8 +82,18 @@ export function SimpleDataGrid({
   onFiltersActiveChange,
   year, 
   mes, 
-  type 
-}: SimpleDataGridProps) {
+  type,
+  // Props para botones externos
+  showFilters: externalShowFilters,
+  setShowFilters: externalSetShowFilters,
+  isSaving: externalIsSaving,
+  setIsSaving: externalSetIsSaving,
+  hasChanges: externalHasChanges,
+  setHasChanges: externalSetHasChanges,
+  addRow: externalAddRow,
+  saveChanges: externalSaveChanges,
+  handleCancel: externalHandleCancel
+}, ref) => {
   const [rows, setRows] = useState<any[]>([])
   const [filteredRows, setFilteredRows] = useState<any[]>([])
   const [hasChanges, setHasChanges] = useState(false)
@@ -116,9 +136,9 @@ export function SimpleDataGrid({
         if (cellValue === null || cellValue === undefined) return false
         
         // Para campos numéricos, buscar coincidencia exacta o parcial
-        if (['valor', 'iva', 'total', 'valor_neto', 'sale', 'entra', 'saldo'].includes(columnKey)) {
-          const numericValue = parseFloat(cellValue)
-          const filterNumeric = parseFloat(filterValue.replace(/[^\d.-]/g, ''))
+        if (['valor', 'iva', 'total', 'valor_neto', 'sale', 'entra', 'saldo', 'retencion', 'pago'].includes(columnKey)) {
+          const numericValue = parseFloat(cellValue) || 0
+          const filterNumeric = parseFloat(filterValue.replace(/[^\d.-]/g, '')) || 0
           return !isNaN(numericValue) && !isNaN(filterNumeric) && 
                  numericValue.toString().includes(filterNumeric.toString())
         }
@@ -159,7 +179,14 @@ export function SimpleDataGrid({
   // Notificar cambios al componente padre
   useEffect(() => {
     onUnsavedChangesChange?.(hasChanges)
-  }, [hasChanges, onUnsavedChangesChange])
+    // Notificar cambios de estado a los botones externos
+    if (externalSetIsSaving) {
+      externalSetIsSaving(isSaving)
+    }
+    if (externalSetHasChanges) {
+      externalSetHasChanges(hasChanges)
+    }
+  }, [hasChanges, isSaving, onUnsavedChangesChange, externalSetIsSaving, externalSetHasChanges])
 
   // Notificar cambios de datos para actualizar totales en tiempo real
   useEffect(() => {
@@ -244,13 +271,13 @@ export function SimpleDataGrid({
       // Calcular total para gastos y facturación (NO para transferencias - saldo es manual)
       if ((type === 'expenses' || type === 'payroll') && (columnKey === 'valor' || columnKey === 'iva' || columnKey === 'valor_neto' || columnKey === 'retencion')) {
         if (type === 'expenses') {
-          const valor = columnKey === 'valor' ? value : newRows[rowIndex].valor
-          const iva = columnKey === 'iva' ? value : newRows[rowIndex].iva
+          const valor = Number(columnKey === 'valor' ? value : newRows[rowIndex].valor) || 0
+          const iva = Number(columnKey === 'iva' ? value : newRows[rowIndex].iva) || 0
           newRows[rowIndex].total = valor + iva
         } else if (type === 'payroll') {
-          const valor_neto = columnKey === 'valor_neto' ? value : newRows[rowIndex].valor_neto
-          const iva = columnKey === 'iva' ? value : newRows[rowIndex].iva
-          const retencion = columnKey === 'retencion' ? value : newRows[rowIndex].retencion
+          const valor_neto = Number(columnKey === 'valor_neto' ? value : newRows[rowIndex].valor_neto) || 0
+          const iva = Number(columnKey === 'iva' ? value : newRows[rowIndex].iva) || 0
+          const retencion = Number(columnKey === 'retencion' ? value : newRows[rowIndex].retencion) || 0
           newRows[rowIndex].total = valor_neto + iva - retencion
         }
       }
@@ -386,6 +413,23 @@ export function SimpleDataGrid({
       onCancel?.()
     }
   }, [hasChanges, onCancel])
+
+  // Usar estados externos si están disponibles, sino usar internos
+  const currentShowFilters = externalShowFilters !== undefined ? externalShowFilters : showFilters
+  const currentSetShowFilters = externalSetShowFilters || setShowFilters
+  const currentIsSaving = externalIsSaving !== undefined ? externalIsSaving : isSaving
+  const currentSetIsSaving = externalSetIsSaving || setIsSaving
+  const currentHasChanges = externalHasChanges !== undefined ? externalHasChanges : hasChanges
+  const currentAddRow = addRow
+  const currentSaveChanges = saveChanges
+  const currentHandleCancel = handleCancel
+
+  // Exponer funciones internas al componente padre
+  useImperativeHandle(ref, () => ({
+    addRow: addRow,
+    saveChanges: saveChanges,
+    handleCancel: handleCancel
+  }), [addRow, saveChanges, handleCancel])
 
   // Confirmar cancelar
   const confirmCancel = useCallback(() => {
@@ -532,27 +576,29 @@ export function SimpleDataGrid({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end items-center">
+      {/* Solo mostrar botones si no hay botones externos */}
+      {!externalAddRow && (
+        <div className="flex justify-end items-center">
         <div className="flex gap-2">
           <Button 
-            onClick={() => setShowFilters(!showFilters)} 
+              onClick={() => currentSetShowFilters(!currentShowFilters)} 
             size="sm"
-            variant={showFilters ? "default" : "outline"}
+              variant={currentShowFilters ? "default" : "outline"}
           >
             <Filter className="h-4 w-4 mr-2" />
-            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+              {currentShowFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
           </Button>
           <Button 
-            onClick={addRow} 
+              onClick={currentAddRow} 
             size="sm"
             disabled={isSaving}
           >
             <Plus className="h-4 w-4 mr-2" />
             Agregar Fila
           </Button>
-          {hasChanges && (
+            {currentHasChanges && (
             <Button 
-              onClick={saveChanges} 
+                onClick={currentSaveChanges} 
               size="sm" 
               variant="default"
               disabled={isSaving}
@@ -562,13 +608,14 @@ export function SimpleDataGrid({
             </Button>
           )}
           {onCancel && (
-            <Button onClick={handleCancel} size="sm" variant="outline">
+              <Button onClick={currentHandleCancel} size="sm" variant="outline">
               <X className="h-4 w-4 mr-2" />
               Cerrar
             </Button>
           )}
         </div>
       </div>
+      )}
       
       <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
@@ -588,7 +635,7 @@ export function SimpleDataGrid({
               </tr>
               
               {/* Fila de filtros */}
-              {showFilters && (
+              {currentShowFilters && (
                 <tr className="bg-blue-700">
                   {columns.map((column) => (
                     <th 
@@ -692,4 +739,6 @@ export function SimpleDataGrid({
       />
     </div>
   )
-}
+})
+
+SimpleDataGrid.displayName = "SimpleDataGrid"

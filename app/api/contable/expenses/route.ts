@@ -91,6 +91,42 @@ export async function POST(request: NextRequest) {
     const results = []
 
     for (const row of data) {
+      // Validar datos requeridos (permitir cadenas vacías pero no null/undefined)
+      if (!row.year || !row.mes || !row.fecha || 
+          row.numero_facturacion === undefined || row.numero_facturacion === null ||
+          row.cliente === undefined || row.cliente === null ||
+          row.servicio === undefined || row.servicio === null ||
+          row.nit === undefined || row.nit === null) {
+        console.log("Validation error - missing required fields:", {
+          year: row.year,
+          mes: row.mes,
+          fecha: row.fecha,
+          numero_facturacion: row.numero_facturacion,
+          cliente: row.cliente,
+          servicio: row.servicio,
+          nit: row.nit
+        })
+        return NextResponse.json(
+          { error: "Faltan campos requeridos" },
+          { status: 400 }
+        )
+      }
+
+      // Validar fecha
+      const fecha = new Date(row.fecha)
+      if (isNaN(fecha.getTime())) {
+        console.log("Validation error - invalid date:", row.fecha)
+        return NextResponse.json(
+          { error: "Fecha inválida" },
+          { status: 400 }
+        )
+      }
+
+      // Validar valores numéricos
+      const valor = Number(row.valor) || 0
+      const iva = Number(row.iva) || 0
+      const total = Number(row.total) || 0
+
       if (row.isNew) {
         // Insertar nueva fila
         const result = await executeQuery(
@@ -105,9 +141,9 @@ export async function POST(request: NextRequest) {
             row.cliente,
             row.servicio,
             row.nit,
-            row.valor,
-            row.iva,
-            row.total,
+            valor,
+            iva,
+            total,
             userId
           ]
         )
@@ -124,9 +160,9 @@ export async function POST(request: NextRequest) {
             row.cliente,
             row.servicio,
             row.nit,
-            row.valor,
-            row.iva,
-            row.total,
+            valor,
+            iva,
+            total,
             userId,
             row.id
           ]

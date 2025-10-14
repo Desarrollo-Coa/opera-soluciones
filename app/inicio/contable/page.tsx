@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, Suspense, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, Calculator, FileText, Calendar, Users, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, Calculator, FileText, Calendar, Users, ChevronLeft, ChevronRight, Filter, Plus, Save, X } from "lucide-react"
 import { SimpleDataGrid } from "@/components/contable/simple-data-grid"
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes"
 import { DiscardChangesDialog } from "@/components/ui/discard-changes-dialog"
@@ -71,7 +71,6 @@ function ContableContent() {
   const [expenseData, setExpenseData] = useState<ExpenseData[]>([])
   const [transferData, setTransferData] = useState<TransferData[]>([])
   const [dataLoading, setDataLoading] = useState(false)
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   
   // Estados para datos en tiempo real (incluyendo cambios no guardados)
   const [currentPayrollData, setCurrentPayrollData] = useState<PayrollData[]>([])
@@ -80,6 +79,14 @@ function ContableContent() {
   
   // Estados para filtros activos
   const [hasActiveFilters, setHasActiveFilters] = useState(false)
+
+  // Estados para el SimpleDataGrid
+  const [showFilters, setShowFilters] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // Usar el mismo estado para hasChanges y hasUnsavedChanges
+  const [hasChanges, setHasChanges] = useState(false)
+  const hasUnsavedChanges = hasChanges
 
   // Estado para el año central del selector (navegación infinita)
   const [centerYear, setCenterYear] = useState<number>(new Date().getFullYear())
@@ -103,7 +110,7 @@ function ContableContent() {
   } = useUnsavedChanges({
     hasUnsavedChanges,
     onConfirmDiscard: () => {
-      setHasUnsavedChanges(false)
+      setHasChanges(false)
       // Limpiar datos al descartar
       setPayrollData([])
       setExpenseData([])
@@ -211,41 +218,107 @@ function ContableContent() {
       setPayrollData([])
       setExpenseData([])
       setTransferData([])
-      setHasUnsavedChanges(false)
+      setCurrentPayrollData([])
+      setCurrentExpenseData([])
+      setCurrentTransferData([])
+      setHasChanges(false)
     })
   }
 
   // Navegar al año anterior
   const navigateToPreviousYear = () => {
     const newCenterYear = centerYear - 1
-    setCenterYear(newCenterYear)
     // Si el año seleccionado es el año central anterior, mantenerlo seleccionado
     if (selectedYear === centerYear) {
-      setSelectedYear(newCenterYear)
+      handleStateChange(() => {
+        setCenterYear(newCenterYear)
+        setSelectedYear(newCenterYear)
+        setSelectedMonth(null) // Reset month when year changes
+        setPayrollData([])
+        setExpenseData([])
+        setTransferData([])
+        setCurrentPayrollData([])
+        setCurrentExpenseData([])
+        setCurrentTransferData([])
+        setHasChanges(false)
+      })
+    } else {
+      // Solo cambiar el centro si no afecta el año seleccionado
+      setCenterYear(newCenterYear)
     }
   }
 
   // Navegar al año siguiente
   const navigateToNextYear = () => {
     const newCenterYear = centerYear + 1
-    setCenterYear(newCenterYear)
     // Si el año seleccionado es el año central siguiente, mantenerlo seleccionado
     if (selectedYear === centerYear) {
-      setSelectedYear(newCenterYear)
+      handleStateChange(() => {
+        setCenterYear(newCenterYear)
+        setSelectedYear(newCenterYear)
+        setSelectedMonth(null) // Reset month when year changes
+        setPayrollData([])
+        setExpenseData([])
+        setTransferData([])
+        setCurrentPayrollData([])
+        setCurrentExpenseData([])
+        setCurrentTransferData([])
+        setHasChanges(false)
+      })
+    } else {
+      // Solo cambiar el centro si no afecta el año seleccionado
+      setCenterYear(newCenterYear)
     }
+  }
+
+  // Referencias para las funciones del SimpleDataGrid
+  const simpleDataGridRef = useRef<any>(null)
+
+  // Agregar nueva fila - delegar al SimpleDataGrid
+  const addRow = () => {
+    if (simpleDataGridRef.current?.addRow) {
+      simpleDataGridRef.current.addRow()
+    }
+  }
+
+  // Guardar cambios - delegar al SimpleDataGrid
+  const saveChanges = async () => {
+    if (simpleDataGridRef.current?.saveChanges) {
+      await simpleDataGridRef.current.saveChanges()
+    }
+  }
+
+  // Manejar cancelar - delegar al SimpleDataGrid
+  const handleCancel = () => {
+    if (simpleDataGridRef.current?.handleCancel) {
+      simpleDataGridRef.current.handleCancel()
+    }
+  }
+
+  // Función onCancel para el SimpleDataGrid
+  const onCancel = () => {
+    setSelectedYear(null)
+    setSelectedMonth(null)
+    setPayrollData([])
+    setExpenseData([])
+    setTransferData([])
+    setCurrentPayrollData([])
+    setCurrentExpenseData([])
+    setCurrentTransferData([])
+    setHasChanges(false)
   }
 
   const handleMonthSelect = (month: string) => {
     handleStateChange(() => {
       setSelectedMonth(month)
-      setHasUnsavedChanges(false)
+      setHasChanges(false)
     })
   }
 
   const handleModuleChange = (module: 'gastos' | 'facturacion' | 'bancos') => {
     handleStateChange(() => {
       setActiveSection(module)
-      setHasUnsavedChanges(false)
+      setHasChanges(false)
       // Limpiar datos en tiempo real al cambiar de módulo
       setCurrentPayrollData([])
       setCurrentExpenseData([])
@@ -335,7 +408,7 @@ function ContableContent() {
 
       const result = await response.json()
       setPayrollData(result.data)
-      setHasUnsavedChanges(false)
+      setHasChanges(false)
       return result
     } catch (error) {
       console.error("Error saving payroll data:", error)
@@ -378,7 +451,7 @@ function ContableContent() {
 
       const result = await response.json()
       setExpenseData(result.data)
-      setHasUnsavedChanges(false)
+      setHasChanges(false)
       return result
     } catch (error) {
       console.error("Error saving expense data:", error)
@@ -421,7 +494,7 @@ function ContableContent() {
 
       const result = await response.json()
       setTransferData(result.data)
-      setHasUnsavedChanges(false)
+      setHasChanges(false)
       return result
     } catch (error) {
       console.error("Error saving transfer data:", error)
@@ -622,46 +695,101 @@ function ContableContent() {
               )}
               
               <CardContent className="space-y-4">
-                {/* Year Selector */}
+                {/* Year Selector con Acciones */}
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Seleccionar Año</h3>
-                  <div className="flex items-center gap-2">
-                    {/* Botón para retroceder año */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={navigateToPreviousYear}
-                      className="h-7 w-7 p-0"
-                      title="Año anterior"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    
-                    {/* Años disponibles (dinámicos) */}
-                    <div className="flex gap-1.5">
-                      {generateYears(centerYear).map((year) => (
-                        <Button
-                          key={year}
-                          variant={selectedYear === year ? 'default' : 'outline'}
-                          size="sm"
-                          className="text-xs h-7 px-2 min-w-[60px]"
-                          onClick={() => handleYearSelect(year)}
-                        >
-                          {year}
-                        </Button>
-                      ))}
+                  <div className="flex items-center gap-4">
+                    {/* Selector de años */}
+                    <div className="flex items-center gap-2">
+                      {/* Botón para retroceder año */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={navigateToPreviousYear}
+                        className="h-7 w-7 p-0"
+                        title="Año anterior"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      
+                      {/* Años disponibles (dinámicos) */}
+                      <div className="flex gap-1.5">
+                        {generateYears(centerYear).map((year) => (
+                      <Button
+                        key={year}
+                        variant={selectedYear === year ? 'default' : 'outline'}
+                        size="sm"
+                            className="text-xs h-7 px-2 min-w-[60px]"
+                        onClick={() => handleYearSelect(year)}
+                      >
+                        {year}
+                      </Button>
+                    ))}
+                      </div>
+                      
+                      {/* Botón para avanzar año */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={navigateToNextYear}
+                        className="h-7 w-7 p-0"
+                        title="Año siguiente"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
-                    
-                    {/* Botón para avanzar año */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={navigateToNextYear}
-                      className="h-7 w-7 p-0"
-                      title="Año siguiente"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+
+                    {/* Acciones (solo iconos) - DESPUÉS del selector - Solo cuando hay tabla visible */}
+                    {selectedYear && selectedMonth && (
+                      <div className="flex items-center gap-3 ml-4">
+                        {/* Mostrar/Ocultar Filtros */}
+                        <Button
+                          variant={showFilters ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setShowFilters(!showFilters)}
+                          className="h-7 w-10 p-0"
+                          title={showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+                        >
+                          <Filter className="h-4 w-4" />
+                        </Button>
+
+                        {/* Agregar Fila */}
+                        <Button
+                          size="sm"
+                          onClick={addRow}
+                          disabled={isSaving}
+                          className="h-7 w-10 p-0"
+                          title="Agregar Fila"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+
+                        {/* Guardar (solo si hay cambios) */}
+                        {hasChanges && (
+                          <Button
+                            onClick={saveChanges}
+                            size="sm"
+                            variant="default"
+                            disabled={isSaving}
+                            className="h-7 w-10 p-0"
+                            title={isSaving ? 'Guardando...' : 'Guardar'}
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Cerrar */}
+                        <Button
+                          onClick={handleCancel}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 w-10 p-0"
+                          title="Cerrar"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -683,6 +811,7 @@ function ContableContent() {
                     </div>
                   ) : (
                     <SimpleDataGrid
+                      ref={simpleDataGridRef}
                       data={activeSection === 'gastos' ? payrollData : 
                             activeSection === 'facturacion' ? expenseData : 
                             transferData}
@@ -701,9 +830,9 @@ function ContableContent() {
                         setCurrentPayrollData([])
                         setCurrentExpenseData([])
                         setCurrentTransferData([])
-                        setHasUnsavedChanges(false)
+                        setHasChanges(false)
                       }}
-                      onUnsavedChangesChange={setHasUnsavedChanges}
+                      onUnsavedChangesChange={setHasChanges}
                       onDataChange={handleDataChange}
                       onFiltersActiveChange={handleFiltersActiveChange}
                       year={selectedYear}
@@ -711,6 +840,16 @@ function ContableContent() {
                       type={activeSection === 'gastos' ? 'payroll' : 
                             activeSection === 'facturacion' ? 'expenses' : 
                             'transfers'}
+                      // Pasar estados y funciones para los botones externos
+                      showFilters={showFilters}
+                      setShowFilters={setShowFilters}
+                      isSaving={isSaving}
+                      setIsSaving={setIsSaving}
+                      hasChanges={hasChanges}
+                      setHasChanges={setHasChanges}
+                      addRow={addRow}
+                      saveChanges={saveChanges}
+                      handleCancel={handleCancel}
                     />
                   )}
                 </div>
