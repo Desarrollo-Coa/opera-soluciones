@@ -322,72 +322,84 @@ export default function EmployeesPage() {
   return (
     <DashboardLayout userRole={user?.role || 'ADMIN'}>
       <div className="h-[calc(100vh-8rem)] flex flex-col -m-4 sm:-m-8 p-4 sm:p-8">
-        {/* Top-right controls */}
+        {/* Toolbar con filtros a la izquierda e iconos a la derecha */}
         <div className="flex-shrink-0 mb-2">
-          <div className="flex justify-end items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="h-8 px-3"
-              title="Filtros"
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
-            {canCreateEmployees && (
-              <Button 
-                size="sm"
-                className="h-8 px-3"
-                onClick={() => {
-                  router.push('/inicio/empleados/action')
-                }}
-                title="Nuevo Empleado"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-          {showFilters && (
-            <Card className="mt-2">
-              <CardContent className="p-3">
-                <div className="flex flex-wrap gap-3 items-end">
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="text-sm font-medium mb-2 block">Rol</label>
-                    <Select value={roleFilter} onValueChange={setRoleFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos los roles" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos los roles</SelectItem>
-                        <SelectItem value="Administrador">Administrador</SelectItem>
-                        <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
-                        <SelectItem value="Auditor">Auditor</SelectItem>
-                        <SelectItem value="Empleado">Empleado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="text-sm font-medium mb-2 block">Estado</label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos los estados" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos los estados</SelectItem>
-                        <SelectItem value="Activo">Activo</SelectItem>
-                        <SelectItem value="Inactivo">Inactivo</SelectItem>
-                        <SelectItem value="Terminado">Terminado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2 h-8">
-                    <X className="h-4 w-4" />
-                    Limpiar
-                  </Button>
+          <div className="flex items-end justify-between gap-3">
+            {/* Filtros inline */}
+            <div className="flex flex-1 flex-wrap items-end gap-3 min-w-0">
+              <div className="w-full sm:w-64">
+                <label className="text-xs font-medium mb-1 block">Buscar</label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Nombre, cédula o email"
+                    className="pl-8 h-9"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+              <div className="w-40">
+                <label className="text-xs font-medium mb-1 block">Rol</label>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="Administrador">Administrador</SelectItem>
+                    <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
+                    <SelectItem value="Auditor">Auditor</SelectItem>
+                    <SelectItem value="Empleado">Empleado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-40">
+                <label className="text-xs font-medium mb-1 block">Estado</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="Activo">Activo</SelectItem>
+                    <SelectItem value="Inactivo">Inactivo</SelectItem>
+                    <SelectItem value="Terminado">Terminado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={clearFilters} className="h-9 px-3">
+                  <X className="h-4 w-4 mr-1" /> Limpiar
+                </Button>
+              </div>
+            </div>
+
+            {/* Iconos a la derecha */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-8 px-3"
+                title="Mostrar/Ocultar filtros"
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
+              {canCreateEmployees && (
+                <Button 
+                  size="sm"
+                  className="h-8 px-3"
+                  onClick={() => {
+                    router.push('/inicio/empleados/action')
+                  }}
+                  title="Nuevo Empleado"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Table */}
