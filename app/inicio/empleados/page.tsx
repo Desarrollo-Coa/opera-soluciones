@@ -251,16 +251,16 @@ export default function EmployeesPage() {
     if (diffDays === undefined || diffDays === null) return "border-b hover:bg-gray-50"
 
     if (diffDays < 0) {
-      // Contract expired: strong red (IndianRed) background, white text
-      return "border-b bg-[#CD5C5C] text-white hover:bg-[#CD5C5C]"
+      // Contract expired: Golden yellow background, dark text
+      return "border-b bg-[#EEB600] text-gray-800 hover:bg-[#D4A000]"
     }
     if (diffDays <= 7) {
-      // Light Coral for <= 7 days
-      return "border-b bg-[#F08080] hover:bg-[#F08080]"
+      // Light yellow for <= 7 days (urgent)
+      return "border-b bg-[#F8DA45] text-gray-800 hover:bg-[#E6C400]"
     }
     if (diffDays <= 15) {
-      // Salmon for <= 15 days
-      return "border-b bg-[#FA8072] hover:bg-[#FA8072]"
+      // Bright yellow for <= 15 days (warning)
+      return "border-b bg-[#FFFF71] text-gray-800 hover:bg-[#E6E600]"
     }
     return "border-b hover:bg-gray-50"
   }
@@ -269,6 +269,18 @@ export default function EmployeesPage() {
     const diffDays = employee.days_until_termination
     if (diffDays === undefined || diffDays === null) return false
     return diffDays < 0
+  }
+
+  const isUrgent = (employee: Employee) => {
+    const diffDays = employee.days_until_termination
+    if (diffDays === undefined || diffDays === null) return false
+    return diffDays <= 7
+  }
+
+  const isWarning = (employee: Employee) => {
+    const diffDays = employee.days_until_termination
+    if (diffDays === undefined || diffDays === null) return false
+    return diffDays <= 15
   }
 
   // Check if user can create employees (only ADMIN and HR)
@@ -473,40 +485,40 @@ export default function EmployeesPage() {
                         <tr key={employee.id} className={`${getRowClasses(employee)} even:bg-gray-50`}>
                           <td className="p-2 sm:p-3 border border-black">
                             <div className="flex items-center gap-2">
-                              <Avatar className={`h-7 w-7 sm:h-8 sm:w-8 ${isExpired(employee) ? 'ring-1 ring-white/70' : ''}`}>
+                              <Avatar className={`h-7 w-7 sm:h-8 sm:w-8 ${(isExpired(employee) || isUrgent(employee) || isWarning(employee)) ? 'ring-1 ring-gray-600/70' : ''}`}>
                                 <AvatarImage src={employee.profile_picture || ""} alt={`${employee.first_name} ${employee.last_name}`} />
-                                <AvatarFallback className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border border-white/40' : ''}`}>
+                                <AvatarFallback className={`text-xs ${(isExpired(employee) || isUrgent(employee) || isWarning(employee)) ? 'bg-gray-600/20 text-gray-800 border border-gray-600/40' : ''}`}>
                                   {employee.first_name.charAt(0)}{employee.last_name.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className={`text-[13px] sm:text-sm font-semibold ${isExpired(employee) ? 'text-white' : 'text-gray-800'}`} title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</div>
-                                <div className={`text-[11px] sm:text-xs ${isExpired(employee) ? 'text-white/80' : 'text-gray-500'}`}>ID: {employee.id}</div>
+                                <div className={`text-[13px] sm:text-sm font-semibold ${(isExpired(employee) || isUrgent(employee) || isWarning(employee)) ? 'text-gray-800' : 'text-gray-800'}`} title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</div>
+                                <div className={`text-[11px] sm:text-xs ${(isExpired(employee) || isUrgent(employee) || isWarning(employee)) ? 'text-gray-600' : 'text-gray-500'}`}>ID: {employee.id}</div>
                               </div>
                             </div>
                           </td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-800'} whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.email}>{employee.email}</td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-800'}`}>{employee.document_number || '-'}</td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-800'} whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.position || '-' }>{employee.position || '-'}</td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm font-semibold tabular-nums text-right border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-900'}`}>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.email}>{employee.email}</td>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black text-gray-800`}>{employee.document_number || '-'}</td>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.position || '-' }>{employee.position || '-'}</td>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm font-semibold tabular-nums text-right border border-black text-gray-900`}>
                             {formatCurrency(employee.salary)}
                           </td>
                           <td className="p-2 sm:p-3 border border-black">
-                            <Badge variant={getRoleBadgeVariant(employee.role_name)} className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border-white/30' : ''}`}>
+                            <Badge variant={getRoleBadgeVariant(employee.role_name)} className="text-xs">
                               {employee.role_name}
                             </Badge>
                           </td>
                           <td className="p-2 sm:p-3 border border-black">
-                            <Badge variant={getStatusBadgeVariant(employee.contract_status_name)} className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border-white/30' : ''}`}>
+                            <Badge variant={getStatusBadgeVariant(employee.contract_status_name)} className="text-xs">
                               {employee.contract_status_name}
                             </Badge>
                           </td>
                           <td className="p-2 sm:p-3 border border-black">
-                            <Badge variant={employee.is_active ? "default" : "secondary"} className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border-white/30' : ''}`}>
+                            <Badge variant={employee.is_active ? "default" : "secondary"} className="text-xs">
                               {employee.is_active ? "Activo" : "Inactivo"}
                             </Badge>
                           </td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm tabular-nums text-right border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-900'}`}>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm tabular-nums text-right border border-black text-gray-900`}>
                             {employee.days_until_termination !== undefined && employee.days_until_termination !== null
                               ? employee.days_until_termination
                               : '-'}
@@ -514,7 +526,7 @@ export default function EmployeesPage() {
                           <td className="p-2 sm:p-3 text-right border border-black">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className={`h-7 w-7 p-0 ${isExpired(employee) ? 'text-white hover:text-white/90' : ''}`} title="Acciones">
+                                <Button variant="ghost" className="h-7 w-7 p-0" title="Acciones">
                                   <MoreHorizontal className="h-3 w-3" />
                                 </Button>
                               </DropdownMenuTrigger>
