@@ -403,7 +403,8 @@ function ContableContent() {
       })
 
       if (!response.ok) {
-        throw new Error('Error al guardar datos')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al guardar datos')
       }
 
       const result = await response.json()
@@ -446,7 +447,8 @@ function ContableContent() {
       })
 
       if (!response.ok) {
-        throw new Error('Error al guardar datos')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al guardar datos')
       }
 
       const result = await response.json()
@@ -489,7 +491,8 @@ function ContableContent() {
       })
 
       if (!response.ok) {
-        throw new Error('Error al guardar datos')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al guardar datos')
       }
 
       const result = await response.json()

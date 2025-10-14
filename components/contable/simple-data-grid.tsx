@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useImperativeHandle, forwardRef } fro
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Save, Trash2, X, Undo2, Filter, Search } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { NumericFormat } from "react-number-format"
 import { DiscardChangesDialog } from "@/components/ui/discard-changes-dialog"
 
@@ -94,6 +94,7 @@ export const SimpleDataGrid = forwardRef<any, SimpleDataGridProps>(({
   saveChanges: externalSaveChanges,
   handleCancel: externalHandleCancel
 }, ref) => {
+  const { toast } = useToast()
   const [rows, setRows] = useState<any[]>([])
   const [filteredRows, setFilteredRows] = useState<any[]>([])
   const [hasChanges, setHasChanges] = useState(false)
@@ -343,16 +344,29 @@ export const SimpleDataGrid = forwardRef<any, SimpleDataGridProps>(({
         title: "Éxito",
         description: "Datos guardados correctamente"
       })
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error saving data:", error)
+      
+      // Extraer mensaje específico del error
+      let errorMessage = "No se pudieron guardar los datos"
+      
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error?.message) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
       toast({
-        title: "Error",
-        description: "No se pudieron guardar los datos",
+        title: "Error al guardar",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
       setIsSaving(false)
     }
-  }, [rows, onSave, onDelete, isSaving])
+  }, [rows, onSave, onDelete, isSaving, toast])
 
   // Contar cambios sin guardar
   const getUnsavedChangesCount = useCallback(() => {

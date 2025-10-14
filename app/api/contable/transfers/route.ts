@@ -102,8 +102,19 @@ export async function POST(request: NextRequest) {
           actividad: row.actividad,
           concepto: row.concepto
         })
+        
+        // Crear mensaje específico sobre qué campos faltan
+        const missingFields = []
+        if (!row.year) missingFields.push("año")
+        if (!row.mes) missingFields.push("mes")
+        if (!row.fecha) missingFields.push("fecha")
+        if (row.actividad === undefined || row.actividad === null) missingFields.push("actividad")
+        if (row.concepto === undefined || row.concepto === null) missingFields.push("concepto")
+        
+        const errorMessage = `Los siguientes campos son obligatorios: ${missingFields.join(", ")}`
+        
         return NextResponse.json(
-          { error: "Faltan campos requeridos" },
+          { error: errorMessage },
           { status: 400 }
         )
       }
@@ -113,7 +124,7 @@ export async function POST(request: NextRequest) {
       if (isNaN(fecha.getTime())) {
         console.log("Validation error - invalid date:", row.fecha)
         return NextResponse.json(
-          { error: "Fecha inválida" },
+          { error: "Fecha inválida. Por favor selecciona una fecha válida." },
           { status: 400 }
         )
       }
