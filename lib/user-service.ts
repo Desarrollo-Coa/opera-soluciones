@@ -89,6 +89,8 @@ export interface UserResponse {
   profile_picture?: string
   is_active?: boolean
   created_at: string
+  termination_date?: string
+  days_until_termination?: number
 }
 
 /**
@@ -155,6 +157,10 @@ export class UserService {
       throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 
+    const daysUntil = user.termination_date
+      ? Math.floor((new Date(user.termination_date).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime()) / (1000 * 60 * 60 * 24))
+      : undefined
+
     return {
       id: user.id,
       first_name: user.first_name,
@@ -168,7 +174,9 @@ export class UserService {
       salary: user.salary,
       profile_picture: user.profile_picture,
       is_active: Boolean(user.is_active),
-      created_at: user.created_at.toISOString()
+      created_at: user.created_at.toISOString(),
+      termination_date: user.termination_date ? new Date(user.termination_date).toISOString() : undefined,
+      days_until_termination: daysUntil
     }
   }
 
@@ -182,6 +190,10 @@ export class UserService {
       return null
     }
 
+    const daysUntil = user.termination_date
+      ? Math.floor((new Date(user.termination_date).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime()) / (1000 * 60 * 60 * 24))
+      : undefined
+
     return {
       id: user.id,
       first_name: user.first_name,
@@ -195,7 +207,9 @@ export class UserService {
       salary: user.salary,
       profile_picture: user.profile_picture,
       is_active: Boolean(user.is_active),
-      created_at: user.created_at.toISOString()
+      created_at: user.created_at.toISOString(),
+      termination_date: user.termination_date ? new Date(user.termination_date).toISOString() : undefined,
+      days_until_termination: daysUntil
     }
   }
 
@@ -219,7 +233,11 @@ export class UserService {
       salary: user.salary,
       profile_picture: user.profile_picture,
       is_active: Boolean(user.is_active),
-      created_at: user.created_at.toISOString()
+      created_at: user.created_at.toISOString(),
+      termination_date: user.termination_date ? new Date(user.termination_date).toISOString() : undefined,
+      days_until_termination: user.termination_date
+        ? Math.floor((new Date(user.termination_date).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime()) / (1000 * 60 * 60 * 24))
+        : undefined
     }))
   }
 
@@ -236,6 +254,10 @@ export class UserService {
       throw new Error("Usuario no encontrado")
     }
 
+    const daysUntil = updatedUser.termination_date
+      ? Math.floor((new Date(updatedUser.termination_date).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime()) / (1000 * 60 * 60 * 24))
+      : undefined
+
     return {
       id: updatedUser.id,
       first_name: updatedUser.first_name,
@@ -249,7 +271,9 @@ export class UserService {
       position: updatedUser.position,
       salary: updatedUser.salary,
       profile_picture: updatedUser.profile_picture,
-      created_at: updatedUser.created_at.toISOString()
+      created_at: updatedUser.created_at.toISOString(),
+      termination_date: updatedUser.termination_date ? new Date(updatedUser.termination_date).toISOString() : undefined,
+      days_until_termination: daysUntil
     }
   }
 

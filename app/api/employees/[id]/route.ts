@@ -52,10 +52,17 @@ export async function GET(
       }, { status: 404 })
     }
 
-    // Convert is_active from 0/1 to boolean
+    // Convert is_active from 0/1 to boolean and add days_until_termination
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const daysUntilTermination = employee.termination_date
+      ? Math.floor((new Date(employee.termination_date).getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24))
+      : undefined
+
     const employeeResponse = {
       ...employee,
-      is_active: Boolean(employee.is_active)
+      is_active: Boolean(employee.is_active),
+      days_until_termination: daysUntilTermination
     }
 
     return NextResponse.json({

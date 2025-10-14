@@ -37,6 +37,8 @@ interface Employee {
   profile_picture?: string
   is_active: boolean
   created_at: string
+  termination_date?: string
+  days_until_termination?: number
 }
 
 /**
@@ -243,6 +245,32 @@ export default function EmployeesPage() {
     setStatusFilter("all")
   }
 
+  // Row coloring based on backend-provided days_until_termination
+  const getRowClasses = (employee: Employee) => {
+    const diffDays = employee.days_until_termination
+    if (diffDays === undefined || diffDays === null) return "border-b hover:bg-gray-50"
+
+    if (diffDays < 0) {
+      // Contract expired: strong red (IndianRed) background, white text
+      return "border-b bg-[#CD5C5C] text-white hover:bg-[#CD5C5C]"
+    }
+    if (diffDays <= 7) {
+      // Light Coral for <= 7 days
+      return "border-b bg-[#F08080] hover:bg-[#F08080]"
+    }
+    if (diffDays <= 15) {
+      // Salmon for <= 15 days
+      return "border-b bg-[#FA8072] hover:bg-[#FA8072]"
+    }
+    return "border-b hover:bg-gray-50"
+  }
+
+  const isExpired = (employee: Employee) => {
+    const diffDays = employee.days_until_termination
+    if (diffDays === undefined || diffDays === null) return false
+    return diffDays < 0
+  }
+
   // Check if user can create employees (only ADMIN and HR)
   const canCreateEmployees = user?.role === ROLE_CODES.ADMIN || user?.role === ROLE_CODES.HR
 
@@ -294,52 +322,35 @@ export default function EmployeesPage() {
   return (
     <DashboardLayout userRole={user?.role || 'ADMIN'}>
       <div className="h-[calc(100vh-8rem)] flex flex-col -m-4 sm:-m-8 p-4 sm:p-8">
-        {/* Header */}
-        <div className="flex-shrink-0 mb-6">
-          <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Empleados</h1>
-              <p className="text-gray-600 mt-1">Gestión de personal y recursos humanos</p>
-          </div>
-          {canCreateEmployees && (
-            <Button 
-              className="flex items-center gap-2"
-              onClick={() => {
-                router.push('/inicio/empleados/action')
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              Nuevo Empleado
-            </Button>
-          )}
-        </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Buscar empleados por nombre, email, cargo o cédula..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+        {/* Top-right controls */}
+        <div className="flex-shrink-0 mb-2">
+          <div className="flex justify-end items-center gap-2">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
+              className="h-8 px-3"
+              title="Filtros"
             >
               <Filter className="h-4 w-4" />
-              Filtros
             </Button>
+            {canCreateEmployees && (
+              <Button 
+                size="sm"
+                className="h-8 px-3"
+                onClick={() => {
+                  router.push('/inicio/empleados/action')
+                }}
+                title="Nuevo Empleado"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-
-          {/* Advanced Filters */}
           {showFilters && (
-            <Card className="mt-4">
-              <CardContent className="p-4">
-                <div className="flex flex-wrap gap-4 items-end">
+            <Card className="mt-2">
+              <CardContent className="p-3">
+                <div className="flex flex-wrap gap-3 items-end">
                   <div className="flex-1 min-w-[200px]">
                     <label className="text-sm font-medium mb-2 block">Rol</label>
                     <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -369,7 +380,7 @@ export default function EmployeesPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2">
+                  <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2 h-8">
                     <X className="h-4 w-4" />
                     Limpiar
                   </Button>
@@ -377,19 +388,6 @@ export default function EmployeesPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Results count */}
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Mostrando {filteredEmployees.length} de {employees.length} empleados
-            </p>
-            {(searchTerm || roleFilter !== "all" || statusFilter !== "all") && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                Filtros activos
-                <X className="h-3 w-3 cursor-pointer" onClick={clearFilters} />
-              </Badge>
-            )}
-          </div>
         </div>
 
         {/* Table */}
@@ -397,108 +395,114 @@ export default function EmployeesPage() {
           <Card className="h-full flex flex-col">
             <CardContent className="flex-1 overflow-auto p-0">
               <div className="min-w-full">
-                <table className="w-full">
-                  <thead className="sticky top-0 bg-white border-b z-10">
+                <table className="w-full border border-black border-collapse table-fixed">
+                  <thead className="sticky top-0 bg-blue-600 text-white z-10 shadow-sm">
                     <tr>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Empleado</th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Email</th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Cédula</th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Cargo</th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Salario</th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Rol</th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Estado Contrato</th>
-                      <th className="text-left p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Usuario Activo</th>
-                      <th className="text-right p-3 text-xs font-medium text-gray-900 uppercase tracking-wider">Acciones</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[220px]">Empleado</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[260px]">Email</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Cédula</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[160px]">Cargo</th>
+                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Salario</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[140px]">Rol</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[150px]">Estado Contrato</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Usuario Activo</th>
+                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[110px]">Días fin</th>
+                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[90px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       // Skeleton loading rows
                       Array.from({ length: 5 }).map((_, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="p-3">
+                        <tr key={index} className="border-b even:bg-gray-50">
+                          <td className="p-2 sm:p-3 border border-black">
                             <div className="flex items-center gap-2">
-                              <Skeleton className="h-8 w-8 rounded-full" />
+                              <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-full" />
                               <div className="space-y-1">
-                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-3.5 sm:h-4 w-28 sm:w-32" />
                                 <Skeleton className="h-3 w-16" />
                               </div>
                             </div>
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-4 w-40" />
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-4 w-20" />
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-4 w-24" />
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-4 w-20" />
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-6 w-20 rounded-full" />
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-6 w-16 rounded-full" />
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-6 w-16 rounded-full" />
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3 border border-black">
                             <Skeleton className="h-8 w-8 rounded" />
                           </td>
                         </tr>
                       ))
                     ) : filteredEmployees.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="text-center py-12 text-gray-500">
+                        <td colSpan={10} className="text-center py-12 text-gray-500">
                           {employees.length === 0 ? 'No hay empleados registrados' : 'No se encontraron empleados con los filtros aplicados'}
                         </td>
                       </tr>
                     ) : (
                       filteredEmployees.map((employee) => (
-                        <tr key={employee.id} className="border-b hover:bg-gray-50">
-                          <td className="p-3">
+                        <tr key={employee.id} className={`${getRowClasses(employee)} even:bg-gray-50`}>
+                          <td className="p-2 sm:p-3 border border-black">
                             <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
+                              <Avatar className={`h-7 w-7 sm:h-8 sm:w-8 ${isExpired(employee) ? 'ring-1 ring-white/70' : ''}`}>
                                 <AvatarImage src={employee.profile_picture || ""} alt={`${employee.first_name} ${employee.last_name}`} />
-                                <AvatarFallback className="text-xs">
+                                <AvatarFallback className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border border-white/40' : ''}`}>
                                   {employee.first_name.charAt(0)}{employee.last_name.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className="text-sm font-medium text-gray-900">{employee.first_name} {employee.last_name}</div>
-                                <div className="text-xs text-gray-500">ID: {employee.id}</div>
+                                <div className={`text-[13px] sm:text-sm font-semibold ${isExpired(employee) ? 'text-white' : 'text-gray-800'}`} title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</div>
+                                <div className={`text-[11px] sm:text-xs ${isExpired(employee) ? 'text-white/80' : 'text-gray-500'}`}>ID: {employee.id}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="p-3 text-sm text-gray-900">{employee.email}</td>
-                          <td className="p-3 text-sm text-gray-900">{employee.document_number || '-'}</td>
-                          <td className="p-3 text-sm text-gray-900">{employee.position || '-'}</td>
-                          <td className="p-3 text-sm font-medium text-gray-900">
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-800'} whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.email}>{employee.email}</td>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-800'}`}>{employee.document_number || '-'}</td>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-800'} whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.position || '-' }>{employee.position || '-'}</td>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm font-semibold tabular-nums text-right border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-900'}`}>
                             {formatCurrency(employee.salary)}
                           </td>
-                          <td className="p-3">
-                            <Badge variant={getRoleBadgeVariant(employee.role_name)} className="text-xs">
+                          <td className="p-2 sm:p-3 border border-black">
+                            <Badge variant={getRoleBadgeVariant(employee.role_name)} className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border-white/30' : ''}`}>
                               {employee.role_name}
                             </Badge>
                           </td>
-                          <td className="p-3">
-                            <Badge variant={getStatusBadgeVariant(employee.contract_status_name)} className="text-xs">
+                          <td className="p-2 sm:p-3 border border-black">
+                            <Badge variant={getStatusBadgeVariant(employee.contract_status_name)} className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border-white/30' : ''}`}>
                               {employee.contract_status_name}
                             </Badge>
                           </td>
-                          <td className="p-3">
-                            <Badge variant={employee.is_active ? "default" : "secondary"} className="text-xs">
+                          <td className="p-2 sm:p-3 border border-black">
+                            <Badge variant={employee.is_active ? "default" : "secondary"} className={`text-xs ${isExpired(employee) ? 'bg-white/20 text-white border-white/30' : ''}`}>
                               {employee.is_active ? "Activo" : "Inactivo"}
                             </Badge>
                           </td>
-                          <td className="p-3 text-right">
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm tabular-nums text-right border border-black ${isExpired(employee) ? 'text-white' : 'text-gray-900'}`}>
+                            {employee.days_until_termination !== undefined && employee.days_until_termination !== null
+                              ? employee.days_until_termination
+                              : '-'}
+                          </td>
+                          <td className="p-2 sm:p-3 text-right border border-black">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-7 w-7 p-0">
+                                <Button variant="ghost" className={`h-7 w-7 p-0 ${isExpired(employee) ? 'text-white hover:text-white/90' : ''}`} title="Acciones">
                                   <MoreHorizontal className="h-3 w-3" />
                                 </Button>
                               </DropdownMenuTrigger>
