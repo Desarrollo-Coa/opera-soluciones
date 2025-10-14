@@ -1,7 +1,7 @@
 "use client"
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle, Save, X } from "lucide-react"
 
 interface DiscardChangesDialogProps {
   open: boolean
@@ -20,7 +20,7 @@ export function DiscardChangesDialog({
   onOpenChange,
   onConfirm,
   onCancel,
-  title = "¿Cerrar tabla?",
+  title = "¿Descartar cambios?",
   description,
   unsavedChangesCount,
   year,
@@ -30,10 +30,10 @@ export function DiscardChangesDialog({
     if (description) return description
     
     if (unsavedChangesCount !== undefined && year && mes) {
-      return `Tienes ${unsavedChangesCount} ${unsavedChangesCount === 1 ? 'cambio sin guardar' : 'cambios sin guardar'} para el año ${year} y mes ${mes}.\n\nSi continúas, se perderán todos los cambios no guardados.`
+      return `Tienes ${unsavedChangesCount} ${unsavedChangesCount === 1 ? 'cambio sin guardar' : 'cambios sin guardar'} para el año ${year} y mes ${mes}.\n\n¿Qué deseas hacer?`
     }
     
-    return "Tienes cambios sin guardar.\n\nSi cierras la tabla, se perderán todos los cambios no guardados."
+    return "Tienes cambios sin guardar.\n\n¿Qué deseas hacer?"
   }
 
   return (
@@ -49,11 +49,13 @@ export function DiscardChangesDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>
-            Mantener cambios
+          <AlertDialogCancel onClick={onCancel} className="flex items-center gap-2">
+            <Save className="h-4 w-4" />
+            Seguir editando
           </AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-red-600 hover:bg-red-700">
-            Cerrar tabla
+          <AlertDialogAction onClick={onConfirm} className="bg-red-600 hover:bg-red-700 flex items-center gap-2">
+            <X className="h-4 w-4" />
+            Descartar cambios
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
