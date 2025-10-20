@@ -632,15 +632,15 @@ export const SimpleDataGrid = forwardRef<any, SimpleDataGridProps>(({
       )}
       
       <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full border-collapse">
-            <thead className="bg-blue-800">
+            <thead className="bg-blue-800 sticky top-0 z-10">
               {/* Fila de encabezados */}
               <tr>
                 {columns.map((column) => (
                   <th 
                     key={column.key} 
-                    className="px-4 py-3 text-left text-sm font-medium text-white border border-gray-300"
+                    className="px-4 py-3 text-left text-sm font-medium text-white border border-gray-300 bg-blue-800"
                     style={{ width: column.width }}
                   >
                     {column.name}
@@ -650,11 +650,11 @@ export const SimpleDataGrid = forwardRef<any, SimpleDataGridProps>(({
               
               {/* Fila de filtros */}
               {currentShowFilters && (
-                <tr className="bg-blue-700">
+                <tr className="bg-blue-700 sticky top-[49px] z-10">
                   {columns.map((column) => (
                     <th 
                       key={`filter-${column.key}`} 
-                      className="px-2 py-2 border border-gray-300"
+                      className="px-2 py-2 border border-gray-300 bg-blue-700"
                       style={{ width: column.width }}
                     >
                       {column.key === 'actions' ? (
