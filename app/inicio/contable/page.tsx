@@ -796,6 +796,26 @@ function ContableContent() {
                   </div>
                 </div>
 
+                {/* Month Selector - MOVIDO ARRIBA */}
+                {selectedYear && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Seleccionar Mes</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableMonths.map((month) => (
+                        <Button
+                          key={month}
+                          variant={selectedMonth === month ? 'default' : 'outline'}
+                          size="sm"
+                          className="text-xs h-7 px-2"
+                          onClick={() => handleMonthSelect(month)}
+                        >
+                          {month}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Data Table - SIEMPRE VISIBLE */}
                 <div>
                   
@@ -857,25 +877,6 @@ function ContableContent() {
                   )}
                 </div>
 
-                {/* Month Selector - MOVIDO ABAJO */}
-                {selectedYear && (
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Seleccionar Mes</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {availableMonths.map((month) => (
-                        <Button
-                          key={month}
-                          variant={selectedMonth === month ? 'default' : 'outline'}
-                          size="sm"
-                          className="text-xs h-7 px-2"
-                          onClick={() => handleMonthSelect(month)}
-                        >
-                          {month}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
