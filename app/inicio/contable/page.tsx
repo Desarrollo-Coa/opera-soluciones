@@ -551,25 +551,6 @@ function ContableContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigateWithConfirmation('/inicio')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Módulo Contable
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Gestión de nómina y gastos por período con edición en tiempo real
-            </p>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
           {/* Sidebar Navigation */}
@@ -581,6 +562,23 @@ function ContableContent() {
                   <h3 className="text-sm font-semibold">Módulos</h3>
                 </div>
                 <p className="text-xs text-gray-600">Selecciona el módulo</p>
+                
+                {/* Botón Volver y Título - MOVIDO ARRIBA */}
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigateWithConfirmation('/inicio')}
+                    className="w-full justify-start text-xs h-7 px-2"
+                  >
+                    <ArrowLeft className="h-3 w-3 mr-1.5" />
+                    Volver
+                  </Button>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Módulo Contable</h2>
+                  </div>
+                </div>
+                
                 <div className="space-y-1">
                   <Button
                     variant={activeSection === 'gastos' ? 'default' : 'outline'}
