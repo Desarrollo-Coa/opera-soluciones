@@ -93,8 +93,7 @@ export async function POST(request: NextRequest) {
     for (const row of data) {
       // Validar datos requeridos (permitir cadenas vacías pero no null/undefined)
       if (!row.year || !row.mes || !row.fecha || 
-          row.actividad === undefined || row.actividad === null ||
-          row.concepto === undefined || row.concepto === null) {
+          row.actividad === undefined || row.actividad === null) {
         console.log("Validation error - missing required fields:", {
           year: row.year,
           mes: row.mes,
@@ -109,7 +108,6 @@ export async function POST(request: NextRequest) {
         if (!row.mes) missingFields.push("mes")
         if (!row.fecha) missingFields.push("fecha")
         if (row.actividad === undefined || row.actividad === null) missingFields.push("actividad")
-        if (row.concepto === undefined || row.concepto === null) missingFields.push("concepto")
         
         const errorMessage = `Los siguientes campos son obligatorios: ${missingFields.join(", ")}`
         
