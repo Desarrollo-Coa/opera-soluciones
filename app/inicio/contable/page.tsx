@@ -517,13 +517,18 @@ function ContableContent() {
           console.log('First processedData.allRows item (single sheet):', processedData.allRows[0])
           
           processedData.allRows.forEach((row: any, index: number) => {
-            console.log(`Processing row ${index} (single sheet):`, row)
+            // Log solo para las primeras 3 filas para debugging
+            if (index < 3) {
+              console.log(`Processing row ${index} (single sheet):`, row)
+            }
             
             // Verificar si el objeto tiene las propiedades de estado
             if (row._isValid !== undefined) {
               // Caso 1: El objeto tiene propiedades de estado (_isValid, _errors, etc.)
               const { _isValid, _errors, _originalIndex, ...rowData } = row
-              console.log(`Row ${index} (single sheet) - _isValid:`, _isValid, '_errors:', _errors, 'rowData:', rowData)
+              if (index < 3) {
+                console.log(`Row ${index} (single sheet) - _isValid:`, _isValid, '_errors:', _errors, 'rowData:', rowData)
+              }
               
               allRowsWithStatus.push({
                 data: rowData,
@@ -534,7 +539,9 @@ function ContableContent() {
             } else {
               // Caso 2: El objeto solo tiene datos (sin propiedades de estado)
               // Asumir que es válido si no hay errores explícitos
-              console.log(`Row ${index} (single sheet) - No _isValid property, assuming valid`)
+              if (index < 3) {
+                console.log(`Row ${index} (single sheet) - No _isValid property, assuming valid`)
+              }
               
               allRowsWithStatus.push({
                 data: row,
@@ -635,18 +642,22 @@ function ContableContent() {
         console.log('processedData.allRows length:', processedData.allRows.length)
         console.log('First processedData.allRows item:', processedData.allRows[0])
         
-        // Procesar solo los primeros 5 elementos para debugging
-        const rowsToProcess = processedData.allRows.slice(0, 5)
-        console.log('Processing first 5 rows for debugging:', rowsToProcess)
+        // Procesar todos los elementos del backend
+        console.log('Processing all rows from backend:', processedData.allRows.length)
         
-        rowsToProcess.forEach((row: any, index: number) => {
-          console.log(`Processing row ${index}:`, row)
+        processedData.allRows.forEach((row: any, index: number) => {
+          // Log solo para las primeras 3 filas para debugging
+          if (index < 3) {
+            console.log(`Processing row ${index}:`, row)
+          }
           
           // Verificar si el objeto tiene las propiedades de estado
           if (row._isValid !== undefined) {
             // Caso 1: El objeto tiene propiedades de estado (_isValid, _errors, etc.)
             const { _isValid, _errors, _originalIndex, ...rowData } = row
-            console.log(`Row ${index} - _isValid:`, _isValid, '_errors:', _errors, 'rowData:', rowData)
+            if (index < 3) {
+              console.log(`Row ${index} - _isValid:`, _isValid, '_errors:', _errors, 'rowData:', rowData)
+            }
             
             allRowsWithStatus.push({
               data: rowData,
@@ -657,7 +668,9 @@ function ContableContent() {
           } else {
             // Caso 2: El objeto solo tiene datos (sin propiedades de estado)
             // Asumir que es válido si no hay errores explícitos
-            console.log(`Row ${index} - No _isValid property, assuming valid`)
+            if (index < 3) {
+              console.log(`Row ${index} - No _isValid property, assuming valid`)
+            }
             
             allRowsWithStatus.push({
               data: row,
