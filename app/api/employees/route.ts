@@ -48,12 +48,21 @@ export async function GET(request: NextRequest) {
     // Verify token and get user info
     const payload = await verifyToken(token)
     
-    // Get all employees
-    const employees = await userService.getAllUsers()
+    // Parse pagination params
+    const searchParams = request.nextUrl.searchParams
+    const limit = parseInt(searchParams.get('limit') || '100')
+    const offset = parseInt(searchParams.get('offset') || '0')
+    
+    // Get employees with pagination
+    const { employees, total } = await userService.getAllUsers(limit, offset)
 
     return NextResponse.json({
       success: true,
-      employees
+      employees,
+      total,
+      limit,
+      offset,
+      hasMore: offset + limit < total
     })
 
   } catch (error) {

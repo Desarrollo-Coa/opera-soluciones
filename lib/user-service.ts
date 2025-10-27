@@ -214,12 +214,13 @@ export class UserService {
   }
 
   /**
-   * Get all users
-   * Obtener todos los usuarios
+   * Get all users with pagination
+   * Obtener todos los usuarios con paginación
    */
-  async getAllUsers(): Promise<UserResponse[]> {
-    const users = await getAllActiveUsers()
-    return users.map(user => ({
+  async getAllUsers(limit: number = 100, offset: number = 0): Promise<{ employees: UserResponse[], total: number }> {
+    const { users, total } = await getAllActiveUsers(limit, offset)
+    
+    const employees = users.map(user => ({
       id: user.id,
       first_name: user.first_name,
       last_name: user.last_name,
@@ -239,6 +240,8 @@ export class UserService {
         ? Math.floor((new Date(user.termination_date).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime()) / (1000 * 60 * 60 * 24))
         : undefined
     }))
+    
+    return { employees, total }
   }
 
   /**
