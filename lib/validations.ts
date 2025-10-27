@@ -47,7 +47,7 @@ export const userSchema = z.object({
   account_type: z.enum(['Ahorros', 'Corriente']).optional(),
   
   // Información adicional
-  profile_picture: z.string().max(FIELD_LENGTHS.PROFILE_PICTURE_MAX, "La URL de la foto de perfil es demasiado larga").optional(),
+  profile_picture: z.string().max(FIELD_LENGTHS.PROFILE_PICTURE_MAX, "La URL de la foto de perfil es demasiado larga").nullable().optional(),
   notes: z.string().max(FIELD_LENGTHS.NOTES_MAX, "Las notas son demasiado largas").optional(),
   is_active: z.boolean().default(true),
   

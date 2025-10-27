@@ -165,7 +165,7 @@ export async function PUT(
       bank_name: validatedData.bank_name,
       account_number: validatedData.account_number,
       account_type: validatedData.account_type,
-      profile_picture: profilePictureUrl,
+      profile_picture: profilePictureUrl || undefined,
       notes: validatedData.notes,
       is_active: validatedData.is_active,
       role_id: validatedData.role_id ? parseInt(validatedData.role_id) : undefined,

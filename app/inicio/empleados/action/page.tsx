@@ -427,7 +427,7 @@ function EmployeeActionContent() {
         credentials: 'include',
         body: JSON.stringify({
           ...formData,
-          profile_picture: profilePictureUrl,
+          profile_picture: profilePictureUrl || undefined,
           salary: formData.salary || undefined,
           manager_id: formData.manager_id ? parseInt(formData.manager_id) : undefined,
           role_id: formData.role_id,
