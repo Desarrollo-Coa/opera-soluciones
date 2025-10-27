@@ -17,7 +17,7 @@ export const userSchema = z.object({
   document_number: z.string().optional().refine((val) => !val || VALIDATION_PATTERNS.DOCUMENT_NUMBER.test(val), "Número de documento inválido"),
   birth_date: z.string().optional(),
   gender: z.enum(['M', 'F', 'O']).optional(),
-  marital_status: z.enum(['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión Libre', 'Soltero', 'Casado', 'Divorciado', 'Viudo']).optional(),
+  marital_status: z.enum(['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión Libre']).optional(),
   emergency_contact_name: z.string().max(FIELD_LENGTHS.NAME_MAX, "Nombre de contacto de emergencia demasiado largo").optional(),
   emergency_contact_phone: z.string().optional().refine((val) => !val || VALIDATION_PATTERNS.PHONE.test(val), "Teléfono de contacto de emergencia inválido"),
   

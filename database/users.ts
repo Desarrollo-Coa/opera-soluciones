@@ -215,7 +215,7 @@ export async function createUser(userData: CreateUserData): Promise<number> {
       userData.document_number || null,
       userData.birth_date || null,
       userData.gender || null,
-      userData.marital_status || null,
+      userData.marital_status && userData.marital_status.trim() !== '' ? userData.marital_status : null,
       userData.emergency_contact_name || null,
       userData.emergency_contact_phone || null,
       userData.phone || null,
