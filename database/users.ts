@@ -280,6 +280,10 @@ export async function getUserById(id: number): Promise<UserWithRole | null> {
  */
 export async function getAllActiveUsers(limit: number = 100, offset: number = 0): Promise<{ users: UserWithRole[], total: number }> {
   try {
+    // Ensure limit and offset are integers
+    const limitInt = typeof limit === 'number' ? limit : parseInt(String(limit), 10)
+    const offsetInt = typeof offset === 'number' ? offset : parseInt(String(offset), 10)
+    
     // Get total count
     const totalResult = await executeQuery(`
       SELECT COUNT(*) as total 
@@ -304,7 +308,7 @@ export async function getAllActiveUsers(limit: number = 100, offset: number = 0)
       WHERE u.deleted_at IS NULL 
       ORDER BY u.id DESC
       LIMIT ? OFFSET ?
-    `, [limit, offset]) as UserWithRole[]
+    `, [limitInt, offsetInt]) as UserWithRole[]
     
     return { users, total }
   } catch (error) {
