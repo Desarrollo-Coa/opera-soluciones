@@ -824,10 +824,10 @@ function EmployeeActionContent() {
                       <SelectValue placeholder="Seleccionar" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Soltero">Soltero</SelectItem>
-                      <SelectItem value="Casado">Casado</SelectItem>
-                      <SelectItem value="Divorciado">Divorciado</SelectItem>
-                      <SelectItem value="Viudo">Viudo</SelectItem>
+                      <SelectItem value="Soltero/a">Soltero/a</SelectItem>
+                      <SelectItem value="Casado/a">Casado/a</SelectItem>
+                      <SelectItem value="Divorciado/a">Divorciado/a</SelectItem>
+                      <SelectItem value="Viudo/a">Viudo/a</SelectItem>
                       <SelectItem value="Unión Libre">Unión Libre</SelectItem>
                     </SelectContent>
                   </Select>

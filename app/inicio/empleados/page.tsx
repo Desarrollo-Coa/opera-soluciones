@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { EmployeesTable } from "@/components/employees/employees-table"
@@ -183,15 +183,15 @@ export default function EmployeesPage() {
     return filtered
   }, [employees, searchTerm, roleFilter, statusFilter])
 
-  const handleViewDetails = (employee: Employee) => {
+  const handleViewDetails = useCallback((employee: Employee) => {
     router.push(`/inicio/empleados/${employee.id}`)
-  }
+  }, [router])
 
-  const handleEdit = (employee: Employee) => {
+  const handleEdit = useCallback((employee: Employee) => {
     router.push(`/inicio/empleados/action?id=${employee.id}`)
-  }
+  }, [router])
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     try {
       const response = await fetch(`/api/employees/${id}`, {
         method: 'DELETE'
@@ -207,9 +207,9 @@ export default function EmployeesPage() {
     } catch (error) {
       console.error('Error deleting employee:', error)
     }
-  }
+  }, [])
 
-  const handleToggleStatus = async (id: number, currentStatus: boolean) => {
+  const handleToggleStatus = useCallback(async (id: number, currentStatus: boolean) => {
     try {
       console.log('Toggling status for employee', id, 'from', currentStatus, 'to', !currentStatus)
       
@@ -237,32 +237,37 @@ export default function EmployeesPage() {
     } catch (error) {
       console.error('Error toggling employee status:', error)
     }
-  }
+  }, [])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchTerm("")
     setRoleFilter("all")
     setStatusFilter("all")
-  }
+  }, [])
 
   // Row coloring based on backend-provided days_until_termination
-  const getRowClasses = (employee: Employee) => {
+  const getRowClasses = (employee: Employee, index: number) => {
     const diffDays = employee.days_until_termination
-    if (diffDays === undefined || diffDays === null) return "border-b hover:bg-gray-50"
+    
+    // Default gray for rows without termination date
+    if (diffDays === undefined || diffDays === null) {
+      return index % 2 === 0 ? "border-b bg-gray-50 hover:bg-gray-100" : "border-b hover:bg-gray-50"
+    }
 
     if (diffDays < 0) {
-      // Contract expired: Golden yellow background, dark text
+      // Contract expired: Golden yellow background, dark text (always shown, not conditional)
       return "border-b bg-[#EEB600] text-gray-800 hover:bg-[#D4A000]"
     }
     if (diffDays <= 7) {
-      // Light yellow for <= 7 days (urgent)
+      // Light yellow for <= 7 days (urgent) (always shown, not conditional)
       return "border-b bg-[#F8DA45] text-gray-800 hover:bg-[#E6C400]"
     }
     if (diffDays <= 15) {
-      // Bright yellow for <= 15 days (warning)
+      // Bright yellow for <= 15 days (warning) (always shown, not conditional)
       return "border-b bg-[#FFFF71] text-gray-800 hover:bg-[#E6E600]"
     }
-    return "border-b hover:bg-gray-50"
+    // Normal rows with zebra striping
+    return index % 2 === 0 ? "border-b bg-gray-50 hover:bg-gray-100" : "border-b hover:bg-gray-50"
   }
 
   const isExpired = (employee: Employee) => {
@@ -481,8 +486,8 @@ export default function EmployeesPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredEmployees.map((employee) => (
-                        <tr key={employee.id} className={`${getRowClasses(employee)} even:bg-gray-50`}>
+                      filteredEmployees.map((employee, index) => (
+                        <tr key={employee.id} className={getRowClasses(employee, index)}>
                           <td className="p-2 sm:p-3 border border-black">
                             <div className="flex items-center gap-2">
                               <Avatar className={`h-7 w-7 sm:h-8 sm:w-8 ${(isExpired(employee) || isUrgent(employee) || isWarning(employee)) ? 'ring-1 ring-gray-600/70' : ''}`}>
@@ -518,9 +523,19 @@ export default function EmployeesPage() {
                               {employee.is_active ? "Activo" : "Inactivo"}
                             </Badge>
                           </td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm tabular-nums text-right border border-black text-gray-900`}>
+                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm tabular-nums text-right border border-black ${
+                            employee.days_until_termination !== undefined && employee.days_until_termination !== null
+                              ? employee.days_until_termination < 0 
+                                ? 'text-red-600 font-semibold' 
+                                : employee.days_until_termination <= 7
+                                  ? 'text-orange-600 font-semibold'
+                                  : 'text-gray-900'
+                              : 'text-gray-500'
+                          }`}>
                             {employee.days_until_termination !== undefined && employee.days_until_termination !== null
-                              ? employee.days_until_termination
+                              ? employee.days_until_termination < 0 
+                                ? `Exp (${Math.abs(employee.days_until_termination)})`
+                                : `${employee.days_until_termination}`
                               : '-'}
                           </td>
                           <td className="p-2 sm:p-3 text-right border border-black">

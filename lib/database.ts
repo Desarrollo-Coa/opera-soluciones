@@ -76,10 +76,18 @@ class DatabaseConnectionPool {
 
   async getConnection(): Promise<DatabaseConnection> {
     try {
-      console.log(`[DB Pool] Getting connection...`);
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[DB Pool] Getting connection...`);
+      }
       
       const connection = await this.pool.getConnection();
-      console.log(`[DB Pool] Connection acquired successfully`);
+      
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[DB Pool] Connection acquired successfully`);
+      }
+      
       return new MySQLConnection(connection);
     } catch (error) {
       console.error('[DB Pool] Database connection error:', error);
@@ -126,13 +134,21 @@ export async function executeQuery(query: string, params: any[] = [], maxRetries
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const connection = await getConnection();
     try {
-      console.log(`[DB Query] Executing query (attempt ${attempt}/${maxRetries}):`, query.substring(0, 100) + '...');
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[DB Query] Executing query (attempt ${attempt}/${maxRetries}):`, query.substring(0, 100) + '...');
+      }
+      
       const startTime = Date.now();
       
       const result = await connection.execute(query, params);
       
       const duration = Date.now() - startTime;
-      console.log(`[DB Query] Query completed in ${duration}ms`);
+      
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[DB Query] Query completed in ${duration}ms`);
+      }
       
       return result;
     } catch (error) {

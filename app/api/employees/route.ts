@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
       bank_name: validatedData.bank_name,
       account_number: validatedData.account_number,
       account_type: validatedData.account_type,
-      profile_picture: validatedData.profile_picture,
+      profile_picture: validatedData.profile_picture || undefined,
       notes: validatedData.notes,
       is_active: validatedData.is_active
     })

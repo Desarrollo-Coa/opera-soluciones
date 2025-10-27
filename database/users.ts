@@ -280,13 +280,20 @@ export async function getUserById(id: number): Promise<UserWithRole | null> {
  */
 export async function getAllActiveUsers(): Promise<UserWithRole[]> {
   try {
+    // Optimized query - only select needed fields for better performance
     const users = await executeQuery(`
-      SELECT u.*, cs.name as contract_status_name, ur.name as role_name, ur.code as role_code 
+      SELECT 
+        u.id, u.first_name, u.last_name, u.email, u.phone, u.document_number,
+        u.position, u.salary, u.termination_date, u.profile_picture, u.is_active,
+        u.created_at, u.role_id, u.contract_status_id, u.department, u.manager_id,
+        cs.name as contract_status_name, 
+        ur.name as role_name, 
+        ur.code as role_code 
       FROM users u 
       LEFT JOIN contract_statuses cs ON u.contract_status_id = cs.id 
       LEFT JOIN user_roles ur ON u.role_id = ur.id 
       WHERE u.deleted_at IS NULL 
-      ORDER BY u.created_at DESC
+      ORDER BY u.id DESC
     `) as UserWithRole[]
     
     return users

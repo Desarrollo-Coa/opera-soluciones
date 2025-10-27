@@ -17,7 +17,7 @@ export const userSchema = z.object({
   document_number: z.string().optional().refine((val) => !val || VALIDATION_PATTERNS.DOCUMENT_NUMBER.test(val), "Número de documento inválido"),
   birth_date: z.string().optional(),
   gender: z.enum(['M', 'F', 'O']).optional(),
-  marital_status: z.enum(['Soltero', 'Casado', 'Divorciado', 'Viudo', 'Unión Libre']).optional(),
+  marital_status: z.enum(['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión Libre', 'Soltero', 'Casado', 'Divorciado', 'Viudo']).optional(),
   emergency_contact_name: z.string().max(FIELD_LENGTHS.NAME_MAX, "Nombre de contacto de emergencia demasiado largo").optional(),
   emergency_contact_phone: z.string().optional().refine((val) => !val || VALIDATION_PATTERNS.PHONE.test(val), "Teléfono de contacto de emergencia inválido"),
   
@@ -32,7 +32,7 @@ export const userSchema = z.object({
   termination_date: z.string().optional(),
   work_schedule: z.string().optional(),
   department: z.string().max(FIELD_LENGTHS.DEPARTMENT_MAX, "El departamento es demasiado largo").optional(),
-  manager_id: z.string().optional(),
+  manager_id: z.union([z.string(), z.number()]).optional().transform((val) => val === undefined ? undefined : String(val)),
   employment_type: z.enum(['Tiempo Completo', 'Medio Tiempo', 'Por Horas', 'Por Contrato']).default('Tiempo Completo'),
   
   // Información de seguridad social
