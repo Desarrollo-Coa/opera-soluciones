@@ -428,7 +428,7 @@ function getColumnMapping(type: string) {
       nit: { 
         columns: ['nit', 'tax_id', 'id'], 
         type: 'string', 
-        required: true, 
+        required: false, 
         label: 'NIT',
         position: 7 // Columna H
       },
@@ -479,7 +479,7 @@ function getColumnMapping(type: string) {
       nit: { 
         columns: ['nit', 'tax_id', 'id'], 
         type: 'string', 
-        required: true, 
+        required: false, 
         label: 'NIT',
         position: 4 // Columna E
       },

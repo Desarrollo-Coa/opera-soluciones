@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS payroll_mes_a_mes (
   iva DECIMAL(12,2) DEFAULT 0.00, -- Valor del IVA
   retencion DECIMAL(12,2) DEFAULT 0.00, -- Valor de retención aplicada
   total DECIMAL(12,2) NOT NULL, -- Valor total (valor_neto + iva - retencion)
-  nit VARCHAR(50) NOT NULL, -- NIT del proveedor
+  nit VARCHAR(50) DEFAULT NULL, -- NIT del proveedor
   numero_factura VARCHAR(50) NOT NULL, -- Número de factura
   obra VARCHAR(255) NOT NULL, -- Obra o proyecto
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS libro_gastos_facturacion (
   fecha DATE NOT NULL, -- Fecha real del movimiento  
   cliente VARCHAR(255) NOT NULL, -- Nombre del cliente
   servicio VARCHAR(255) NOT NULL, -- Descripción del servicio
-  nit VARCHAR(50) NOT NULL, -- NIT del cliente
+  nit VARCHAR(50) DEFAULT NULL, -- NIT del cliente
   valor DECIMAL(12,2) NOT NULL, -- Valor base (sin IVA)
   iva DECIMAL(12,2) DEFAULT 0.00, -- Valor del IVA
   total DECIMAL(12,2) NOT NULL, -- Valor total (valor + iva)
