@@ -275,25 +275,12 @@ export async function getUserById(id: number): Promise<UserWithRole | null> {
 }
 
 /**
- * Get all active users with role and contract status (with pagination)
- * Obtener todos los usuarios activos con rol y estado de contrato (con paginación)
+ * Get all active users with role and contract status
+ * Obtener todos los usuarios activos con rol y estado de contrato
  */
-export async function getAllActiveUsers(limit: number = 100, offset: number = 0): Promise<{ users: UserWithRole[], total: number }> {
+export async function getAllActiveUsers(): Promise<UserWithRole[]> {
   try {
-    // Ensure limit and offset are integers
-    const limitInt = typeof limit === 'number' ? limit : parseInt(String(limit), 10)
-    const offsetInt = typeof offset === 'number' ? offset : parseInt(String(offset), 10)
-    
-    // Get total count
-    const totalResult = await executeQuery(`
-      SELECT COUNT(*) as total 
-      FROM users u 
-      WHERE u.deleted_at IS NULL
-    `) as any[]
-    
-    const total = totalResult[0]?.total || 0
-    
-    // Optimized query - only select needed fields for better performance with pagination
+    // Optimized query - only select needed fields for better performance
     const users = await executeQuery(`
       SELECT 
         u.id, u.first_name, u.last_name, u.email, u.phone, u.document_number,
@@ -307,10 +294,9 @@ export async function getAllActiveUsers(limit: number = 100, offset: number = 0)
       LEFT JOIN user_roles ur ON u.role_id = ur.id 
       WHERE u.deleted_at IS NULL 
       ORDER BY u.id DESC
-      LIMIT ? OFFSET ?
-    `, [limitInt, offsetInt]) as UserWithRole[]
+    `) as UserWithRole[]
     
-    return { users, total }
+    return users
   } catch (error) {
     console.error("Error getting all active users:", error)
     throw new Error(ERROR_MESSAGES.DATABASE_ERROR)

@@ -53,11 +53,6 @@ export default function EmployeesPage() {
   const [user, setUser] = useState<User | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(false)
-  const [totalEmployees, setTotalEmployees] = useState(0)
-  const [currentOffset, setCurrentOffset] = useState(0)
-  const limit = 100 // Load 100 employees at a time
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("")
@@ -84,7 +79,7 @@ export default function EmployeesPage() {
               'Pragma': 'no-cache'
             }
           }),
-          fetch(`/api/employees?limit=${limit}&offset=0`, {
+          fetch('/api/employees', {
             method: 'GET',
             credentials: 'include',
             headers: {
@@ -115,11 +110,8 @@ export default function EmployeesPage() {
         // Handle employees data
         if (employeesResponse.ok) {
           const data = await employeesResponse.json()
-          console.log('[Employees] Fetched employees data:', data.employees?.length || 0, 'of', data.total, 'employees')
+          console.log('[Employees] Fetched employees data:', data.employees?.length || 0, 'employees')
           setEmployees(data.employees || [])
-          setTotalEmployees(data.total || 0)
-          setHasMore(data.hasMore || false)
-          setCurrentOffset(data.employees?.length || 0)
         } else {
           console.error('[Employees] Error response:', employeesResponse.status, employeesResponse.statusText)
           
@@ -148,39 +140,6 @@ export default function EmployeesPage() {
 
     fetchData()
   }, [])
-
-  const loadMoreEmployees = useCallback(async () => {
-    if (loadingMore || !hasMore) return
-    
-    try {
-      setLoadingMore(true)
-      const nextOffset = currentOffset
-      
-      const response = await fetch(`/api/employees?limit=${limit}&offset=${nextOffset}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('[Employees] Loaded more:', data.employees?.length || 0, 'employees')
-        
-        setEmployees(prev => [...prev, ...(data.employees || [])])
-        setHasMore(data.hasMore || false)
-        setCurrentOffset(prev => prev + (data.employees?.length || 0))
-      } else {
-        console.error('Error loading more employees:', response.status, response.statusText)
-      }
-    } catch (error) {
-      console.error('Error loading more employees:', error)
-    } finally {
-      setLoadingMore(false)
-    }
-  }, [loadingMore, hasMore, currentOffset, limit])
 
   // Use useMemo to optimize filtering and avoid unnecessary re-renders
   const filteredEmployees = useMemo(() => {
@@ -604,26 +563,6 @@ export default function EmployeesPage() {
                   </tbody>
                 </table>
               </div>
-              
-              {/* Load More Button */}
-              {hasMore && !loading && filteredEmployees.length > 0 && (
-                <div className="p-4 border-t flex items-center justify-center">
-                  <Button 
-                    onClick={loadMoreEmployees} 
-                    disabled={loadingMore}
-                    variant="outline"
-                    className="min-w-[150px]"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <span className="mr-2">Cargando...</span>
-                      </>
-                    ) : (
-                      `Cargar más (${totalEmployees - employees.length} restantes)`
-                    )}
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

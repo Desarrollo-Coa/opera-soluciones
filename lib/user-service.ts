@@ -8,7 +8,7 @@
 // Date: 2025-01-16
 // =====================================================
 
-import { createUser, getUserByEmailWithStatus, getAllActiveUsers, updateUser, softDeleteUser, getUserById as getUserByIdFromDB } from "@/database/users"
+import { createUser, getUserByEmailWithStatus, getAllActiveUsers, updateUser, softDeleteUser, getUserById as getUserByIdFromDB, type UserWithRole } from "@/database/users"
 import { hashPassword } from "@/lib/auth"
 import { ROLE_CODES, DEFAULT_VALUES, ERROR_MESSAGES } from "@/lib/constants"
 import type { RoleCode } from "@/lib/constants"
@@ -214,13 +214,13 @@ export class UserService {
   }
 
   /**
-   * Get all users with pagination
-   * Obtener todos los usuarios con paginación
+   * Get all users
+   * Obtener todos los usuarios
    */
-  async getAllUsers(limit: number = 100, offset: number = 0): Promise<{ employees: UserResponse[], total: number }> {
-    const { users, total } = await getAllActiveUsers(limit, offset)
+  async getAllUsers(): Promise<UserResponse[]> {
+    const users = await getAllActiveUsers()
     
-    const employees = users.map(user => ({
+    return (users as UserWithRole[]).map((user: UserWithRole) => ({
       id: user.id,
       first_name: user.first_name,
       last_name: user.last_name,
@@ -240,8 +240,6 @@ export class UserService {
         ? Math.floor((new Date(user.termination_date).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime()) / (1000 * 60 * 60 * 24))
         : undefined
     }))
-    
-    return { employees, total }
   }
 
   /**
