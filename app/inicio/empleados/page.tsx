@@ -453,16 +453,16 @@ export default function EmployeesPage() {
                 <table className="w-full border border-black border-collapse table-fixed">
                   <thead className="sticky top-0 bg-blue-600 text-white z-10 shadow-sm">
                     <tr>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[220px]">Empleado</th>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[260px]">Email</th>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Cédula</th>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[160px]">Cargo</th>
-                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Salario</th>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[140px]">Rol</th>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[150px]">Estado Contrato</th>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Usuario Activo</th>
-                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[110px]">Días fin</th>
-                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[90px]">Acciones</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[180px]">Empleado</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[200px]">Email</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[100px]">Cédula</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[140px]">Cargo</th>
+                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[110px]">Salario</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Rol</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[130px]">Estado</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[100px]">Activo</th>
+                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[90px]">Días fin</th>
+                      <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[80px]">Acc.</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -514,7 +514,7 @@ export default function EmployeesPage() {
                     ) : (
                       filteredEmployees.map((employee, index) => (
                         <tr key={employee.id} className={getRowClasses(employee, index)}>
-                          <td className="p-2 sm:p-3 border border-black">
+                          <td className="p-2 border border-black">
                             <div className="flex items-center gap-2">
                               <Avatar className={`h-7 w-7 sm:h-8 sm:w-8 ${(isExpired(employee) || isUrgent(employee) || isWarning(employee)) ? 'ring-1 ring-gray-600/70' : ''}`}>
                                 <AvatarImage src={employee.profile_picture || ""} alt={`${employee.first_name} ${employee.last_name}`} />
@@ -528,28 +528,28 @@ export default function EmployeesPage() {
                               </div>
                             </div>
                           </td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.email}>{employee.email}</td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black text-gray-800`}>{employee.document_number || '-'}</td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.position || '-' }>{employee.position || '-'}</td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm font-semibold tabular-nums text-right border border-black text-gray-900`}>
+                          <td className={`p-2 text-[12px] border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.email}>{employee.email}</td>
+                          <td className={`p-2 text-[12px] border border-black text-gray-800`}>{employee.document_number || '-'}</td>
+                          <td className={`p-2 text-[12px] border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.position || '-' }>{employee.position || '-'}</td>
+                          <td className={`p-2 text-[12px] font-semibold tabular-nums text-right border border-black text-gray-900`}>
                             {formatCurrency(employee.salary)}
                           </td>
-                          <td className="p-2 sm:p-3 border border-black">
+                          <td className="p-2 border border-black">
                             <Badge variant={getRoleBadgeVariant(employee.role_name)} className="text-xs">
                               {employee.role_name}
                             </Badge>
                           </td>
-                          <td className="p-2 sm:p-3 border border-black">
+                          <td className="p-2 border border-black">
                             <Badge variant={getStatusBadgeVariant(employee.contract_status_name)} className="text-xs">
                               {employee.contract_status_name}
                             </Badge>
                           </td>
-                          <td className="p-2 sm:p-3 border border-black">
+                          <td className="p-2 border border-black">
                             <Badge variant={employee.is_active ? "default" : "secondary"} className="text-xs">
                               {employee.is_active ? "Activo" : "Inactivo"}
                             </Badge>
                           </td>
-                          <td className={`p-2 sm:p-3 text-[12px] sm:text-sm tabular-nums text-right border border-black ${
+                          <td className={`p-2 text-[12px] tabular-nums text-right border border-black ${
                             employee.days_until_termination !== undefined && employee.days_until_termination !== null
                               ? employee.days_until_termination < 0 
                                 ? 'text-red-600 font-semibold' 
@@ -564,7 +564,7 @@ export default function EmployeesPage() {
                                 : `${employee.days_until_termination}`
                               : '-'}
                           </td>
-                          <td className="p-2 sm:p-3 text-right border border-black">
+                          <td className="p-2 text-right border border-black">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-7 w-7 p-0" title="Acciones">
