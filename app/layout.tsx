@@ -3,13 +3,16 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-
+import { Toaster as SonnerToaster } from "sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SGI Opera Soluciones - Sistema de Gestión Integral",
+  title: "SGI Opera Soluciones",
   description: "Sistema de Gestión Integral para Opera Soluciones - Innovación y Excelencia",
-    generator: 'v0.dev'
+  generator: 'SGI-OS',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({
@@ -24,7 +27,7 @@ export default function RootLayout({
           <img src="/recursos/logopera.jpeg" alt="Opera Soluciones" className="h-12 w-auto" />
         </header> */}
         {children}
-        <Toaster />
+        <SonnerToaster richColors position="top-right" />
       </body>
     </html>
   )

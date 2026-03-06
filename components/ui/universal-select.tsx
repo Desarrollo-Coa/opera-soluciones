@@ -31,16 +31,18 @@ interface UniversalSelectProps {
   searchPlaceholder?: string
   emptyMessage?: string
   disabled?: boolean
+  className?: string
 }
 
-export function UniversalSelect({ 
-  value, 
-  onValueChange, 
+export function UniversalSelect({
+  value,
+  onValueChange,
   placeholder = "Selecciona una opción",
   options,
   searchPlaceholder = "Buscar...",
   emptyMessage = "No se encontró ninguna opción.",
-  disabled = false
+  disabled = false,
+  className
 }: UniversalSelectProps) {
   const [open, setOpen] = useState(false)
 
@@ -53,10 +55,10 @@ export function UniversalSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between text-left"
+          className={cn("w-full justify-between text-left", className)}
           disabled={disabled}
         >
-          <span className="truncate">
+          <span className={cn("truncate", !selectedOption && "text-muted-foreground")}>
             {selectedOption ? selectedOption.name : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -84,7 +86,9 @@ export function UniversalSelect({
                 />
                 <div>
                   <div className="font-medium">{option.name}</div>
-                  <div className="text-sm text-gray-500">{option.code}</div>
+                  {option.code !== option.name && (
+                    <div className="text-sm text-gray-500">{option.code}</div>
+                  )}
                 </div>
               </CommandItem>
             ))}

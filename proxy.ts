@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifyTokenEdge } from "@/lib/auth"
+import { verifyTokenEdge } from "@/lib/auth/token-verifier"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  console.log("Middleware called for pathname:", pathname)
+  console.log("Proxy (formerly Middleware) called for pathname:", pathname)
 
   // Protected routes - Dashboard pages
   if (pathname.startsWith("/inicio")) {
@@ -30,6 +30,8 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next()
 }
+
+export default proxy;
 
 export const config = {
   matcher: [

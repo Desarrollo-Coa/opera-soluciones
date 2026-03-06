@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyTokenEdge } from "@/lib/auth/token-verifier"
-import { executeQuery } from "@/lib/database"
+import { executeQuery } from "@/lib/db"
 
 // GET - Obtener datos de gastos/facturación por año y mes
 export async function GET(request: NextRequest) {
@@ -36,12 +36,23 @@ export async function GET(request: NextRequest) {
 
     // Obtener datos de la base de datos
     console.log(`Fetching expenses data for year: ${year}, mes: ${mes}`)
-    
+
     const rows = await executeQuery(
-      `SELECT id, year, mes, numero_facturacion, fecha, cliente, servicio, nit, valor, iva, total 
-       FROM libro_gastos_facturacion 
-       WHERE year = ? AND mes = ? 
-       ORDER BY fecha DESC, id DESC`,
+      `SELECT 
+         FA_IDFACTURA_PK as id, 
+         FA_ANIO as year, 
+         FA_MES as mes, 
+         FA_NUMERO_FACTURACION as numero_facturacion, 
+         FA_FECHA as fecha, 
+         FA_CLIENTE as cliente, 
+         FA_SERVICIO as servicio, 
+         FA_NIT as nit, 
+         FA_VALOR as valor, 
+         FA_IVA as iva, 
+         FA_TOTAL as total 
+       FROM OS_FACTURACION 
+       WHERE FA_ANIO = ? AND FA_MES = ? 
+       ORDER BY FA_FECHA DESC, FA_IDFACTURA_PK DESC`,
       [parseInt(year), mes]
     )
 
@@ -92,11 +103,11 @@ export async function POST(request: NextRequest) {
 
     for (const row of data) {
       // Validar datos requeridos (permitir cadenas vacías pero no null/undefined)
-      if (!row.year || !row.mes || !row.fecha || 
-          row.numero_facturacion === undefined || row.numero_facturacion === null ||
-          row.cliente === undefined || row.cliente === null ||
-          row.servicio === undefined || row.servicio === null ||
-          row.nit === undefined || row.nit === null) {
+      if (!row.year || !row.mes || !row.fecha ||
+        row.numero_facturacion === undefined || row.numero_facturacion === null ||
+        row.cliente === undefined || row.cliente === null ||
+        row.servicio === undefined || row.servicio === null ||
+        row.nit === undefined || row.nit === null) {
         console.log("Validation error - missing required fields:", {
           year: row.year,
           mes: row.mes,
@@ -106,7 +117,7 @@ export async function POST(request: NextRequest) {
           servicio: row.servicio,
           nit: row.nit
         })
-        
+
         // Crear mensaje específico sobre qué campos faltan
         const missingFields = []
         if (!row.year) missingFields.push("año")
@@ -116,9 +127,9 @@ export async function POST(request: NextRequest) {
         if (row.cliente === undefined || row.cliente === null) missingFields.push("cliente")
         if (row.servicio === undefined || row.servicio === null) missingFields.push("servicio")
         if (row.nit === undefined || row.nit === null) missingFields.push("NIT")
-        
+
         const errorMessage = `Los siguientes campos son obligatorios: ${missingFields.join(", ")}`
-        
+
         return NextResponse.json(
           { error: errorMessage },
           { status: 400 }
@@ -143,8 +154,8 @@ export async function POST(request: NextRequest) {
       if (row.isNew) {
         // Insertar nueva fila
         const result = await executeQuery(
-          `INSERT INTO libro_gastos_facturacion 
-           (year, mes, numero_facturacion, fecha, cliente, servicio, nit, valor, iva, total, created_by) 
+          `INSERT INTO OS_FACTURACION 
+           (FA_ANIO, FA_MES, FA_NUMERO_FACTURACION, FA_FECHA, FA_CLIENTE, FA_SERVICIO, FA_NIT, FA_VALOR, FA_IVA, FA_TOTAL, FA_CREADO_POR) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             row.year,
@@ -164,9 +175,9 @@ export async function POST(request: NextRequest) {
       } else if (row.id) {
         // Actualizar fila existente
         await executeQuery(
-          `UPDATE libro_gastos_facturacion 
-           SET numero_facturacion = ?, fecha = ?, cliente = ?, servicio = ?, nit = ?, valor = ?, iva = ?, total = ?, updated_by = ?
-           WHERE id = ?`,
+          `UPDATE OS_FACTURACION 
+           SET FA_NUMERO_FACTURACION = ?, FA_FECHA = ?, FA_CLIENTE = ?, FA_SERVICIO = ?, FA_NIT = ?, FA_VALOR = ?, FA_IVA = ?, FA_TOTAL = ?, FA_ACTUALIZADO_POR = ?
+           WHERE FA_IDFACTURA_PK = ?`,
           [
             row.numero_facturacion,
             row.fecha,
@@ -184,8 +195,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       data: results,
       message: "Datos guardados correctamente"
     })
@@ -231,11 +242,11 @@ export async function DELETE(request: NextRequest) {
 
     // Eliminar registro
     await executeQuery(
-      "DELETE FROM libro_gastos_facturacion WHERE id = ?",
+      "DELETE FROM OS_FACTURACION WHERE FA_IDFACTURA_PK = ?",
       [parseInt(id)]
     )
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: "Registro eliminado correctamente"
     })

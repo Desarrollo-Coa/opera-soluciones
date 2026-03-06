@@ -4,7 +4,7 @@
 // =====================================================
 
 import { NextResponse, type NextRequest } from "next/server"
-import { executeQuery } from "@/lib/database"
+import { executeQuery } from "@/lib/db"
 import { uploadToSpaces, extractKeyFromUrl, deleteFromSpaces } from "@/lib/digitalocean-spaces"
 import { generateSimpleFileName } from "@/lib/file-utils"
 
@@ -18,11 +18,12 @@ export async function GET(request: NextRequest) {
     }
 
     const rows = await executeQuery(
-      `SELECT d.id, d.document_name, d.file_url, dt.name AS document_type_name, d.uploaded_at, d.description
-       FROM documents d
-       LEFT JOIN document_types dt ON dt.id = d.document_type_id
-       WHERE d.user_id = ? AND d.deleted_at IS NULL
-       ORDER BY d.uploaded_at DESC`,
+      `SELECT d.DO_IDDOCUMENTO_PK as id, d.DO_NOMBRE as document_name, d.DO_URL_ARCHIVO as file_url, 
+              dt.TD_NOMBRE AS document_type_name, d.DO_FECHA_SUBIDA as uploaded_at, d.DO_DESCRIPCION as description
+       FROM OS_DOCUMENTOS d
+       LEFT JOIN OS_TIPOS_DOCUMENTO dt ON dt.TD_IDTIPO_DOCUMENTO_PK = d.TD_IDTIPO_DOCUMENTO_FK
+       WHERE d.US_IDUSUARIO_FK = ? AND d.DO_FECHA_ELIMINACION IS NULL
+       ORDER BY d.DO_FECHA_SUBIDA DESC`,
       [employeeId]
     )
 
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Generar nombre único simple con UUID
     const uniqueFileName = generateSimpleFileName(file.name);
-    
+
     const upload = await uploadToSpaces(
       buffer,
       uniqueFileName,
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     )
 
     await executeQuery(
-      `INSERT INTO documents (user_id, document_name, file_url, document_type_id, description, created_by)
+      `INSERT INTO OS_DOCUMENTOS (US_IDUSUARIO_FK, DO_NOMBRE, DO_URL_ARCHIVO, TD_IDTIPO_DOCUMENTO_FK, DO_DESCRIPCION, DO_CREADO_POR)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [employeeId, documentName, upload.url, parseInt(documentTypeId), description, 1]
     )

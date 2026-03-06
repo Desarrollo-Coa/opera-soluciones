@@ -1,9 +1,9 @@
+@import '../styles/react-data-grid.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Importar estilos de react-data-grid */
-@import '../styles/react-data-grid.css';
 
 /* === Variables estándar de shadcn/ui para tema claro === */
 :root {
@@ -56,6 +56,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -81,9 +82,12 @@
 
 /* Animación de gradiente de fondo para Hero */
 @keyframes gradientMove {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -102,6 +106,7 @@
     transform: translateY(40px) scale(0.95);
     filter: blur(8px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);

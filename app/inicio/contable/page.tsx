@@ -15,6 +15,7 @@ import { ArrowLeft, Calculator, FileText, Calendar, Users, ChevronLeft, ChevronR
 import { SimpleDataGrid } from "@/components/contable/simple-data-grid"
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes"
 import { DiscardChangesDialog } from "@/components/ui/discard-changes-dialog"
+import { toast } from "sonner"
 import { useToast } from "@/hooks/use-toast"
 
 interface User {
@@ -104,26 +105,26 @@ function ContableContent() {
   const [expenseData, setExpenseData] = useState<ExpenseData[]>([])
   const [transferData, setTransferData] = useState<TransferData[]>([])
   const [dataLoading, setDataLoading] = useState(false)
-  
+
   // Estados para datos en tiempo real (incluyendo cambios no guardados)
   const [currentPayrollData, setCurrentPayrollData] = useState<PayrollData[]>([])
   const [currentExpenseData, setCurrentExpenseData] = useState<ExpenseData[]>([])
   const [currentTransferData, setCurrentTransferData] = useState<TransferData[]>([])
-  
+
   // Estados para filtros activos
   const [hasActiveFilters, setHasActiveFilters] = useState(false)
 
   // Estados para el SimpleDataGrid
   const [showFilters, setShowFilters] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  
+
   // Usar el mismo estado para hasChanges y hasUnsavedChanges
   const [hasChanges, setHasChanges] = useState(false)
   const hasUnsavedChanges = hasChanges
 
   // Estado para el año central del selector (navegación infinita)
   const [centerYear, setCenterYear] = useState<number>(new Date().getFullYear())
-  
+
   // Estados para importación
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -135,10 +136,10 @@ function ContableContent() {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
   const [allRows, setAllRows] = useState<any[]>([])
   const { toast } = useToast()
-  
+
   // Generar años dinámicamente basados en el año central
   const generateYears = (center: number) => [center - 1, center, center + 1]
-  
+
   // Meses disponibles (estáticos)
   const availableMonths = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
@@ -146,12 +147,12 @@ function ContableContent() {
   ]
 
   // Configurar hook para manejar cambios sin guardar
-  const { 
-    navigateWithConfirmation, 
-    handleStateChange, 
-    showDiscardDialog, 
-    confirmDiscard, 
-    cancelDiscard 
+  const {
+    navigateWithConfirmation,
+    handleStateChange,
+    showDiscardDialog,
+    confirmDiscard,
+    cancelDiscard
   } = useUnsavedChanges({
     hasUnsavedChanges,
     onConfirmDiscard: () => {
@@ -173,7 +174,7 @@ function ContableContent() {
           method: 'GET',
           credentials: 'include'
         })
-        
+
         if (response.ok) {
           const userData = await response.json()
           setUser({
@@ -438,7 +439,7 @@ function ContableContent() {
         { key: 'mes', label: 'MES' }
       ]
     }
-    
+
     return columnDefinitions[type as keyof typeof columnDefinitions] || []
   }
 
@@ -454,7 +455,7 @@ function ContableContent() {
       // Mapear el tipo del frontend al tipo del backend
       const typeMapping: Record<string, string> = {
         'gastos': 'payroll',
-        'facturacion': 'expenses', 
+        'facturacion': 'expenses',
         'bancos': 'transfers'
       }
       const backendType = typeMapping[activeSection] || activeSection
@@ -488,11 +489,11 @@ function ContableContent() {
     if (!file) return
 
     setImportFile(file)
-    
+
     try {
       // Primero obtener información de las hojas disponibles
       const sheetsData = await processFile(file)
-      
+
       if (sheetsData.sheets && sheetsData.sheets.length > 1) {
         setAvailableSheets(sheetsData.sheets)
         setSelectedSheet("")
@@ -506,22 +507,22 @@ function ContableContent() {
         console.log('allRows from backend (single sheet):', processedData.allRows)
         console.log('allRows length (single sheet):', processedData.allRows ? processedData.allRows.length : 'No allRows')
         console.log('First allRow (single sheet):', processedData.allRows ? processedData.allRows[0] : 'No allRows')
-        
+
         // Procesar allRows igual que en handleSheetSelect
         const allRowsWithStatus: RowWithStatus[] = []
-        
+
         if (processedData.allRows) {
           // Usar los datos completos del backend
           console.log('Processing allRows from backend (single sheet)...')
           console.log('processedData.allRows length (single sheet):', processedData.allRows.length)
           console.log('First processedData.allRows item (single sheet):', processedData.allRows[0])
-          
+
           processedData.allRows.forEach((row: any, index: number) => {
             // Log solo para las primeras 3 filas para debugging
             if (index < 3) {
               console.log(`Processing row ${index} (single sheet):`, row)
             }
-            
+
             // Verificar si el objeto tiene las propiedades de estado
             if (row._isValid !== undefined) {
               // Caso 1: El objeto tiene propiedades de estado (_isValid, _errors, etc.)
@@ -529,7 +530,7 @@ function ContableContent() {
               if (index < 3) {
                 console.log(`Row ${index} (single sheet) - _isValid:`, _isValid, '_errors:', _errors, 'rowData:', rowData)
               }
-              
+
               allRowsWithStatus.push({
                 data: rowData,
                 isValid: _isValid,
@@ -542,7 +543,7 @@ function ContableContent() {
               if (index < 3) {
                 console.log(`Row ${index} (single sheet) - No _isValid property, assuming valid`)
               }
-              
+
               allRowsWithStatus.push({
                 data: row,
                 isValid: true, // Asumir válido si no hay propiedades de estado
@@ -551,7 +552,7 @@ function ContableContent() {
               })
             }
           })
-          
+
           console.log('Finished processing allRows (single sheet). allRowsWithStatus length:', allRowsWithStatus.length)
         } else {
           // Fallback: crear lista desde datos válidos y errores (método anterior)
@@ -563,7 +564,7 @@ function ContableContent() {
               index: index
             })
           })
-          
+
           if (processedData.errors && processedData.errors.length > 0) {
             processedData.errors.forEach((error: string, errorIndex: number) => {
               const match = error.match(/Fila (\d+):/)
@@ -581,15 +582,15 @@ function ContableContent() {
             })
           }
         }
-        
+
         console.log('allRowsWithStatus created (single sheet):', allRowsWithStatus)
         console.log('allRowsWithStatus length (single sheet):', allRowsWithStatus.length)
         console.log('First allRowsWithStatus item (single sheet):', allRowsWithStatus[0])
         console.log('Valid rows count (single sheet):', allRowsWithStatus.filter(row => row.isValid).length)
         console.log('Invalid rows count (single sheet):', allRowsWithStatus.filter(row => !row.isValid).length)
-        
+
         setAllRows(allRowsWithStatus)
-        
+
         // Seleccionar automáticamente solo los registros válidos
         const validRowIndices = new Set(
           allRowsWithStatus
@@ -598,7 +599,7 @@ function ContableContent() {
         )
         console.log('Valid row indices (single sheet):', Array.from(validRowIndices))
         setSelectedRows(validRowIndices)
-        
+
         setImportData(processedData)
         setAvailableSheets([])
       }
@@ -618,10 +619,10 @@ function ContableContent() {
       console.log('No importFile, returning')
       return
     }
-    
+
     console.log('Setting selectedSheet to:', sheetName)
     setSelectedSheet(sheetName)
-    
+
     try {
       console.log('Calling processFile...')
       const processedData = await processFile(importFile, sheetName)
@@ -632,25 +633,25 @@ function ContableContent() {
       console.log('allRows from backend:', processedData.allRows)
       console.log('allRows length:', processedData.allRows ? processedData.allRows.length : 'No allRows')
       console.log('First allRow:', processedData.allRows ? processedData.allRows[0] : 'No allRows')
-      
+
       // Usar los datos reales del backend
       const allRowsWithStatus: RowWithStatus[] = []
-      
+
       if (processedData.allRows) {
         // Usar los datos completos del backend
         console.log('Processing allRows from backend...')
         console.log('processedData.allRows length:', processedData.allRows.length)
         console.log('First processedData.allRows item:', processedData.allRows[0])
-        
+
         // Procesar todos los elementos del backend
         console.log('Processing all rows from backend:', processedData.allRows.length)
-        
+
         processedData.allRows.forEach((row: any, index: number) => {
           // Log solo para las primeras 3 filas para debugging
           if (index < 3) {
             console.log(`Processing row ${index}:`, row)
           }
-          
+
           // Verificar si el objeto tiene las propiedades de estado
           if (row._isValid !== undefined) {
             // Caso 1: El objeto tiene propiedades de estado (_isValid, _errors, etc.)
@@ -658,7 +659,7 @@ function ContableContent() {
             if (index < 3) {
               console.log(`Row ${index} - _isValid:`, _isValid, '_errors:', _errors, 'rowData:', rowData)
             }
-            
+
             allRowsWithStatus.push({
               data: rowData,
               isValid: _isValid,
@@ -671,7 +672,7 @@ function ContableContent() {
             if (index < 3) {
               console.log(`Row ${index} - No _isValid property, assuming valid`)
             }
-            
+
             allRowsWithStatus.push({
               data: row,
               isValid: true, // Asumir válido si no hay propiedades de estado
@@ -680,7 +681,7 @@ function ContableContent() {
             })
           }
         })
-        
+
         console.log('Finished processing allRows. allRowsWithStatus length:', allRowsWithStatus.length)
         console.log('First allRowsWithStatus item:', allRowsWithStatus[0])
       } else {
@@ -693,7 +694,7 @@ function ContableContent() {
             index: index
           })
         })
-        
+
         if (processedData.errors && processedData.errors.length > 0) {
           processedData.errors.forEach((error: string, errorIndex: number) => {
             const match = error.match(/Fila (\d+):/)
@@ -711,15 +712,15 @@ function ContableContent() {
           })
         }
       }
-      
+
       console.log('allRowsWithStatus created:', allRowsWithStatus)
       console.log('allRowsWithStatus length:', allRowsWithStatus.length)
       console.log('First allRowsWithStatus item:', allRowsWithStatus[0])
       console.log('Valid rows count:', allRowsWithStatus.filter(row => row.isValid).length)
       console.log('Invalid rows count:', allRowsWithStatus.filter(row => !row.isValid).length)
-      
+
       setAllRows(allRowsWithStatus)
-      
+
       // Seleccionar automáticamente solo los registros válidos
       const validRowIndices = new Set(
         allRowsWithStatus
@@ -728,7 +729,7 @@ function ContableContent() {
       )
       console.log('Valid row indices:', Array.from(validRowIndices))
       setSelectedRows(validRowIndices)
-      
+
       setImportData(processedData)
     } catch (error) {
       console.error('Error in handleSheetSelect:', error)
@@ -796,12 +797,12 @@ function ContableContent() {
   // Confirmar importación
   const confirmImport = async () => {
     if (!importData) return
-    
+
     // Filtrar los registros seleccionados (tanto válidos como con errores)
     const selectedRowsData = allRows
       .filter(row => selectedRows.has(row.index))
       .map(row => row.data)
-    
+
     if (selectedRowsData.length === 0) {
       toast({
         title: "Sin registros seleccionados",
@@ -810,10 +811,10 @@ function ContableContent() {
       })
       return
     }
-    
+
     const validSelectedCount = allRows.filter(row => selectedRows.has(row.index) && row.isValid).length
     const errorSelectedCount = allRows.filter(row => selectedRows.has(row.index) && !row.isValid).length
-    
+
     setIsImporting(true)
     try {
       const response = await fetch('/api/contable/import/confirm', {
@@ -844,7 +845,7 @@ function ContableContent() {
 
       // Recargar datos
       await fetchData()
-      
+
       // Cerrar diálogo
       setShowImportDialog(false)
       setImportFile(null)
@@ -853,7 +854,7 @@ function ContableContent() {
       setSelectedSheet("")
       setAllRows([])
       setSelectedRows(new Set())
-      
+
     } catch (error) {
       toast({
         title: "Error",
@@ -894,11 +895,11 @@ function ContableContent() {
         const value = Number(row.sale) || 0
         return sum + value
       }, 0)
-      return { 
-        totalEntra, 
-        totalSale, 
+      return {
+        totalEntra,
+        totalSale,
         label: 'Bancos',
-        isTransfer: true 
+        isTransfer: true
       }
     }
     return { total: 0, label: '' }
@@ -1075,7 +1076,7 @@ function ContableContent() {
                   <h3 className="text-sm font-semibold">Módulos</h3>
                 </div>
                 <p className="text-xs text-gray-600">Selecciona el módulo</p>
-                
+
                 {/* Botón Volver y Título - MOVIDO ARRIBA */}
                 <div className="space-y-2 pt-2 border-t border-gray-200">
                   <Button
@@ -1091,7 +1092,7 @@ function ContableContent() {
                     <h2 className="text-sm font-semibold text-gray-900">Módulo Contable</h2>
                   </div>
                 </div>
-                
+
                 <div className="space-y-1">
                   <Button
                     variant={activeSection === 'gastos' ? 'default' : 'outline'}
@@ -1118,7 +1119,7 @@ function ContableContent() {
                     Bancos
                   </Button>
                 </div>
-                
+
                 {/* Botón de Importar - Parte inferior */}
                 <div className="pt-4 border-t border-gray-200">
                   <Button
@@ -1144,16 +1145,16 @@ function ContableContent() {
                   <div>
                     {/* Sin títulos redundantes */}
                   </div>
-                  
+
                 </div>
               </CardHeader>
-              
+
               {/* Totales del mes seleccionado - Overlay absoluto fuera del CardHeader */}
               {selectedYear && selectedMonth && (
                 <div className="absolute top-4 right-4 z-10 flex gap-3">
                   {(() => {
                     const totals = calculateTotals()
-                    
+
                     if (totals.isTransfer) {
                       return (
                         <>
@@ -1221,7 +1222,7 @@ function ContableContent() {
                   })()}
                 </div>
               )}
-              
+
               <CardContent className="space-y-4">
                 {/* Year Selector con Acciones */}
                 <div>
@@ -1239,22 +1240,22 @@ function ContableContent() {
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      
+
                       {/* Años disponibles (dinámicos) */}
                       <div className="flex gap-1.5">
                         {generateYears(centerYear).map((year) => (
-                      <Button
-                        key={year}
-                        variant={selectedYear === year ? 'default' : 'outline'}
-                        size="sm"
+                          <Button
+                            key={year}
+                            variant={selectedYear === year ? 'default' : 'outline'}
+                            size="sm"
                             className="text-xs h-7 px-2 min-w-[60px]"
-                        onClick={() => handleYearSelect(year)}
-                      >
-                        {year}
-                      </Button>
-                    ))}
+                            onClick={() => handleYearSelect(year)}
+                          >
+                            {year}
+                          </Button>
+                        ))}
                       </div>
-                      
+
                       {/* Botón para avanzar año */}
                       <Button
                         variant="outline"
@@ -1343,7 +1344,7 @@ function ContableContent() {
 
                 {/* Data Table - SIEMPRE VISIBLE */}
                 <div>
-                  
+
                   {!selectedYear || !selectedMonth ? (
                     <div className="border rounded-lg overflow-hidden min-h-[320px] bg-gray-50 flex items-center justify-center">
                       <div className="text-center text-gray-500">
@@ -1360,15 +1361,15 @@ function ContableContent() {
                   ) : (
                     <SimpleDataGrid
                       ref={simpleDataGridRef}
-                      data={activeSection === 'gastos' ? payrollData : 
-                            activeSection === 'facturacion' ? expenseData : 
-                            transferData}
-                      onSave={activeSection === 'gastos' ? savePayrollData : 
-                             activeSection === 'facturacion' ? saveExpenseData : 
-                             saveTransferData}
-                      onDelete={activeSection === 'gastos' ? deletePayrollRecord : 
-                               activeSection === 'facturacion' ? deleteExpenseRecord : 
-                               deleteTransferRecord}
+                      data={activeSection === 'gastos' ? payrollData :
+                        activeSection === 'facturacion' ? expenseData :
+                          transferData}
+                      onSave={activeSection === 'gastos' ? savePayrollData :
+                        activeSection === 'facturacion' ? saveExpenseData :
+                          saveTransferData}
+                      onDelete={activeSection === 'gastos' ? deletePayrollRecord :
+                        activeSection === 'facturacion' ? deleteExpenseRecord :
+                          deleteTransferRecord}
                       onCancel={() => {
                         setSelectedYear(null)
                         setSelectedMonth(null)
@@ -1385,9 +1386,9 @@ function ContableContent() {
                       onFiltersActiveChange={handleFiltersActiveChange}
                       year={selectedYear}
                       mes={selectedMonth}
-                      type={activeSection === 'gastos' ? 'payroll' : 
-                            activeSection === 'facturacion' ? 'expenses' : 
-                            'transfers'}
+                      type={activeSection === 'gastos' ? 'payroll' :
+                        activeSection === 'facturacion' ? 'expenses' :
+                          'transfers'}
                       // Pasar estados y funciones para los botones externos
                       showFilters={showFilters}
                       setShowFilters={setShowFilters}
@@ -1422,8 +1423,8 @@ function ContableContent() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5" />
-              Importar Datos - {activeSection === 'gastos' ? 'Libro Gastos' : 
-                               activeSection === 'facturacion' ? 'Facturación' : 'Bancos'}
+              Importar Datos - {activeSection === 'gastos' ? 'Libro Gastos' :
+                activeSection === 'facturacion' ? 'Facturación' : 'Bancos'}
             </DialogTitle>
             <DialogDescription>
               Importa datos desde un archivo Excel (.xlsx) o CSV. Las fechas en el archivo determinarán automáticamente el año y mes de destino.
@@ -1493,7 +1494,7 @@ function ContableContent() {
             {importData && (
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Vista previa de datos</h3>
-                
+
                 {/* Resumen */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-blue-50 p-3 rounded-lg">
@@ -1552,11 +1553,10 @@ function ContableContent() {
                           </thead>
                           <tbody>
                             {allRows.filter(row => !row.isValid).map((rowWithStatus, index) => (
-                              <tr 
-                                key={index} 
-                                className={`border-t hover:bg-red-50 ${
-                                  selectedRows.has(rowWithStatus.index) ? 'bg-blue-50' : ''
-                                }`}
+                              <tr
+                                key={index}
+                                className={`border-t hover:bg-red-50 ${selectedRows.has(rowWithStatus.index) ? 'bg-blue-50' : ''
+                                  }`}
                               >
                                 <td className="px-2 py-2 text-center border-r">
                                   <button
@@ -1601,12 +1601,12 @@ function ContableContent() {
                                       Object.keys(row.data).forEach(key => allColumns.add(key))
                                     }
                                   })
-                                  
+
                                   return Array.from(allColumns).map((key, cellIndex) => {
-                                    const value = rowWithStatus.data && rowWithStatus.data[key] !== undefined 
-                                      ? rowWithStatus.data[key] 
+                                    const value = rowWithStatus.data && rowWithStatus.data[key] !== undefined
+                                      ? rowWithStatus.data[key]
                                       : null
-                                    
+
                                     return (
                                       <td key={cellIndex} className="px-3 py-2 border-r">
                                         <Tooltip>
@@ -1778,13 +1778,11 @@ function ContableContent() {
                             return null
                           })()}
                           {allRows.slice(0, 20).map((rowWithStatus, index) => (
-                            <tr 
-                              key={index} 
-                              className={`border-t hover:bg-gray-50 ${
-                                !rowWithStatus.isValid ? 'bg-red-50' : ''
-                              } ${
-                                selectedRows.has(rowWithStatus.index) ? 'bg-blue-50' : ''
-                              }`}
+                            <tr
+                              key={index}
+                              className={`border-t hover:bg-gray-50 ${!rowWithStatus.isValid ? 'bg-red-50' : ''
+                                } ${selectedRows.has(rowWithStatus.index) ? 'bg-blue-50' : ''
+                                }`}
                             >
                               <td className="px-2 py-2 text-center border-r">
                                 <button
@@ -1837,12 +1835,12 @@ function ContableContent() {
                                     Object.keys(row.data).forEach(key => allColumns.add(key))
                                   }
                                 })
-                                
+
                                 return Array.from(allColumns).map((key, cellIndex) => {
-                                  const value = rowWithStatus.data && rowWithStatus.data[key] !== undefined 
-                                    ? rowWithStatus.data[key] 
+                                  const value = rowWithStatus.data && rowWithStatus.data[key] !== undefined
+                                    ? rowWithStatus.data[key]
                                     : null
-                                  
+
                                   return (
                                     <td key={cellIndex} className="px-3 py-2 border-r">
                                       <Tooltip>

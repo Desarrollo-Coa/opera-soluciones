@@ -86,6 +86,29 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return passwordService.verifyPassword(password, hash)
 }
 
+import { cookies } from 'next/headers'
+
+/**
+ * Get authenticated user data from cookies (Server side)
+ * Obtener datos del usuario autenticado desde cookies (Lado servidor)
+ */
+export async function getAuthUser() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('auth-token')?.value
+  if (!token) return null
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return {
+      id: payload.id as number,
+      role: payload.role as string,
+      email: payload.email as string
+    }
+  } catch (error) {
+    return null
+  }
+}
+
 /**
  * Sign token (convenience function)
  * Firmar token (función de conveniencia)

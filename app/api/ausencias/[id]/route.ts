@@ -12,7 +12,7 @@ export async function GET(
     const id_ausencia = parseInt(id);
 
     const ausencia = await ausenciaService.obtenerPorId(id_ausencia);
-    
+
     if (!ausencia) {
       return NextResponse.json({ error: 'Ausencia no encontrada' }, { status: 404 });
     }
@@ -32,13 +32,13 @@ export async function PUT(
     const { id } = await context.params;
     const id_ausencia = parseInt(id);
     const body = await request.json();
-    const { nombre_tipo_ausencia, descripcion } = body;
+    const { id_tipo_ausencia, descripcion, fecha_inicio, fecha_fin } = body;
 
-    // Obtener el ID del tipo de ausencia basado en el nombre
+    // Obtener el ID del tipo de ausencia basado en el ID proporcionado
     const { TipoAusenciaService } = await import('@/lib/ausencias/services');
     const tipoService = new TipoAusenciaService();
     const tipos = await tipoService.obtenerActivos();
-    const tipo = tipos.find(t => t.nombre === nombre_tipo_ausencia);
+    const tipo = tipos.find(t => t.id === id_tipo_ausencia);
 
     if (!tipo) {
       return NextResponse.json({ error: 'Tipo de ausencia no válido' }, { status: 400 });
@@ -46,7 +46,9 @@ export async function PUT(
 
     await ausenciaService.actualizar(id_ausencia, {
       id_tipo_ausencia: tipo.id,
-      descripcion
+      descripcion,
+      fecha_inicio,
+      fecha_fin
     });
 
     return NextResponse.json({ success: true });

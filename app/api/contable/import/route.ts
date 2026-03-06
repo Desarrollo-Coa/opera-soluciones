@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyTokenEdge } from '@/lib/auth/token-verifier'
-import { executeQuery } from '@/lib/database'
+import { executeQuery } from '@/lib/db'
 import * as XLSX from 'xlsx'
 
 export async function POST(request: NextRequest) {

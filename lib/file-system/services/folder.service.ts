@@ -1,4 +1,4 @@
-import { executeQuery } from '@/lib/database';
+import { executeQuery } from '@/lib/db';
 import { FileFolder, CreateFolderData } from '../types';
 
 export class FolderService {
@@ -7,11 +7,22 @@ export class FolderService {
    */
   async obtenerTodas(): Promise<FileFolder[]> {
     const folders = await executeQuery(
-      `SELECT f.*, u.first_name, u.last_name
-       FROM file_folders f
-       JOIN users u ON f.created_by = u.id
-       WHERE f.is_active = TRUE
-       ORDER BY f.path, f.name`
+      `SELECT 
+         f.CF_IDCARPETA_PK as id, 
+         f.CF_NOMBRE as name, 
+         f.CF_IDCARPETA_PADRE_FK as parent_id, 
+         f.CF_RUTA as path, 
+         f.CF_DESCRIPCION as description, 
+         f.CF_CREADO_POR as created_by, 
+         f.CF_FECHA_CREACION as created_at, 
+         f.CF_FECHA_ACTUALIZACION as updated_at, 
+         f.CF_ACTIVO as is_active,
+         u.US_NOMBRE as first_name, 
+         u.US_APELLIDO as last_name
+       FROM OS_CARPETAS f
+       JOIN OS_USUARIOS u ON f.CF_CREADO_POR = u.US_IDUSUARIO_PK
+       WHERE f.CF_ACTIVO = TRUE
+       ORDER BY f.CF_RUTA, f.CF_NOMBRE`
     ) as FileFolder[];
 
     return this.buildFolderTree(folders);
@@ -22,12 +33,23 @@ export class FolderService {
    */
   async obtenerPorPadre(parentId: number | null): Promise<FileFolder[]> {
     const folders = await executeQuery(
-      `SELECT f.*, u.first_name, u.last_name
-       FROM file_folders f
-       JOIN users u ON f.created_by = u.id
-       WHERE f.parent_id ${parentId ? '= ?' : 'IS NULL'} 
-       AND f.is_active = TRUE
-       ORDER BY f.name`,
+      `SELECT 
+         f.CF_IDCARPETA_PK as id, 
+         f.CF_NOMBRE as name, 
+         f.CF_IDCARPETA_PADRE_FK as parent_id, 
+         f.CF_RUTA as path, 
+         f.CF_DESCRIPCION as description, 
+         f.CF_CREADO_POR as created_by, 
+         f.CF_FECHA_CREACION as created_at, 
+         f.CF_FECHA_ACTUALIZACION as updated_at, 
+         f.CF_ACTIVO as is_active,
+         u.US_NOMBRE as first_name, 
+         u.US_APELLIDO as last_name
+       FROM OS_CARPETAS f
+       JOIN OS_USUARIOS u ON f.CF_CREADO_POR = u.US_IDUSUARIO_PK
+       WHERE f.CF_IDCARPETA_PADRE_FK ${parentId ? '= ?' : 'IS NULL'} 
+       AND f.CF_ACTIVO = TRUE
+       ORDER BY f.CF_NOMBRE`,
       parentId ? [parentId] : []
     ) as FileFolder[];
 
@@ -39,10 +61,21 @@ export class FolderService {
    */
   async obtenerPorId(id: number): Promise<FileFolder | null> {
     const folders = await executeQuery(
-      `SELECT f.*, u.first_name, u.last_name
-       FROM file_folders f
-       JOIN users u ON f.created_by = u.id
-       WHERE f.id = ? AND f.is_active = TRUE`,
+      `SELECT 
+         f.CF_IDCARPETA_PK as id, 
+         f.CF_NOMBRE as name, 
+         f.CF_IDCARPETA_PADRE_FK as parent_id, 
+         f.CF_RUTA as path, 
+         f.CF_DESCRIPCION as description, 
+         f.CF_CREADO_POR as created_by, 
+         f.CF_FECHA_CREACION as created_at, 
+         f.CF_FECHA_ACTUALIZACION as updated_at, 
+         f.CF_ACTIVO as is_active,
+         u.US_NOMBRE as first_name, 
+         u.US_APELLIDO as last_name
+       FROM OS_CARPETAS f
+       JOIN OS_USUARIOS u ON f.CF_CREADO_POR = u.US_IDUSUARIO_PK
+       WHERE f.CF_IDCARPETA_PK = ? AND f.CF_ACTIVO = TRUE`,
       [id]
     ) as FileFolder[];
 
@@ -53,14 +86,14 @@ export class FolderService {
    * Crear nueva carpeta
    */
   async crear(data: CreateFolderData, userId: number): Promise<number> {
-    const parentPath = data.parent_id 
+    const parentPath = data.parent_id
       ? await this.obtenerRutaPadre(data.parent_id)
       : '/';
-    
+
     const newPath = `${parentPath}${data.name}/`;
-    
+
     const result = await executeQuery(
-      `INSERT INTO file_folders (name, parent_id, path, description, created_by)
+      `INSERT INTO OS_CARPETAS (CF_NOMBRE, CF_IDCARPETA_PADRE_FK, CF_RUTA, CF_DESCRIPCION, CF_CREADO_POR)
        VALUES (?, ?, ?, ?, ?)`,
       [data.name, data.parent_id, newPath, data.description || '', userId]
     ) as any;
@@ -76,18 +109,18 @@ export class FolderService {
     const values = [];
 
     if (data.name) {
-      updates.push('name = ?');
+      updates.push('CF_NOMBRE = ?');
       values.push(data.name);
     }
     if (data.description !== undefined) {
-      updates.push('description = ?');
+      updates.push('CF_DESCRIPCION = ?');
       values.push(data.description);
     }
 
     if (updates.length > 0) {
       values.push(id);
       await executeQuery(
-        `UPDATE file_folders SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        `UPDATE OS_CARPETAS SET ${updates.join(', ')}, CF_FECHA_ACTUALIZACION = CURRENT_TIMESTAMP WHERE CF_IDCARPETA_PK = ?`,
         values
       );
     }
@@ -98,7 +131,7 @@ export class FolderService {
    */
   async eliminar(id: number): Promise<void> {
     await executeQuery(
-      'UPDATE file_folders SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE OS_CARPETAS SET CF_ACTIVO = FALSE, CF_FECHA_ACTUALIZACION = CURRENT_TIMESTAMP WHERE CF_IDCARPETA_PK = ?',
       [id]
     );
   }
@@ -108,7 +141,7 @@ export class FolderService {
    */
   private async obtenerRutaPadre(parentId: number): Promise<string> {
     const folders = await executeQuery(
-      'SELECT path FROM file_folders WHERE id = ? AND is_active = TRUE',
+      'SELECT CF_RUTA as path FROM OS_CARPETAS WHERE CF_IDCARPETA_PK = ? AND CF_ACTIVO = TRUE',
       [parentId]
     ) as FileFolder[];
 
@@ -130,7 +163,7 @@ export class FolderService {
     // Construir jerarquía
     folders.forEach(folder => {
       const folderNode = folderMap.get(folder.id)!;
-      
+
       if (folder.parent_id === null) {
         rootFolders.push(folderNode);
       } else {

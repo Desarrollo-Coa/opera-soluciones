@@ -1,20 +1,33 @@
+/**
+ * Tipos de ausencias — Migración 007
+ * Las propiedades de Ausencia y TipoAusencia se alinean con las
+ * nuevas columnas OS_ devueltas directamente por las queries SQL.
+ * Los alias en los SELECT (.service.ts) producen estos nombres.
+ */
+
+// Propiedades que vienen directamente de OS_AUSENCIAS con columnas AU_
 export interface Ausencia {
-  id_ausencia: number;
-  id_colaborador: number;
-  id_tipo_ausencia: number;
-  fecha_inicio: string;
-  fecha_fin: string;
-  dias_ausencia: number;
-  descripcion: string;
-  soporte_url?: string;
-  id_usuario_registro: number;
-  fecha_registro: string;
-  activo: boolean;
+  AU_IDAUSENCIA_PK: number;
+  US_IDUSUARIO_FK: number;
+  TA_IDTIPO_AUSENCIA_FK: number;
+  AU_FECHA_INICIO: string;
+  AU_FECHA_FIN: string;
+  AU_DIAS_AUSENCIA: number;
+  AU_DESCRIPCION: string;
+  AU_SOPORTE_URL?: string;
+  AU_USUARIO_REGISTRO_FK: number;
+  AU_FECHA_REGISTRO: string;
+  AU_ACTIVO: boolean;
+
+  // Campos alias de JOIN con OS_USUARIOS
   nombre_colaborador?: string;
   apellido_colaborador?: string;
-  nombre_puesto?: string;
   nombre_departamento?: string;
+
+  // Campo alias de JOIN con OS_TIPOS_AUSENCIA
   nombre_tipo_ausencia?: string;
+
+  // Archivos adjuntos (alias del SELECT en OS_ARCHIVOS_AUSENCIAS)
   archivos?: Array<{
     id_archivo: number;
     url_archivo: string;
@@ -32,16 +45,27 @@ export interface CrearAusenciaData {
   archivos?: File[];
 }
 
+// Propiedades de OS_TIPOS_AUSENCIA con columnas TA_
 export interface TipoAusencia {
-  id: number;
-  nombre: string;
+  TA_IDTIPO_AUSENCIA_PK: number;
+  TA_NOMBRE: string;
+  TA_DESCRIPCION?: string;
+  TA_PORCENTAJE_PAGO?: number;
+  TA_ACTIVO: boolean;
+  TA_FECHA_CREACION?: string;
+  TA_CREADO_POR?: number;
+  TA_FECHA_ACTUALIZACION?: string;
+  TA_ACTUALIZADO_POR?: number;
+
+  // Aliases opcionales para compatibilidad con componentes legacy
+  id?: number;
+  nombre?: string;
   descripcion?: string;
-  es_remunerada: boolean;
-  is_active: boolean;
-  created_at: string;
-  created_by: number;
+  is_active?: boolean;
+  porcentaje_pago?: number;
+  created_at?: string;
+  created_by?: number;
   updated_at?: string;
-  updated_by?: number;
 }
 
 export interface DashboardStats {

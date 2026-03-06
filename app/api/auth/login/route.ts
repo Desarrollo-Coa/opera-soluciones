@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { signToken, verifyPassword, hashPassword } from "@/lib/auth"
-import { getUserByEmailWithStatus, createUser } from "@/database/users"
+import { getUserByEmailWithStatus, createUser } from "@/lib/repositories/users"
 import { loginSchema } from "@/lib/validations"
 import { ERROR_MESSAGES, SUCCESS_MESSAGES, type RoleCode, ROLE_CODES, DEFAULT_VALUES } from "@/lib/constants"
 
@@ -15,16 +15,16 @@ export async function POST(request: NextRequest) {
     const user = await getUserByEmailWithStatus(email)
 
     if (!user) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: ERROR_MESSAGES.INVALID_CREDENTIALS
       }, { status: 401 })
     }
 
     // Verify password
     // Verificar contraseña
-    const isValidPassword = await verifyPassword(password, user.password_hash)
+    const isValidPassword = await verifyPassword(password, user.US_PASSWORD_HASH)
     if (!isValidPassword) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: ERROR_MESSAGES.INVALID_CREDENTIALS
       }, { status: 401 })
     }
@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
     // Create JWT token
     // Crear token JWT
     const token = await signToken({
-      id: user.id,
-      email: user.email,
+      id: user.US_IDUSUARIO_PK,
+      email: user.US_EMAIL,
       role: user.role_code as RoleCode,
-      first_name: user.first_name,
-      last_name: user.last_name,
+      first_name: user.US_NOMBRE,
+      last_name: user.US_APELLIDO,
     })
 
     // Set cookie and return response
@@ -44,12 +44,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       user: {
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        nombres: user.first_name,
-        apellidos: user.last_name, 
-        email: user.email,
+        id: user.US_IDUSUARIO_PK,
+        first_name: user.US_NOMBRE,
+        last_name: user.US_APELLIDO,
+        nombres: user.US_NOMBRE,
+        apellidos: user.US_APELLIDO,
+        email: user.US_EMAIL,
         role: user.role_code,
         role_name: user.role_name,
       },
@@ -65,16 +65,16 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error("Login error / Error de login:", error)
-    
+
     // Handle specific validation errors
     // Manejar errores específicos de validación
     if (error instanceof Error && error.message.includes("validation")) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: ERROR_MESSAGES.VALIDATION_ERROR
       }, { status: 400 })
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR
     }, { status: 500 })
   }

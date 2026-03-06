@@ -74,11 +74,11 @@ export const ERROR_MESSAGES = {
   TOKEN_EXPIRED: 'Token expirado',
   INVALID_TOKEN: 'Token inválido',
   USER_ALREADY_EXISTS: 'El usuario ya existe',
-  
+
   // Database errors
   DATABASE_ERROR: 'Error de base de datos',
   CONNECTION_ERROR: 'Error de conexión',
-  
+
   // Validation errors
   INVALID_EMAIL: 'Email inválido',
   INVALID_EMAIL_FORMAT: 'Formato de email inválido',
@@ -94,7 +94,7 @@ export const ERROR_MESSAGES = {
   INVALID_TOKEN_INPUT: 'Entrada de token inválida',
   TOKEN_SIGNING_ERROR: 'Error al firmar token',
   VALIDATION_ERROR: 'Datos de entrada inválidos',
-  
+
   // General errors
   INTERNAL_SERVER_ERROR: 'Error interno del servidor',
   NOT_FOUND: 'Recurso no encontrado',
@@ -170,9 +170,82 @@ export const NAVIGATION_LINKS = [
  */
 export const DASHBOARD_COMPONENTS = {
   ADMIN: "AdminDashboard",
-  EMPLOYEE: "EmployeeDashboard", 
+  EMPLOYEE: "EmployeeDashboard",
   HR: "HRDashboard",
   AUDITOR: "AuditorDashboard",
 } as const;
 
 
+/**
+ * Common Social Security entities in Colombia
+ */
+export const EPS_LIST = [
+  "ALIANSALUD EPS S.A.",
+  "ASMET SALUD EPS S.A.S.",
+  "CAJACOPI EPS S.A.S",
+  "CAJA DE COMPENSACIÓN FAMILIAR COMPENSAR",
+  "COOSALUD EPS S.A.",
+  "EMSSANAR S.A.S.",
+  "ENTIDAD PROMOTORA DE SALUD SANITAS S.A.S.",
+  "ENTIDAD PROMOTORA DE SALUD SERVICIO OCCIDENTAL DE SALUD S.A. S.O.S.",
+  "EPS SURAMERICANA S.A.",
+  "EPS FAMISANAR S.A.S.",
+  "NUEVA EPS S.A.",
+  "SALUD TOTAL S.A.",
+  "SAVIA SALUD EPS",
+  "OTRO / NO APLICA"
+];
+
+export const ARL_LIST = [
+  "POSITIVA COMPAÑÍA DE SEGUROS",
+  "AXA COLPATRIA SEGUROS S.A.",
+  "SEGUROS DE VIDA SURAMERICANA S.A.",
+  "SEGUROS BOLÍVAR S.A.",
+  "LA EQUIDAD SEGUROS",
+  "LIBERTY SEGUROS S.A.",
+  "MAPFRE SEGUROS",
+  "OTRO / NO APLICA"
+];
+
+export const PENSION_FUNDS_LIST = [
+  "COLPENSIONES (RPM)",
+  "PORVENIR",
+  "PROTECCIÓN",
+  "COLFONDOS",
+  "SKANDIA",
+  "OTRO / NO APLICA"
+];
+
+export const COMPENSATION_FUNDS_LIST = [
+  "CAJACOPI",
+  "COMFANDI",
+  "COMFENALCO",
+  "COMPENSAR",
+  "CAFAM",
+  "COLSUBSIDIO",
+  "COMFAMA",
+  "COMFAMILIAR",
+  "OTRO / NO APLICA"
+];
+
+/**
+ * Work schedule modalities
+ */
+export const WORK_SCHEDULES = [
+  "8:00 a.m - 5:00 p.m. (L-V)",
+  "8:00 a.m - 6:00 p.m. (L-V)",
+  "7:00 a.m - 4:00 p.m. (L-S)",
+  "Turnos Rotativos",
+  "Teletrabajo / Flexible",
+  "Personalizado"
+];
+
+/**
+ * Contract types (Mapping for UI display)
+ */
+export const EMPLOYMENT_TYPES = [
+  'Tiempo Completo',
+  'Medio Tiempo',
+  'Por Horas',
+  'Por Contrato'
+];

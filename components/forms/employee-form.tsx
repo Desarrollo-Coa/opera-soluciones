@@ -14,7 +14,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner" // Changed from "@/hooks/use-toast"
 
 interface EmployeeFormData {
   nombres: string
@@ -37,23 +37,16 @@ export function EmployeeForm({ onSubmit, onCancel, isLoading = false }: Employee
     cedula: "",
   })
 
-  const { toast } = useToast()
+  // Removed: const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       await onSubmit(form)
-      toast({
-        title: "Empleado creado",
-        description: "El empleado ha sido creado exitosamente",
-      })
+      toast.success("El empleado ha sido creado exitosamente") // Updated toast call
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear el empleado",
-        variant: "destructive",
-      })
+      toast.error("No se pudo crear el empleado") // Updated toast call
     }
   }
 
@@ -73,7 +66,7 @@ export function EmployeeForm({ onSubmit, onCancel, isLoading = false }: Employee
           disabled={isLoading}
         />
       </div>
-      
+
       <div>
         <Label htmlFor="apellidos">Apellidos</Label>
         <Input
@@ -84,7 +77,7 @@ export function EmployeeForm({ onSubmit, onCancel, isLoading = false }: Employee
           disabled={isLoading}
         />
       </div>
-      
+
       <div>
         <Label htmlFor="email">Email</Label>
         <Input
@@ -96,7 +89,7 @@ export function EmployeeForm({ onSubmit, onCancel, isLoading = false }: Employee
           disabled={isLoading}
         />
       </div>
-      
+
       <div>
         <Label htmlFor="cedula">Cédula</Label>
         <Input
@@ -107,7 +100,7 @@ export function EmployeeForm({ onSubmit, onCancel, isLoading = false }: Employee
           disabled={isLoading}
         />
       </div>
-      
+
       <div className="flex gap-2 pt-4">
         <Button type="submit" disabled={isLoading}>
           {isLoading ? "Creando..." : "Crear empleado"}

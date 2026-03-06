@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Upload, Loader2 } from "lucide-react"
 
 interface DocumentUploadProps {
@@ -20,7 +20,6 @@ interface DocumentUploadProps {
 }
 
 export function DocumentUpload({ employeeId, onUploadSuccess, allowedTypeNames, defaultTypeName }: DocumentUploadProps) {
-  const { toast } = useToast()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [documentTypes, setDocumentTypes] = useState<any[]>([])
@@ -62,10 +61,7 @@ export function DocumentUpload({ employeeId, onUploadSuccess, allowedTypeNames, 
       })
 
       if (response.ok) {
-        toast({
-          title: "Éxito",
-          description: "Documento subido correctamente",
-        })
+        toast.success("Documento subido correctamente")
         setOpen(false)
         setFormData({
           document_name: '',
@@ -76,19 +72,11 @@ export function DocumentUpload({ employeeId, onUploadSuccess, allowedTypeNames, 
         onUploadSuccess()
       } else {
         const error = await response.json()
-        toast({
-          title: "Error",
-          description: error.error || "Error al subir el documento",
-          variant: "destructive",
-        })
+        toast.error(error.error || "Error al subir el documento")
       }
     } catch (error) {
       console.error('Error uploading document:', error)
-      toast({
-        title: "Error",
-        description: "Error al subir el documento",
-        variant: "destructive",
-      })
+      toast.error("Error al subir el documento")
     } finally {
       setLoading(false)
     }
@@ -129,7 +117,7 @@ export function DocumentUpload({ employeeId, onUploadSuccess, allowedTypeNames, 
         <DialogHeader>
           <DialogTitle>Subir Documento</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="file">Archivo *</Label>

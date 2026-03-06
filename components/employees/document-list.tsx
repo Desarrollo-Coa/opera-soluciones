@@ -6,7 +6,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Download, Trash2, Eye, FileText } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
+import { useState } from "react"
+import { Loader2 } from "lucide-react"
 
 interface EmployeeDocument {
   id: number
@@ -20,11 +22,11 @@ interface EmployeeDocument {
 interface DocumentListProps {
   documents: EmployeeDocument[]
   loading: boolean
-  onDelete: () => void
+  onDeleteSuccess: () => void
 }
 
-export function DocumentList({ documents, loading, onDelete }: DocumentListProps) {
-  const { toast } = useToast()
+export function DocumentList({ documents, loading, onDeleteSuccess }: DocumentListProps) {
+  const [isDeleting, setIsDeleting] = useState<number | null>(null)
 
   const handleDownload = (doc: EmployeeDocument) => {
     // Create a temporary link to download the file
@@ -37,31 +39,29 @@ export function DocumentList({ documents, loading, onDelete }: DocumentListProps
   }
 
   const handleDelete = async (id: number) => {
+    setIsDeleting(id)
     try {
       const response = await fetch(`/api/documents/${id}`, {
         method: 'DELETE'
       })
-      
+
       if (response.ok) {
-        toast({
-          title: "Éxito",
-          description: "Documento eliminado correctamente",
-        })
-        onDelete()
+        const res = await response.json() // Assuming API returns a JSON response with success/message
+        if (res.success) {
+          toast.success("Documento eliminado correctamente")
+          onDeleteSuccess()
+        } else {
+          toast.error(res.message || "Error al eliminar el documento")
+        }
       } else {
-        toast({
-          title: "Error",
-          description: "Error al eliminar el documento",
-          variant: "destructive",
-        })
+        const errorData = await response.json().catch(() => ({ message: "Error desconocido" }))
+        toast.error(errorData.message || "Error al eliminar el documento")
       }
     } catch (error) {
       console.error('Error deleting document:', error)
-      toast({
-        title: "Error",
-        description: "Error al eliminar el documento",
-        variant: "destructive",
-      })
+      toast.error("Error al procesar la eliminación")
+    } finally {
+      setIsDeleting(null)
     }
   }
 

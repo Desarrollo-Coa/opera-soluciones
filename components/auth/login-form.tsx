@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants"
 
@@ -15,7 +15,6 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -37,24 +36,13 @@ export function LoginForm() {
       const data = await response.json()
 
       if (response.ok) {
-        toast({
-          title: SUCCESS_MESSAGES.LOGIN_SUCCESS,
-          description: `Bienvenido, ${data.user.nombres}`,
-        })
+        toast.success(`Bienvenido, ${data.user.nombres}`)
         router.push("/inicio")
       } else {
-        toast({
-          title: "Error de autenticación",
-          description: data.error || ERROR_MESSAGES.INVALID_CREDENTIALS,
-          variant: "destructive",
-        })
+        toast.error(data.error || ERROR_MESSAGES.INVALID_CREDENTIALS)
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-        variant: "destructive",
-      })
+      toast.error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
     } finally {
       setIsLoading(false)
     }

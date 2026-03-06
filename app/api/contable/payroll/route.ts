@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyTokenEdge } from "@/lib/auth/token-verifier"
-import { executeQuery } from "@/lib/database"
+import { executeQuery } from "@/lib/db"
 
 // GET - Obtener datos de nómina por año y mes
 export async function GET(request: NextRequest) {
@@ -36,12 +36,26 @@ export async function GET(request: NextRequest) {
 
     // Obtener datos de la base de datos
     console.log(`Fetching payroll data for year: ${year}, mes: ${mes}`)
-    
+
     const rows = await executeQuery(
-      `SELECT id, year, mes, fecha, proveedor, pago, objeto, valor_neto, iva, retencion, total, nit, numero_factura, obra 
-       FROM payroll_mes_a_mes 
-       WHERE year = ? AND mes = ? 
-       ORDER BY fecha DESC, id DESC`,
+      `SELECT 
+         GM_IDGASTO_PK as id, 
+         GM_ANIO as year, 
+         GM_MES as mes, 
+         GM_FECHA as fecha, 
+         GM_PROVEEDOR as proveedor, 
+         GM_PAGO as pago, 
+         GM_OBJETO as objeto, 
+         GM_VALOR_NETO as valor_neto, 
+         GM_IVA as iva, 
+         GM_RETENCION as retencion, 
+         GM_TOTAL as total, 
+         GM_NIT as nit, 
+         GM_NUMERO_FACTURA as numero_factura, 
+         GM_OBRA as obra 
+       FROM OS_GASTOS_MES 
+       WHERE GM_ANIO = ? AND GM_MES = ? 
+       ORDER BY GM_FECHA DESC, GM_IDGASTO_PK DESC`,
       [parseInt(year), mes]
     )
 
@@ -92,12 +106,12 @@ export async function POST(request: NextRequest) {
 
     for (const row of data) {
       // Validar datos requeridos (permitir cadenas vacías pero no null/undefined)
-      if (!row.year || !row.mes || !row.fecha || 
-          row.proveedor === undefined || row.proveedor === null ||
-          row.objeto === undefined || row.objeto === null ||
-          row.nit === undefined || row.nit === null ||
-          row.numero_factura === undefined || row.numero_factura === null ||
-          row.obra === undefined || row.obra === null) {
+      if (!row.year || !row.mes || !row.fecha ||
+        row.proveedor === undefined || row.proveedor === null ||
+        row.objeto === undefined || row.objeto === null ||
+        row.nit === undefined || row.nit === null ||
+        row.numero_factura === undefined || row.numero_factura === null ||
+        row.obra === undefined || row.obra === null) {
         console.log("Validation error - missing required fields:", {
           year: row.year,
           mes: row.mes,
@@ -108,7 +122,7 @@ export async function POST(request: NextRequest) {
           numero_factura: row.numero_factura,
           obra: row.obra
         })
-        
+
         // Crear mensaje específico sobre qué campos faltan
         const missingFields = []
         if (!row.year) missingFields.push("año")
@@ -119,9 +133,9 @@ export async function POST(request: NextRequest) {
         if (row.nit === undefined || row.nit === null) missingFields.push("NIT")
         if (row.numero_factura === undefined || row.numero_factura === null) missingFields.push("número de factura")
         if (row.obra === undefined || row.obra === null) missingFields.push("obra")
-        
+
         const errorMessage = `Los siguientes campos son obligatorios: ${missingFields.join(", ")}`
-        
+
         return NextResponse.json(
           { error: errorMessage },
           { status: 400 }
@@ -148,8 +162,8 @@ export async function POST(request: NextRequest) {
       if (row.isNew) {
         // Insertar nueva fila
         const result = await executeQuery(
-          `INSERT INTO payroll_mes_a_mes 
-           (year, mes, fecha, proveedor, pago, objeto, valor_neto, iva, retencion, total, nit, numero_factura, obra, created_by) 
+          `INSERT INTO OS_GASTOS_MES 
+           (GM_ANIO, GM_MES, GM_FECHA, GM_PROVEEDOR, GM_PAGO, GM_OBJETO, GM_VALOR_NETO, GM_IVA, GM_RETENCION, GM_TOTAL, GM_NIT, GM_NUMERO_FACTURA, GM_OBRA, GM_CREADO_POR) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             row.year,
@@ -172,9 +186,9 @@ export async function POST(request: NextRequest) {
       } else if (row.id) {
         // Actualizar fila existente
         await executeQuery(
-          `UPDATE payroll_mes_a_mes 
-           SET fecha = ?, proveedor = ?, pago = ?, objeto = ?, valor_neto = ?, iva = ?, retencion = ?, total = ?, nit = ?, numero_factura = ?, obra = ?, updated_by = ?
-           WHERE id = ?`,
+          `UPDATE OS_GASTOS_MES 
+           SET GM_FECHA = ?, GM_PROVEEDOR = ?, GM_PAGO = ?, GM_OBJETO = ?, GM_VALOR_NETO = ?, GM_IVA = ?, GM_RETENCION = ?, GM_TOTAL = ?, GM_NIT = ?, GM_NUMERO_FACTURA = ?, GM_OBRA = ?, GM_ACTUALIZADO_POR = ?
+           WHERE GM_IDGASTO_PK = ?`,
           [
             row.fecha,
             row.proveedor,
@@ -195,8 +209,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       data: results,
       message: "Datos guardados correctamente"
     })
@@ -242,11 +256,11 @@ export async function DELETE(request: NextRequest) {
 
     // Eliminar registro
     await executeQuery(
-      "DELETE FROM payroll_mes_a_mes WHERE id = ?",
+      "DELETE FROM OS_GASTOS_MES WHERE GM_IDGASTO_PK = ?",
       [parseInt(id)]
     )
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: "Registro eliminado correctamente"
     })

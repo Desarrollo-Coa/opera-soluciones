@@ -4,13 +4,13 @@ import { ERROR_MESSAGES } from "@/lib/constants"
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get("auth-token")?.value
-  
+
   if (!token) {
-    return NextResponse.json({ 
-      error: ERROR_MESSAGES.UNAUTHORIZED 
+    return NextResponse.json({
+      error: ERROR_MESSAGES.UNAUTHORIZED
     }, { status: 401 })
   }
-  
+
   try {
     const payload = await verifyToken(token)
     return NextResponse.json({
@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Token verification error:", error)
-    return NextResponse.json({ 
-      error: ERROR_MESSAGES.UNAUTHORIZED 
+    return NextResponse.json({
+      error: ERROR_MESSAGES.UNAUTHORIZED
     }, { status: 401 })
   }
 } 

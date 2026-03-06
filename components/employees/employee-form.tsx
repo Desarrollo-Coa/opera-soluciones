@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { ROLE_CODES } from "@/lib/constants"
 
@@ -32,11 +32,10 @@ interface EmployeeFormProps {
 }
 
 export function EmployeeForm({ employee, currentUserRole, onClose, onSuccess }: EmployeeFormProps) {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [roles, setRoles] = useState<any[]>([])
   const [contractStatuses, setContractStatuses] = useState<any[]>([])
-  
+
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -74,22 +73,22 @@ export function EmployeeForm({ employee, currentUserRole, onClose, onSuccess }: 
         fetch('/api/reference/roles'),
         fetch('/api/reference/contract-statuses')
       ])
-      
+
       if (rolesRes.ok) {
         const rolesData = await rolesRes.json()
         let availableRoles = rolesData.roles || []
-        
+
         // Filter roles based on current user permissions
         // Only ADMIN can create other ADMIN users
         if (currentUserRole !== ROLE_CODES.ADMIN) {
-          availableRoles = availableRoles.filter((role: any) => 
+          availableRoles = availableRoles.filter((role: any) =>
             role.code !== ROLE_CODES.ADMIN
           )
         }
-        
+
         setRoles(availableRoles)
       }
-      
+
       if (statusesRes.ok) {
         const statusesData = await statusesRes.json()
         setContractStatuses(statusesData.contract_statuses || [])
@@ -106,7 +105,7 @@ export function EmployeeForm({ employee, currentUserRole, onClose, onSuccess }: 
     try {
       const url = isEditing ? `/api/employees/${employee.id}` : '/api/employees'
       const method = isEditing ? 'PUT' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -116,26 +115,15 @@ export function EmployeeForm({ employee, currentUserRole, onClose, onSuccess }: 
       })
 
       if (response.ok) {
-        toast({
-          title: "Éxito",
-          description: isEditing ? "Empleado actualizado correctamente" : "Empleado creado correctamente",
-        })
+        toast.success(isEditing ? "Empleado actualizado correctamente" : "Empleado creado correctamente")
         onSuccess()
       } else {
         const error = await response.json()
-        toast({
-          title: "Error",
-          description: error.error || "Error al procesar la solicitud",
-          variant: "destructive",
-        })
+        toast.error(error.error || "Error al procesar la solicitud")
       }
     } catch (error) {
       console.error('Error submitting form:', error)
-      toast({
-        title: "Error",
-        description: "Error al procesar la solicitud",
-        variant: "destructive",
-      })
+      toast.error("Error al procesar la solicitud")
     } finally {
       setLoading(false)
     }

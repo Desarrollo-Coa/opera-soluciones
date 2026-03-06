@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, X, Camera } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -15,13 +15,12 @@ interface ProfilePictureUploadProps {
   className?: string
 }
 
-export function ProfilePictureUpload({ 
-  value, 
-  onChange, 
-  disabled = false, 
-  className 
+export function ProfilePictureUpload({
+  value,
+  onChange,
+  disabled = false,
+  className
 }: ProfilePictureUploadProps) {
-  const { toast } = useToast()
   const [preview, setPreview] = useState<string | null>(value || null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -38,14 +37,14 @@ export function ProfilePictureUpload({
     // Validate file type
     const allowedTypes = ["jpeg", "jpg", "png", "webp"]
     if (!isValidFileType(file.name, allowedTypes)) {
-      toast({ title: "Archivo no válido", description: "Solo JPG, PNG y WebP", variant: "destructive" })
+      toast.error("Solo JPG, PNG y WebP")
       return
     }
 
     // Validate file size (max 5MB)
     if (!isValidFileSize(file.size, 5)) {
       const fileSize = getHumanReadableFileSize(file.size)
-      toast({ title: "Archivo demasiado grande", description: `Tamaño: ${fileSize}. Máximo 5MB`, variant: "destructive" })
+      toast.error(`Tamaño: ${fileSize}. Máximo 5MB`)
       return
     }
 
@@ -53,7 +52,7 @@ export function ProfilePictureUpload({
     const previewUrl = URL.createObjectURL(file)
     setPreview(previewUrl)
     setSelectedFile(file)
-    
+
     // Notify parent component
     onChange(file, previewUrl)
   }
@@ -82,7 +81,7 @@ export function ProfilePictureUpload({
             <Camera className="h-8 w-8" />
           </AvatarFallback>
         </Avatar>
-        
+
         {preview && !disabled && (
           <Button
             type="button"
@@ -111,7 +110,7 @@ export function ProfilePictureUpload({
           <Upload className="h-4 w-4" />
           {preview ? "Cambiar foto" : "Seleccionar foto"}
         </Button>
-        
+
         <p className="text-xs text-gray-500 text-center">
           JPG, PNG o WebP. Máximo 5MB
         </p>

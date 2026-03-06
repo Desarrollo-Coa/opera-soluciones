@@ -8,12 +8,19 @@
 // Date: 2025-09-16
 // =====================================================
 
-import { getConnection } from '@/lib/database'
+import { executeQuery, DatabaseConnection } from '@/lib/db'
 import { IAuthService, IUserRepository, ITokenService, IPasswordService } from './interfaces'
 import { AuthService } from './auth.service'
 import { MySQLUserRepository } from './user.repository'
 import { TokenService } from './token.service'
 import { PasswordService } from './password.service'
+
+class SimpleConnection implements DatabaseConnection {
+  async execute(query: string, params?: any[]): Promise<any> {
+    return executeQuery(query, params || [])
+  }
+  release(): void { }
+}
 
 /**
  * Authentication Factory
@@ -29,11 +36,11 @@ export class AuthFactory {
    */
   static async createAuthService(): Promise<IAuthService> {
     try {
-      const connection = await getConnection()
+      const connection = new SimpleConnection()
       const userRepository = new MySQLUserRepository(connection)
       const tokenService = this.getTokenService()
       const passwordService = this.getPasswordService()
-      
+
       return new AuthService(userRepository, tokenService, passwordService)
     } catch (error) {
       console.error('Error creating auth service:', error)
@@ -47,7 +54,7 @@ export class AuthFactory {
    */
   static async createUserRepository(): Promise<IUserRepository> {
     try {
-      const connection = await getConnection()
+      const connection = new SimpleConnection()
       return new MySQLUserRepository(connection)
     } catch (error) {
       console.error('Error creating user repository:', error)

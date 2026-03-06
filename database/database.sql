@@ -65,6 +65,42 @@ CREATE TABLE IF NOT EXISTS contract_statuses (
 );
 
 -- =====================================================
+-- NOMINA PARAMETERS AND POSITIONS (PARÁMETROS DE NÓMINA Y CARGOS)
+-- =====================================================
+
+-- Parámetros de nómina (SMMLV, Auxilio, Jornada)
+CREATE TABLE IF NOT EXISTS parametros_nomina (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ano_vigencia INT NOT NULL UNIQUE,
+  smmlv DECIMAL(12,2) NOT NULL,
+  auxilio_transporte DECIMAL(12,2) NOT NULL,
+  horas_semanales_maximas INT NOT NULL,
+  horas_mensuales_promedio INT NOT NULL,
+  fecha_cambio_jornada DATE,
+  nueva_horas_semanales INT,
+  nueva_horas_mensuales INT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Cargos table
+CREATE TABLE IF NOT EXISTS cargos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL UNIQUE,
+  sueldo_mensual_base DECIMAL(12,2) NOT NULL,
+  jornada_diaria_estandar INT NOT NULL,
+  aplica_auxilio_transporte BOOLEAN NOT NULL,
+  clase_riesgo_arl VARCHAR(50) NOT NULL,
+  porcentaje_riesgo_arl DECIMAL(5,3) NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_by INT NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_by INT
+);
+
+-- =====================================================
 -- CORE TABLES (TABLAS PRINCIPALES)
 -- =====================================================
 
@@ -118,6 +154,7 @@ CREATE TABLE IF NOT EXISTS users (
   
   -- Campos del sistema
   role_id INT,
+  cargo_id INT, -- Referencia al cargo (nuevo sistema de nómina 2026)
   contract_status_id INT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
@@ -148,6 +185,83 @@ CREATE TABLE IF NOT EXISTS documents (
 -- =====================================================
 -- NOMINA AND ACCOUNTING TABLES (TABLAS DE NÓMINA Y CONTABILIDAD)
 -- =====================================================
+
+-- Maestro de Conceptos de Nómina
+CREATE TABLE IF NOT EXISTS conceptos_nomina (
+    codigo VARCHAR(20) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    tipo ENUM('Devengo', 'Deducción', 'Aporte Empleador', 'Info') NOT NULL,
+    afecta_ibc_salud BOOLEAN DEFAULT FALSE,
+    afecta_ibc_pension BOOLEAN DEFAULT FALSE,
+    afecta_ibc_arl BOOLEAN DEFAULT FALSE,
+    constitutivo_salario BOOLEAN DEFAULT FALSE,
+    es_novedad BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Insertar conceptos base de nómina
+INSERT INTO conceptos_nomina (codigo, nombre, tipo, afecta_ibc_salud, afecta_ibc_pension, afecta_ibc_arl, constitutivo_salario, es_novedad) VALUES
+('DEV001', 'Sueldo Básico', 'Devengo', TRUE, TRUE, TRUE, TRUE, FALSE),
+('DEV002', 'Auxilio de Transporte', 'Devengo', FALSE, FALSE, FALSE, FALSE, FALSE),
+('DED001', 'Salud (Empleado)', 'Deducción', FALSE, FALSE, FALSE, FALSE, FALSE),
+('DED002', 'Pensión (Empleado)', 'Deducción', FALSE, FALSE, FALSE, FALSE, FALSE),
+('DEV003', 'Bonificación / Comisión', 'Devengo', TRUE, TRUE, TRUE, TRUE, TRUE),
+('DED003', 'Préstamo / Libranza', 'Deducción', FALSE, FALSE, FALSE, FALSE, TRUE),
+('DED004', 'Otras Deducciones', 'Deducción', FALSE, FALSE, FALSE, FALSE, TRUE);
+
+-- Tabla maestra de liquidaciones (una por empleado-mes/quincena)
+CREATE TABLE IF NOT EXISTS liquidaciones_nomina (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    empleado_id INT NOT NULL,
+    periodo_mes INT NOT NULL,          -- 1..12
+    periodo_anio INT NOT NULL,
+    fecha_liquidacion DATE NOT NULL,
+    fecha_pago DATE NULL,
+    dias_trabajados INT DEFAULT 30,
+    dias_incapacidad INT DEFAULT 0,
+    dias_vacaciones INT DEFAULT 0,
+    
+    -- Bases (calculadas on demand del detalle)
+    ibc_salud DECIMAL(12,2) NOT NULL,
+    ibc_pension DECIMAL(12,2) NOT NULL,
+    ibc_arl DECIMAL(12,2) NOT NULL,
+    
+    -- Totales (resumen on demand del detalle)
+    total_devengado DECIMAL(12,2) NOT NULL,
+    total_deducciones DECIMAL(12,2) NOT NULL,
+    neto_pagar DECIMAL(12,2) NOT NULL,
+    costo_total_empresa DECIMAL(12,2) NOT NULL,
+    
+    -- Atributos de Trazabilidad
+    salario_integral BOOLEAN DEFAULT FALSE,
+    valor_smmlv_base DECIMAL(12,2) NOT NULL,
+    xml_pila TEXT NULL,
+    observaciones JSON NULL,
+    estado ENUM('Borrador','Calculado','Aprobado','Pagado','Anulado') DEFAULT 'Borrador',
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_liquidacion (empleado_id, periodo_anio, periodo_mes)
+);
+
+-- Detalle de conceptos (uno por tipo de devengo/deducción/aporte para la liquidación)
+CREATE TABLE IF NOT EXISTS detalle_liquidacion (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    liquidacion_id BIGINT NOT NULL,
+    concepto_codigo VARCHAR(20) NOT NULL, 
+    descripcion VARCHAR(150),
+    cantidad DECIMAL(10,2) DEFAULT 1.00,
+    valor_unitario DECIMAL(12,2),
+    valor_total DECIMAL(12,2) NOT NULL,
+    
+    -- Desnormalización por agilidad analítica
+    tipo ENUM('Devengo', 'Deducción', 'Aporte Empleador', 'Info') NOT NULL,
+    afecta_ibc_salud BOOLEAN DEFAULT FALSE,
+    afecta_ibc_pension BOOLEAN DEFAULT FALSE,
+    afecta_ibc_arl BOOLEAN DEFAULT FALSE
+);
 
 -- Libro Gastos Mes a Mes table (tabla para gastos con facturas)
 -- Tabla para datos de gastos mes a mes con facturas
@@ -237,11 +351,18 @@ INSERT INTO document_types (name, description, created_by) VALUES
 ('Volantes de pago', 'Comprobantes de nómina y pagos salariales', 1),
 ('Exámenes médicos', 'Certificados médicos y exámenes de salud ocupacional', 1),
 ('Seguridad social', 'Documentos de afiliación y aportes a seguridad social', 1);
- 
+INSERT INTO parametros_nomina (ano_vigencia, smmlv, auxilio_transporte, horas_semanales_maximas, horas_mensuales_promedio, fecha_cambio_jornada, nueva_horas_semanales, nueva_horas_mensuales) VALUES
+(2026, 1750905.00, 249095.00, 44, 220, '2026-07-15', 42, 210);
 
-
-
--- =====================================================
+-- Insert initial data for cargos
+INSERT INTO cargos (nombre, sueldo_mensual_base, jornada_diaria_estandar, aplica_auxilio_transporte, clase_riesgo_arl, porcentaje_riesgo_arl, description, created_by) VALUES
+('VIVIENTE', 1750905.00, 8, TRUE, 'Riesgo I - 0.522%', 0.522, 'Personal de servicios generales/viviencia', 1),
+('OFICIOS VARIOS', 1750905.00, 8, TRUE, 'Riesgo I - 0.522%', 0.522, 'Personal de mantenimiento y oficios varios', 1),
+('LIDER SST', 3500000.00, 8, TRUE, 'Riesgo I - 0.522%', 0.522, 'Líder de Seguridad y Salud en el Trabajo', 1),
+('CONTADOR', 4500000.00, 8, FALSE, 'Riesgo I - 0.522%', 0.522, 'Responsable del área contable', 1),
+('ASISTENTE ADMINISTRATIVO', 2000000.00, 8, TRUE, 'Riesgo I - 0.522%', 0.522, 'Apoyo operativo administrativo', 1),
+('GERENTE', 8000000.00, 8, FALSE, 'Riesgo I - 0.522%', 0.522, 'Alta gerencia', 1),
+('CEO', 12000000.00, 8, FALSE, 'Riesgo I - 0.522%', 0.522, 'Director Ejecutivo', 1);-- =====================================================
 -- INDEXES (ÍNDICES)
 -- =====================================================
 
@@ -300,7 +421,17 @@ CREATE INDEX idx_transferencias_concepto ON transferencias_pagos(concepto);
 ALTER TABLE users 
 ADD CONSTRAINT fk_users_role_id FOREIGN KEY (role_id) REFERENCES user_roles(id),
 ADD CONSTRAINT fk_users_contract_status_id FOREIGN KEY (contract_status_id) REFERENCES contract_statuses(id),
-ADD CONSTRAINT fk_users_manager_id FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL;
+ADD CONSTRAINT fk_users_manager_id FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL,
+ADD CONSTRAINT fk_users_cargo_id FOREIGN KEY (cargo_id) REFERENCES cargos(id) ON DELETE SET NULL;
+
+-- Nómina foreign keys
+ALTER TABLE liquidaciones_nomina
+ADD CONSTRAINT fk_liquidaciones_emp FOREIGN KEY (empleado_id) REFERENCES users(id) ON DELETE CASCADE,
+ADD CONSTRAINT fk_liquidaciones_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT;
+
+ALTER TABLE detalle_liquidacion
+ADD CONSTRAINT fk_detalle_liq FOREIGN KEY (liquidacion_id) REFERENCES liquidaciones_nomina(id) ON DELETE CASCADE,
+ADD CONSTRAINT fk_detalle_concepto FOREIGN KEY (concepto_codigo) REFERENCES conceptos_nomina(codigo) ON DELETE RESTRICT;
 
 -- Documents table foreign keys
 ALTER TABLE documents 
@@ -352,12 +483,34 @@ CREATE TABLE IF NOT EXISTS tipos_ausencia (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
   descripcion TEXT,
-  es_remunerada BOOLEAN DEFAULT TRUE,
+  porcentaje_pago DECIMAL(5,2) NOT NULL DEFAULT 100.00, -- 100.00 (vacaciones), 66.67 (incapacidad general), 0.00 (ausencia), etc.
+  afecta_auxilio_transporte BOOLEAN DEFAULT TRUE, -- Si se descuenta el auxilio de transporte en los días de ausencia
   is_active BOOLEAN DEFAULT TRUE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_by INT NOT NULL,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   updated_by INT
+);
+
+-- Novedades eventuales y recurrentes (Bonos, Descuentos Especiales, etc.)
+CREATE TABLE IF NOT EXISTS novedades_nomina (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    empleado_id INT NOT NULL,
+    concepto_codigo VARCHAR(20) NOT NULL,
+    
+    -- Para qué periodo aplica esta novedad (si es específica de un mes/año)
+    periodo_mes INT NOT NULL,
+    periodo_anio INT NOT NULL,
+    
+    valor_total DECIMAL(12,2) NOT NULL,
+    cantidad DECIMAL(10,2) DEFAULT 1.00,
+    observaciones TEXT,
+    
+    estado ENUM('Pendiente', 'Procesado', 'Anulado') DEFAULT 'Pendiente',
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Absences table
@@ -402,16 +555,10 @@ CREATE TABLE IF NOT EXISTS archivos_ausencias (
 
 -- Insert initial data for absence types
 -- Insertar datos iniciales para tipos de ausencia
-INSERT INTO tipos_ausencia (nombre, descripcion, es_remunerada, created_by) VALUES
-('Vacaciones', 'Días de descanso por vacaciones anuales', TRUE, 1),
-('Enfermedad General', 'Incapacidad por enfermedad común', TRUE, 1),
-('Enfermedad Laboral', 'Incapacidad por accidente o enfermedad laboral', TRUE, 1),
-('Maternidad', 'Licencia de maternidad', TRUE, 1),
-('Paternidad', 'Licencia de paternidad', TRUE, 1),
-('Duelo', 'Licencia por fallecimiento de familiar', TRUE, 1),
-('Permiso No Remunerado', 'Permiso sin goce de salario', FALSE, 1),
-('Permiso Personal', 'Permiso por asuntos personales', FALSE, 1),
-('No Presentado', 'Ausencia sin justificación - no se presentó a trabajar', FALSE, 1);
+INSERT INTO tipos_ausencia (nombre, descripcion, porcentaje_pago, afecta_auxilio_transporte, created_by) VALUES
+('Ausencia', 'Ausencia injustificada o permiso no remunerado', 0.00, TRUE, 1),
+('Incapacidad', 'Incapacidad común o laboral', 66.67, TRUE, 1),
+('Vacaciones', 'Disfrute de días de vacaciones (pago en liquidación)', 0.00, TRUE, 1);
 
 -- =====================================================
 -- INDEXES FOR ABSENCE MANAGEMENT
@@ -443,6 +590,10 @@ ADD CONSTRAINT fk_ausencias_tipo FOREIGN KEY (id_tipo_ausencia) REFERENCES tipos
 ADD CONSTRAINT fk_ausencias_usuario_registro FOREIGN KEY (id_usuario_registro) REFERENCES users(id),
 ADD CONSTRAINT fk_ausencias_created_by FOREIGN KEY (created_by) REFERENCES users(id),
 ADD CONSTRAINT fk_ausencias_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE novedades_nomina
+ADD CONSTRAINT fk_novedades_emp FOREIGN KEY (empleado_id) REFERENCES users(id) ON DELETE CASCADE,
+ADD CONSTRAINT fk_novedades_con FOREIGN KEY (concepto_codigo) REFERENCES conceptos_nomina(codigo) ON DELETE RESTRICT;
 
 ALTER TABLE archivos_ausencias 
 ADD CONSTRAINT fk_archivos_ausencias_ausencia FOREIGN KEY (id_ausencia) REFERENCES ausencias(id_ausencia) ON DELETE CASCADE,

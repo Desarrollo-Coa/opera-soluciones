@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Calculator, Shield, FileText, CalendarDays } from "lucide-react";
+import { Users, Calculator, Shield, FileText, CalendarDays, Receipt } from "lucide-react";
 import Link from "next/link";
 
 // Tipos para los módulos del dashboard
@@ -62,6 +62,15 @@ const MODULES: Module[] = [
     hoverColor: "hover:bg-purple-100",
     href: "/inicio/sgi",
   },
+  {
+    title: "Nómina",
+    description: "Gestión de liquidaciones y compensación",
+    icon: Receipt,
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+    hoverColor: "hover:bg-indigo-100",
+    href: "/inicio/nomina",
+  },
 ];
 
 /**
@@ -110,9 +119,8 @@ export default async function DashboardPage() {
 function ModuleCard({ module }: { module: Module }) {
   const cardContent = (
     <Card
-      className={`transition-colors ${module.hoverColor} ${
-        module.href ? "cursor-pointer" : "cursor-default"
-      }`}
+      className={`transition-colors ${module.hoverColor} ${module.href ? "cursor-pointer" : "cursor-default"
+        }`}
     >
       <CardHeader className="text-center">
         <div

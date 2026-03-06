@@ -1,4 +1,4 @@
-import { executeQuery } from '@/lib/database';
+import { executeQuery } from '@/lib/db';
 import { uploadToSpaces, deleteFromSpaces, extractKeyFromUrl } from '@/lib/digitalocean-spaces';
 import { generateSimpleFileName } from '@/lib/file-utils';
 import { FileSystemFile, UploadFileData } from '../types';
@@ -9,12 +9,28 @@ export class FileService {
    */
   async obtenerPorCarpeta(folderId: number | null): Promise<FileSystemFile[]> {
     const files = await executeQuery(
-      `SELECT f.*, u.first_name, u.last_name
-       FROM file_system_files f
-       JOIN users u ON f.created_by = u.id
-       WHERE f.folder_id ${folderId ? '= ?' : 'IS NULL'} 
-       AND f.is_active = TRUE
-       ORDER BY f.name`,
+      `SELECT 
+         f.AF_IDARCHIVO_PK as id,
+         f.AF_NOMBRE as name,
+         f.AF_NOMBRE_ORIGINAL as original_name,
+         f.CF_IDCARPETA_FK as folder_id,
+         f.AF_RUTA_ARCHIVO as file_path,
+         f.AF_URL_ARCHIVO as file_url,
+         f.AF_TAMANO as file_size,
+         f.AF_TIPO_MIME as mime_type,
+         f.AF_EXTENSION as file_extension,
+         f.AF_DESCRIPCION as description,
+         f.AF_CREADO_POR as created_by,
+         f.AF_FECHA_CREACION as created_at,
+         f.AF_FECHA_ACTUALIZACION as updated_at,
+         f.AF_ACTIVO as is_active,
+         u.US_NOMBRE as first_name, 
+         u.US_APELLIDO as last_name
+       FROM OS_ARCHIVOS f
+       JOIN OS_USUARIOS u ON f.AF_CREADO_POR = u.US_IDUSUARIO_PK
+       WHERE f.CF_IDCARPETA_FK ${folderId ? '= ?' : 'IS NULL'} 
+       AND f.AF_ACTIVO = TRUE
+       ORDER BY f.AF_NOMBRE`,
       folderId ? [folderId] : []
     ) as FileSystemFile[];
 
@@ -29,10 +45,26 @@ export class FileService {
    */
   async obtenerPorId(id: number): Promise<FileSystemFile | null> {
     const files = await executeQuery(
-      `SELECT f.*, u.first_name, u.last_name
-       FROM file_system_files f
-       JOIN users u ON f.created_by = u.id
-       WHERE f.id = ? AND f.is_active = TRUE`,
+      `SELECT 
+         f.AF_IDARCHIVO_PK as id,
+         f.AF_NOMBRE as name,
+         f.AF_NOMBRE_ORIGINAL as original_name,
+         f.CF_IDCARPETA_FK as folder_id,
+         f.AF_RUTA_ARCHIVO as file_path,
+         f.AF_URL_ARCHIVO as file_url,
+         f.AF_TAMANO as file_size,
+         f.AF_TIPO_MIME as mime_type,
+         f.AF_EXTENSION as file_extension,
+         f.AF_DESCRIPCION as description,
+         f.AF_CREADO_POR as created_by,
+         f.AF_FECHA_CREACION as created_at,
+         f.AF_FECHA_ACTUALIZACION as updated_at,
+         f.AF_ACTIVO as is_active,
+         u.US_NOMBRE as first_name, 
+         u.US_APELLIDO as last_name
+       FROM OS_ARCHIVOS f
+       JOIN OS_USUARIOS u ON f.AF_CREADO_POR = u.US_IDUSUARIO_PK
+       WHERE f.AF_IDARCHIVO_PK = ? AND f.AF_ACTIVO = TRUE`,
       [id]
     ) as FileSystemFile[];
 
@@ -50,31 +82,31 @@ export class FileService {
    */
   async subir(data: UploadFileData, userId: number): Promise<number> {
     const { file, folder_id, description } = data;
-    
+
     // Generar nombre único para el archivo
     const fileExtension = file.name.split('.').pop() || '';
     const uniqueFileName = generateSimpleFileName(file.name);
     const fileName = `${uniqueFileName}.${fileExtension}`;
-    
+
     // Convertir File a Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
+
     // Subir archivo a DigitalOcean Spaces
     const uploadResult = await uploadToSpaces(buffer, fileName, file.type, 'file-system');
     const fileUrl = uploadResult.url;
-    
+
     // Obtener ruta de la carpeta
-    const folderPath = folder_id 
+    const folderPath = folder_id
       ? await this.obtenerRutaCarpeta(folder_id)
       : '/';
-    
+
     const filePath = `${folderPath}${fileName}`;
-    
+
     // Guardar en base de datos
     const result = await executeQuery(
-      `INSERT INTO file_system_files 
-       (name, original_name, folder_id, file_path, file_url, file_size, mime_type, file_extension, description, created_by)
+      `INSERT INTO OS_ARCHIVOS 
+       (AF_NOMBRE, AF_NOMBRE_ORIGINAL, CF_IDCARPETA_FK, AF_RUTA_ARCHIVO, AF_URL_ARCHIVO, AF_TAMANO, AF_TIPO_MIME, AF_EXTENSION, AF_DESCRIPCION, AF_CREADO_POR)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         fileName,
@@ -101,20 +133,20 @@ export class FileService {
     const values = [];
 
     if (data.name) {
-      updates.push('name = ?');
-      updates.push('original_name = ?');
+      updates.push('AF_NOMBRE = ?');
+      updates.push('AF_NOMBRE_ORIGINAL = ?');
       values.push(data.name);
       values.push(data.name);
     }
     if (data.description !== undefined) {
-      updates.push('description = ?');
+      updates.push('AF_DESCRIPCION = ?');
       values.push(data.description);
     }
 
     if (updates.length > 0) {
       values.push(id);
       await executeQuery(
-        `UPDATE file_system_files SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        `UPDATE OS_ARCHIVOS SET ${updates.join(', ')}, AF_FECHA_ACTUALIZACION = CURRENT_TIMESTAMP WHERE AF_IDARCHIVO_PK = ?`,
         values
       );
     }
@@ -126,16 +158,16 @@ export class FileService {
   async eliminar(id: number): Promise<void> {
     // Primero obtener la información del archivo para eliminar de DigitalOcean
     const files = await executeQuery(
-      'SELECT file_url FROM file_system_files WHERE id = ? AND is_active = TRUE',
+      'SELECT AF_URL_ARCHIVO as file_url FROM OS_ARCHIVOS WHERE AF_IDARCHIVO_PK = ? AND AF_ACTIVO = TRUE',
       [id]
     ) as any[];
 
     if (files.length > 0) {
       const fileUrl = files[0].file_url;
-      
+
       // Extraer la clave del archivo de la URL
       const key = extractKeyFromUrl(fileUrl);
-      
+
       if (key) {
         try {
           // Eliminar archivo de DigitalOcean Spaces
@@ -150,7 +182,7 @@ export class FileService {
 
     // Marcar como inactivo en la base de datos
     await executeQuery(
-      'UPDATE file_system_files SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE OS_ARCHIVOS SET AF_ACTIVO = FALSE, AF_FECHA_ACTUALIZACION = CURRENT_TIMESTAMP WHERE AF_IDARCHIVO_PK = ?',
       [id]
     );
   }
@@ -160,14 +192,30 @@ export class FileService {
    */
   async buscar(term: string, folderId?: number | null): Promise<FileSystemFile[]> {
     const files = await executeQuery(
-      `SELECT f.*, u.first_name, u.last_name
-       FROM file_system_files f
-       JOIN users u ON f.created_by = u.id
-       WHERE f.is_active = TRUE
-       AND (f.name LIKE ? OR f.original_name LIKE ? OR f.description LIKE ?)
-       ${folderId !== undefined ? 'AND f.folder_id ' + (folderId ? '= ?' : 'IS NULL') : ''}
-       ORDER BY f.name`,
-      folderId !== undefined && folderId ? 
+      `SELECT 
+         f.AF_IDARCHIVO_PK as id,
+         f.AF_NOMBRE as name,
+         f.AF_NOMBRE_ORIGINAL as original_name,
+         f.CF_IDCARPETA_FK as folder_id,
+         f.AF_RUTA_ARCHIVO as file_path,
+         f.AF_URL_ARCHIVO as file_url,
+         f.AF_TAMANO as file_size,
+         f.AF_TIPO_MIME as mime_type,
+         f.AF_EXTENSION as file_extension,
+         f.AF_DESCRIPCION as description,
+         f.AF_CREADO_POR as created_by,
+         f.AF_FECHA_CREACION as created_at,
+         f.AF_FECHA_ACTUALIZACION as updated_at,
+         f.AF_ACTIVO as is_active,
+         u.US_NOMBRE as first_name, 
+         u.US_APELLIDO as last_name
+       FROM OS_ARCHIVOS f
+       JOIN OS_USUARIOS u ON f.AF_CREADO_POR = u.US_IDUSUARIO_PK
+       WHERE f.AF_ACTIVO = TRUE
+       AND (f.AF_NOMBRE LIKE ? OR f.AF_NOMBRE_ORIGINAL LIKE ? OR f.AF_DESCRIPCION LIKE ?)
+       ${folderId !== undefined ? 'AND f.CF_IDCARPETA_FK ' + (folderId ? '= ?' : 'IS NULL') : ''}
+       ORDER BY f.AF_NOMBRE`,
+      folderId !== undefined && folderId ?
         [`%${term}%`, `%${term}%`, `%${term}%`, folderId] :
         [`%${term}%`, `%${term}%`, `%${term}%`]
     ) as FileSystemFile[];
@@ -183,11 +231,27 @@ export class FileService {
    */
   async obtenerRecientes(limit: number = 10): Promise<FileSystemFile[]> {
     const files = await executeQuery(
-      `SELECT f.*, u.first_name, u.last_name
-       FROM file_system_files f
-       JOIN users u ON f.created_by = u.id
-       WHERE f.is_active = TRUE
-       ORDER BY f.created_at DESC
+      `SELECT 
+         f.AF_IDARCHIVO_PK as id,
+         f.AF_NOMBRE as name,
+         f.AF_NOMBRE_ORIGINAL as original_name,
+         f.CF_IDCARPETA_FK as folder_id,
+         f.AF_RUTA_ARCHIVO as file_path,
+         f.AF_URL_ARCHIVO as file_url,
+         f.AF_TAMANO as file_size,
+         f.AF_TIPO_MIME as mime_type,
+         f.AF_EXTENSION as file_extension,
+         f.AF_DESCRIPCION as description,
+         f.AF_CREADO_POR as created_by,
+         f.AF_FECHA_CREACION as created_at,
+         f.AF_FECHA_ACTUALIZACION as updated_at,
+         f.AF_ACTIVO as is_active,
+         u.US_NOMBRE as first_name, 
+         u.US_APELLIDO as last_name
+       FROM OS_ARCHIVOS f
+       JOIN OS_USUARIOS u ON f.AF_CREADO_POR = u.US_IDUSUARIO_PK
+       WHERE f.AF_ACTIVO = TRUE
+       ORDER BY f.AF_FECHA_CREACION DESC
        LIMIT ?`,
       [limit]
     ) as FileSystemFile[];
@@ -208,11 +272,11 @@ export class FileService {
     total_size_formatted: string;
   }> {
     const [foldersResult] = await executeQuery(
-      'SELECT COUNT(*) as total FROM file_folders WHERE is_active = TRUE'
+      'SELECT COUNT(*) as total FROM OS_CARPETAS WHERE CF_ACTIVO = TRUE'
     ) as any[];
 
     const [filesResult] = await executeQuery(
-      'SELECT COUNT(*) as total, COALESCE(SUM(file_size), 0) as total_size FROM file_system_files WHERE is_active = TRUE'
+      'SELECT COUNT(*) as total, COALESCE(SUM(AF_TAMANO), 0) as total_size FROM OS_ARCHIVOS WHERE AF_ACTIVO = TRUE'
     ) as any[];
 
     return {
@@ -228,7 +292,7 @@ export class FileService {
    */
   private async obtenerRutaCarpeta(folderId: number): Promise<string> {
     const folders = await executeQuery(
-      'SELECT path FROM file_folders WHERE id = ? AND is_active = TRUE',
+      'SELECT CF_RUTA as path FROM OS_CARPETAS WHERE CF_IDCARPETA_PK = ? AND CF_ACTIVO = TRUE',
       [folderId]
     ) as any[];
 
@@ -240,11 +304,11 @@ export class FileService {
    */
   private formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B';
-    
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

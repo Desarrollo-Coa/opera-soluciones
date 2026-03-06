@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { getRoleInitials } from "@/lib/role-utils"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants"
 import {
@@ -17,7 +17,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Home, Users, FileText, Settings, LogOut, Shield, User, Menu, X } from "lucide-react"
+import { Home, Users, FileText, Settings, LogOut, Shield, User, FolderOpen } from "lucide-react"
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
+} from "@/components/ui/sidebar"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -25,30 +39,24 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
+  const pathname = usePathname()
 
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" })
-      toast({
-        title: SUCCESS_MESSAGES.LOGOUT_SUCCESS,
-        description: "Has cerrado sesión exitosamente",
-      })
+      await fetch("/api/auth/logout", { method: "POST" })
+      toast.success(SUCCESS_MESSAGES.LOGOUT_SUCCESS)
       window.location.href = "/login"
     } catch (error) {
-      toast({
-        title: "Error",
-        description: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
-        variant: "destructive",
-      })
+      toast.error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR)
     }
   }
 
   const getMenuItems = () => {
     return [
       { icon: Home, label: "Inicio", href: "/inicio" },
+      { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
       { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
     ]
   }
@@ -56,88 +64,100 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   const menuItems = getMenuItems()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 w-full max-w-full overflow-x-hidden">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+    <SidebarProvider>
+      <Sidebar collapsible="icon" className="border-r border-gray-200/60 bg-[#F8FAFC]">
+        <SidebarHeader className="flex flex-row items-center gap-3 p-4 pb-2 pt-6 pl-5 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+          <Image
+            src="/recursos/logopera.png"
+            alt="SGI Opera Logo"
+            width={48}
+            height={48}
+            className="w-12 h-12 rounded-sm object-contain shrink-0 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10"
+          />
+          <span className="text-[22px] font-google font-medium text-gray-800 tracking-tight truncate group-data-[collapsible=icon]:hidden">
+            SGI Opera
+          </span>
+        </SidebarHeader>
 
-      <div className="flex flex-col lg:flex-row min-h-screen">
-        {/* Sidebar */}
-        <div
-          className={`
-          bg-white shadow-xl z-50
-          w-64
-          fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:static lg:translate-x-0
-        `}
-        >
-          <div className="flex items-center justify-between h-16 px-6 border-b">
-            <h1 className="text-xl font-bold text-blue-700 tracking-wide">SGI Opera</h1>
-            <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
-              <X size={24} />
-            </button>
+        <SidebarContent className="mt-4">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-2">
+                {menuItems.map((item) => {
+                  const isActive = pathname === item.href || (pathname.startsWith(item.href + "/") && item.href !== "/inicio")
+
+                  return (
+                    <SidebarMenuItem key={item.href} className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full">
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.label}
+                        className={`transition-all duration-200 h-12 ml-3 mr-4 w-[calc(100%-1.75rem)] rounded-full group-data-[collapsible=icon]:!m-0 group-data-[collapsible=icon]:!w-10 group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center ${isActive
+                          ? "bg-[#C2E7FF] hover:bg-[#C2E7FF] text-[#001D35] group-data-[collapsible=icon]:bg-[#C2E7FF]"
+                          : "text-[#444746] hover:bg-black/5 hover:text-[#1F1F1F]"
+                          }`}
+                      >
+                        <a href={item.href} className="flex items-center gap-4 px-4 h-full w-full group-data-[collapsible=icon]:!px-0 group-data-[collapsible=icon]:justify-center">
+                          <item.icon
+                            className={`!w-[22px] !h-[22px] shrink-0 group-data-[collapsible=icon]:!w-[20px] group-data-[collapsible=icon]:!h-[20px] ${isActive ? "text-[#001D35] fill-transparent" : "text-[#444746]"}`}
+                            strokeWidth={isActive ? 2.5 : 2}
+                          />
+                          <span className={`text-[14px] leading-5 tracking-wide group-data-[collapsible=icon]:hidden ${isActive ? "font-w[600]" : "font-medium"}`}>
+                            {item.label}
+                          </span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+
+      <SidebarInset className="flex-1 flex flex-col min-w-0 bg-white w-full overflow-x-hidden min-h-screen">
+        {/* Top bar */}
+        <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 h-16 flex items-center px-4 sm:px-6 sticky top-0 z-30 gap-4">
+          <SidebarTrigger className="-ml-2 text-gray-500 hover:text-gray-900 focus:ring-gray-200 hover:bg-gray-100/50 rounded-full" />
+
+          <div className="flex items-center space-x-4 ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full flex items-center justify-center p-0 overflow-hidden ring-2 ring-transparent transition-all hover:ring-gray-200">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className="bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-semibold text-sm">
+                      {getRoleInitials(userRole)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mt-2 rounded-xl shadow-lg border-gray-100 p-2" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal px-2 py-1.5">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-semibold text-gray-900 leading-none">Usuario</p>
+                    <p className="text-xs leading-none text-gray-500">Rol: {userRole}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-100 my-1" />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="rounded-lg text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer transition-colors px-2 py-2 mt-1"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span className="font-medium">Cerrar sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+        </header>
 
-          <nav className="mt-6 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-4rem)] pb-6">
-            {menuItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="flex items-center px-6 py-3 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-900 transition-colors font-medium"
-              >
-                <item.icon className="w-5 h-5 mr-3 text-blue-500" />
-                {item.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 flex flex-col">
-          {/* Top bar */}
-          <header className="bg-white/80 backdrop-blur-md shadow-sm border-b h-16 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
-            <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
-              <Menu size={24} />
-            </button>
-
-            <div className="flex items-center space-x-4 ml-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full flex items-center justify-center">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
-                        {getRoleInitials(userRole)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Usuario</p>
-                      <p className="text-xs leading-none text-muted-foreground">Rol: {userRole}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Cerrar sesión</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </header>
-
-          {/* Page content */}
-          <main className="flex-1 w-full overflow-x-auto">
-            <div className="w-full h-full p-4 sm:p-8 max-w-7xl mx-auto">
-              {children}
-            </div>
-          </main>
-        </div>
-      </div>
-    </div>
+        {/* Page content */}
+        <main className="flex-1 w-full overflow-x-auto bg-[#F8FAFC]">
+          <div className="w-full h-full p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto rounded-xl">
+            {children}
+          </div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

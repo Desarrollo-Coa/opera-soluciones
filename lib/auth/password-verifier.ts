@@ -3,7 +3,7 @@
 // Verificador de contraseñas para operaciones sensibles
 // =====================================================
 
-import { executeQuery } from '@/lib/database';
+import { executeQuery } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth';
 import { NextRequest } from 'next/server';
 
@@ -15,9 +15,9 @@ import { NextRequest } from 'next/server';
  */
 export async function verifyUserPassword(userId: number, password: string): Promise<boolean> {
   try {
-    // Obtener hash de contraseña del usuario
+    // Obtener hash de contraseña del usuario — Migración 007: OS_USUARIOS
     const users = await executeQuery(
-      'SELECT password_hash FROM users WHERE id = ? AND is_active = TRUE',
+      'SELECT US_PASSWORD_HASH FROM OS_USUARIOS WHERE US_IDUSUARIO_PK = ? AND US_ACTIVO = TRUE',
       [userId]
     ) as any[];
 
@@ -25,8 +25,8 @@ export async function verifyUserPassword(userId: number, password: string): Prom
       return false;
     }
 
-    const passwordHash = users[0].password_hash;
-    
+    const passwordHash = users[0].US_PASSWORD_HASH;
+
     // Verificar contraseña usando la misma función que el login
     return await verifyPassword(password, passwordHash);
   } catch (error) {

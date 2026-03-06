@@ -6,12 +6,12 @@
 // =====================================================
 
 import { NextResponse } from "next/server"
-import { executeQuery } from "@/lib/database"
+import { executeQuery } from "@/lib/db"
 
 export async function GET() {
   try {
     const rows = await executeQuery(
-      "SELECT id, name, description, is_active FROM document_types WHERE is_active = 1 ORDER BY name"
+      "SELECT TD_IDTIPO_DOCUMENTO_PK as id, TD_NOMBRE as name, TD_DESCRIPCION as description, TD_ACTIVO as is_active FROM OS_TIPOS_DOCUMENTO WHERE TD_ACTIVO = 1 ORDER BY TD_NOMBRE"
     )
 
     return NextResponse.json({

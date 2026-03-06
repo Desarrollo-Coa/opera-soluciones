@@ -1,20 +1,16 @@
 // =====================================================
 // SGI Opera Soluciones - User Repository
 // Repositorio de usuarios siguiendo SRP y DIP
-// =====================================================
-// Description: Repositorio para acceso a datos de usuarios
-// Descripción: Repositorio para acceso a datos de usuarios
-// Author: Carlos Muñoz
-// Date: 2025-09-16
+// Migración 007: tablas OS_USUARIOS y OS_ROLES con nuevas columnas
 // =====================================================
 
-import { DatabaseConnection } from '@/lib/database'
+import { DatabaseConnection } from '@/lib/db'
 import { IUserRepository, User, CreateUserData } from './interfaces'
 import { ERROR_MESSAGES } from '@/lib/constants'
 
 /**
  * MySQL User Repository Implementation
- * Implementación del repositorio de usuarios MySQL
+ * Migración 007: OS_USUARIOS (US_), OS_ROLES (RO_)
  */
 export class MySQLUserRepository implements IUserRepository {
   private readonly connection: DatabaseConnection
@@ -24,21 +20,22 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Get user by email
    * Obtener usuario por email
+   * Migración 007: OS_USUARIOS + OS_ROLES con nuevas columnas
    */
   async getUserByEmail(email: string): Promise<User | null> {
     try {
       this.validateEmail(email)
-      
+
       const rows = await this.connection.execute(
-        `SELECT u.id, u.email, u.password_hash as password, ur.code as role, u.first_name, u.last_name 
-         FROM users u 
-         LEFT JOIN user_roles ur ON u.role_id = ur.id 
-         WHERE u.email = ? AND u.deleted_at IS NULL`,
+        `SELECT u.US_IDUSUARIO_PK as id, u.US_EMAIL as email, u.US_PASSWORD_HASH as password,
+                ur.RO_CODIGO as role, u.US_NOMBRE as first_name, u.US_APELLIDO as last_name 
+         FROM OS_USUARIOS u 
+         LEFT JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK 
+         WHERE u.US_EMAIL = ? AND u.US_FECHA_ELIMINACION IS NULL`,
         [email]
       ) as any[]
-      
+
       return rows.length > 0 ? this.mapToUser(rows[0]) : null
     } catch (error) {
       console.error('Error getting user by email:', error)
@@ -47,21 +44,22 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Get user by ID
    * Obtener usuario por ID
+   * Migración 007: OS_USUARIOS + OS_ROLES con nuevas columnas
    */
   async getUserById(id: number): Promise<User | null> {
     try {
       this.validateId(id)
-      
+
       const rows = await this.connection.execute(
-        `SELECT u.id, u.email, u.password_hash as password, ur.code as role, u.first_name, u.last_name 
-         FROM users u 
-         LEFT JOIN user_roles ur ON u.role_id = ur.id 
-         WHERE u.id = ? AND u.deleted_at IS NULL`,
+        `SELECT u.US_IDUSUARIO_PK as id, u.US_EMAIL as email, u.US_PASSWORD_HASH as password,
+                ur.RO_CODIGO as role, u.US_NOMBRE as first_name, u.US_APELLIDO as last_name 
+         FROM OS_USUARIOS u 
+         LEFT JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK 
+         WHERE u.US_IDUSUARIO_PK = ? AND u.US_FECHA_ELIMINACION IS NULL`,
         [id]
       ) as any[]
-      
+
       return rows.length > 0 ? this.mapToUser(rows[0]) : null
     } catch (error) {
       console.error('Error getting user by ID:', error)
@@ -70,15 +68,15 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Create new user
    * Crear nuevo usuario
+   * Migración 007: INSERT en OS_USUARIOS con nuevas columnas
    */
   async createUser(userData: CreateUserData): Promise<User> {
     try {
       this.validateCreateUserData(userData)
-      
+
       const result = await this.connection.execute(
-        `INSERT INTO users (email, password_hash, role_id, first_name, last_name, contract_status_id, created_by)
+        `INSERT INTO OS_USUARIOS (US_EMAIL, US_PASSWORD_HASH, RO_IDROL_FK, US_NOMBRE, US_APELLIDO, EC_IDESTADO_CONTRATO_FK, US_CREADO_POR)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           userData.email,
@@ -90,7 +88,7 @@ export class MySQLUserRepository implements IUserRepository {
           userData.created_by
         ]
       ) as any
-      
+
       return {
         id: result.insertId,
         email: userData.email,
@@ -106,8 +104,7 @@ export class MySQLUserRepository implements IUserRepository {
   }
 
   /**
-   * Map database row to User entity
-   * Mapear fila de base de datos a entidad User
+   * Mapear fila de base de datos a entidad User (alias ya vienen en el SELECT)
    */
   private mapToUser(row: any): User {
     return {
@@ -120,42 +117,27 @@ export class MySQLUserRepository implements IUserRepository {
     }
   }
 
-  /**
-   * Validate email input
-   * Validar entrada de email
-   */
   private validateEmail(email: string): void {
     if (!email || typeof email !== 'string') {
       throw new Error(ERROR_MESSAGES.INVALID_EMAIL_INPUT)
     }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       throw new Error(ERROR_MESSAGES.INVALID_EMAIL_FORMAT)
     }
   }
 
-  /**
-   * Validate ID input
-   * Validar entrada de ID
-   */
   private validateId(id: number): void {
     if (!id || typeof id !== 'number' || id <= 0) {
       throw new Error(ERROR_MESSAGES.INVALID_ID_INPUT)
     }
   }
 
-  /**
-   * Validate create user data
-   * Validar datos de creación de usuario
-   */
   private validateCreateUserData(data: CreateUserData): void {
     if (!data.email || !data.password || !data.role || !data.first_name || !data.last_name) {
       throw new Error(ERROR_MESSAGES.INVALID_USER_DATA)
     }
-
     this.validateEmail(data.email)
-    
     if (data.password.length < 6) {
       throw new Error(ERROR_MESSAGES.PASSWORD_TOO_SHORT)
     }

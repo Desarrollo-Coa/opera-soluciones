@@ -8,6 +8,7 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    qualities: [75, 90],
   },
   // Configuración para archivos estáticos
   trailingSlash: false,

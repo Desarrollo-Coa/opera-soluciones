@@ -7,16 +7,18 @@ import { cn } from "@/lib/utils"
 
 interface CurrencyInputProps {
   value?: string | number
+  defaultValue?: string | number
   onChange?: (value: string) => void
   placeholder?: string
   disabled?: boolean
   className?: string
   id?: string
   name?: string
+  required?: boolean
 }
 
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
-  ({ value, onChange, placeholder = "0", disabled, className, id, name, ...props }, ref) => {
+  ({ value, defaultValue, onChange, placeholder = "0", disabled, className, id, name, required, ...props }, ref) => {
     return (
       <NumericFormat
         customInput={Input}
@@ -27,6 +29,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         fixedDecimalScale={false}
         allowNegative={false}
         value={value}
+        defaultValue={defaultValue}
         onValueChange={(values) => {
           onChange?.(values.value)
         }}
@@ -35,6 +38,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         className={cn(className)}
         id={id}
         name={name}
+        required={required}
         getInputRef={ref}
         {...props}
       />
