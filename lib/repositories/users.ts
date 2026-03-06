@@ -32,6 +32,7 @@ export interface UserWithRole {
   // Información laboral
   CA_IDCARGO_FK?: number
   position?: string // Alias virtual → CA_NOMBRE
+  salary?: number   // Alias virtual → CA_SUELDO_BASE
   US_FECHA_CONTRATACION?: Date
   US_FECHA_RETIRO?: Date
   US_HORARIO_TRABAJO?: string
@@ -256,7 +257,8 @@ export async function createUser(userData: CreateUserData): Promise<number> {
 export async function getUserById(id: number): Promise<UserWithRole | null> {
   try {
     const users = await executeQuery(`
-      SELECT u.*, cs.EC_NOMBRE as contract_status_name, ur.RO_NOMBRE as role_name, ur.RO_CODIGO as role_code, c.CA_NOMBRE as position
+      SELECT u.*, cs.EC_NOMBRE as contract_status_name, ur.RO_NOMBRE as role_name, ur.RO_CODIGO as role_code, 
+             c.CA_NOMBRE as position, c.CA_SUELDO_BASE as salary
       FROM OS_USUARIOS u 
       LEFT JOIN OS_ESTADOS_CONTRATO cs ON u.EC_IDESTADO_CONTRATO_FK = cs.EC_IDESTADO_CONTRATO_PK 
       LEFT JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK 
@@ -279,7 +281,7 @@ export async function getAllActiveUsers(): Promise<UserWithRole[]> {
     const users = await executeQuery(`
       SELECT 
         u.US_IDUSUARIO_PK, u.US_NOMBRE, u.US_APELLIDO, u.US_EMAIL, u.US_TELEFONO, u.US_NUMERO_DOCUMENTO,
-        u.CA_IDCARGO_FK, c.CA_NOMBRE as position, u.US_FECHA_RETIRO, u.US_FOTO_PERFIL, u.US_ACTIVO,
+        u.CA_IDCARGO_FK, c.CA_NOMBRE as position, c.CA_SUELDO_BASE as salary, u.US_FECHA_RETIRO, u.US_FOTO_PERFIL, u.US_ACTIVO,
         u.US_FECHA_CREACION, u.RO_IDROL_FK, u.EC_IDESTADO_CONTRATO_FK, u.US_DEPARTAMENTO, u.US_IDMANAGER_FK,
         cs.EC_NOMBRE as contract_status_name, 
         ur.RO_NOMBRE as role_name, 

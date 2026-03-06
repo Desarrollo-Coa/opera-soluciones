@@ -79,6 +79,7 @@ export interface UserResponse {
   phone?: string
   document_number?: string
   position?: string
+  salary?: number
   department?: string
   profile_picture?: string
   is_active?: boolean
@@ -107,6 +108,7 @@ function mapUserWithRoleToResponse(user: UserWithRole): UserResponse {
     phone: user.US_TELEFONO,
     document_number: user.US_NUMERO_DOCUMENTO,
     position: user.position, // alias virtual 'CA_NOMBRE'
+    salary: user.salary,     // alias virtual 'CA_SUELDO_BASE'
     department: user.US_DEPARTAMENTO,
     profile_picture: user.US_FOTO_PERFIL,
     is_active: Boolean(user.US_ACTIVO),

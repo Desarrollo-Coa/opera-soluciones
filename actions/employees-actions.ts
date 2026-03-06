@@ -33,7 +33,7 @@ const employeeProfileSchema = z.object({
     termination_date: z.string().optional().nullable(),
     work_schedule: z.string().optional().nullable(),
     department: z.string().optional().nullable(),
-    employment_type: z.enum(['Tiempo Completo', 'Medio Tiempo', 'Por Horas', 'Por Contrato']).optional(),
+    employment_type: z.enum(['Tiempo Completo', 'Medio Tiempo', 'Por Horas', 'Por Contrato']).optional().nullable(),
 
     // Seguridad Social
     eps_id: z.string().optional().nullable(),
@@ -50,6 +50,9 @@ const employeeProfileSchema = z.object({
     is_active: z.coerce.boolean().optional().default(true),
     role_id: z.coerce.number().optional().nullable(),
     contract_status_id: z.coerce.number().optional().nullable(),
+
+    // Sueldo (aunque se guarde en cargos, se permite en el schema para fluidez)
+    salary: z.coerce.number().optional().nullable(),
 
     // Solo para creación
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").optional(),
