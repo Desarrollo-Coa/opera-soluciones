@@ -117,6 +117,25 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
                 totalDescuentoAusencias += (emp.sueldo_base / 30) * dias * factorDescuento;
             }
 
+            // 3.5 Consultar Cláusulas Extralegales activas del periodo
+            const [clausulas] = await connection.execute<any[]>(
+                `SELECT uc.*, cl.CL_NOMBRE as nombre, cl.CN_IDCONCEPTO_FK as concepto_id
+                 FROM OS_USUARIOS_CLAUSULAS uc
+                 JOIN OS_CLAUSULAS cl ON uc.CL_IDCLAUSULA_FK = cl.CL_IDCLAUSULA_PK
+                 WHERE uc.US_IDUSUARIO_FK = ? AND uc.UC_ACTIVO = 1
+                 AND uc.UC_FECHA_INICIO <= ? 
+                 AND (uc.UC_FECHA_FIN IS NULL OR uc.UC_FECHA_FIN >= ?)`,
+                [emp.id, fechaFinQ, fechaInicioQ]
+            );
+
+            let totalClausulas = 0;
+            const detallesClausulas: any[] = [];
+            for (const cl of clausulas) {
+                const montoQuincenal = Number(cl.UC_MONTO_MENSUAL) / 2;
+                totalClausulas += montoQuincenal;
+                detallesClausulas.push([cl.concepto_id, cl.nombre, 1, Number(cl.UC_MONTO_MENSUAL) / 2, montoQuincenal, 'Devengo', false]);
+            }
+
             // --- CÁLCULOS QUINCENALES (15 días base) ---
             let diasTrabajadosEfectivos = 15 - totalDiasAusencia;
             if (diasTrabajadosEfectivos < 0) diasTrabajadosEfectivos = 0;
@@ -162,7 +181,7 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
             const saludEmpleado = ibc * 0.04;
             const pensionEmpleado = ibc * 0.04;
 
-            const totalDevengado = sueldoProporcional + auxilioTransporte + devengosExtras;
+            const totalDevengado = sueldoProporcional + auxilioTransporte + devengosExtras + totalClausulas;
             const totalDeducciones = saludEmpleado + pensionEmpleado + deduccionesExtras;
             const netoPagar = totalDevengado - totalDeducciones;
 
@@ -189,7 +208,8 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
                 ['DEV001', 'Sueldo Básico (15d)', 1, sueldoQuincenalBase, sueldoProporcional, 'Devengo', true],
                 ['DEV002', 'Auxilio de Transporte', 1, p.auxilio_transporte / 2, auxilioTransporte, 'Devengo', false],
                 ['DED001', 'Salud (4%)', 1, ibc, saludEmpleado, 'Deducción', false],
-                ['DED002', 'Pensión (4%)', 1, ibc, pensionEmpleado, 'Deducción', false]
+                ['DED002', 'Pensión (4%)', 1, ibc, pensionEmpleado, 'Deducción', false],
+                ...detallesClausulas
             ];
 
             if (totalDescuentoAusencias > 0) {
@@ -445,6 +465,38 @@ export async function eliminarNominaPeriodo(mes: number, anio: number, quincena:
         revalidatePath('/inicio/nomina/liquidaciones');
         return { success: true, message: "Todos los borradores del periodo han sido eliminados." };
     } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+/**
+ * Obtener las liquidaciones (volantes) del usuario autenticado
+ */
+export async function getMisVolantesAction(): Promise<ActionResponse<any[]>> {
+    const user = await getAuthUser();
+    if (!user) return { success: false, message: 'No autorizado' };
+
+    try {
+        const [rows] = await pool.execute<any[]>(
+            `SELECT 
+                LQ_IDLIQUIDACION_PK     as id,
+                LQ_PERIODO_MES          as periodo_mes,
+                LQ_PERIODO_ANIO         as periodo_anio,
+                LQ_QUINCENA             as quincena,
+                LQ_TOTAL_DEVENGADO      as total_devengado,
+                LQ_TOTAL_DEDUCCIONES    as total_deducciones,
+                LQ_NETO_PAGAR           as neto_pagar,
+                LQ_ESTADO               as estado,
+                LQ_FECHA_LIQUIDACION    as fecha_liquidacion
+             FROM OS_LIQUIDACIONES 
+             WHERE US_IDUSUARIO_FK = ? AND LQ_ESTADO = 'Aprobado'
+             ORDER BY LQ_PERIODO_ANIO DESC, LQ_PERIODO_MES DESC, LQ_QUINCENA DESC`,
+            [user.id]
+        );
+
+        return { success: true, data: rows };
+    } catch (error: any) {
+        console.error('Error fetching user volantes:', error);
         return { success: false, message: error.message };
     }
 }

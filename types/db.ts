@@ -21,3 +21,23 @@ export interface EmpleadoLiquidacionRow extends RowDataPacket {
     aplica_auxilio_transporte: number; // alias de CA_APLICA_AUXILIO
     porcentaje_riesgo_arl: number;     // alias de CA_PORCENTAJE_RIESGO_ARL
 }
+
+export interface ClausulaRow extends RowDataPacket {
+    id: number;
+    nombre: string;
+    descripcion: string;
+    concepto_id: string;
+    activo: number;
+}
+
+export interface UsuarioClausulaRow extends RowDataPacket {
+    id: number;
+    usuario_id: number;
+    clausula_id: number;
+    monto_mensual: number;
+    fecha_inicio: string;
+    fecha_fin: string | null;
+    activo: number;
+    notas_auditoria: string;
+    nombre_clausula?: string; // Para joins
+}

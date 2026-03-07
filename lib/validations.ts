@@ -11,7 +11,7 @@ export const userSchema = z.object({
   first_name: z.string().min(2, "El nombre es requerido").max(FIELD_LENGTHS.NAME_MAX, "El nombre es demasiado largo"),
   last_name: z.string().min(2, "El apellido es requerido").max(FIELD_LENGTHS.NAME_MAX, "El apellido es demasiado largo"),
   email: z.string().email("Email inválido").max(FIELD_LENGTHS.EMAIL_MAX, "El email es demasiado largo"),
-  
+
   // Información personal y documental
   document_type: z.enum(['CC', 'CE', 'TI', 'RC', 'PA']).default('CC'),
   document_number: z.string().optional().refine((val) => !val || VALIDATION_PATTERNS.DOCUMENT_NUMBER.test(val), "Número de documento inválido"),
@@ -20,11 +20,11 @@ export const userSchema = z.object({
   marital_status: z.enum(['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión Libre']).optional(),
   emergency_contact_name: z.string().max(FIELD_LENGTHS.NAME_MAX, "Nombre de contacto de emergencia demasiado largo").optional(),
   emergency_contact_phone: z.string().optional().refine((val) => !val || VALIDATION_PATTERNS.PHONE.test(val), "Teléfono de contacto de emergencia inválido"),
-  
+
   // Información de contacto
   phone: z.string().optional().refine((val) => !val || VALIDATION_PATTERNS.PHONE.test(val), "Número de teléfono inválido"),
   address: z.string().max(FIELD_LENGTHS.ADDRESS_MAX, "La dirección es demasiado larga").optional(),
-  
+
   // Información laboral
   position: z.string().max(FIELD_LENGTHS.POSITION_MAX, "El cargo es demasiado largo").optional(),
   salary: z.string().optional().refine((val) => !val || /^\d+$/.test(val.replace(/[^\d]/g, '')), "El salario debe contener solo números"),
@@ -34,23 +34,23 @@ export const userSchema = z.object({
   department: z.string().max(FIELD_LENGTHS.DEPARTMENT_MAX, "El departamento es demasiado largo").optional(),
   manager_id: z.union([z.string(), z.number()]).optional().transform((val) => val === undefined ? undefined : String(val)),
   employment_type: z.enum(['Tiempo Completo', 'Medio Tiempo', 'Por Horas', 'Por Contrato']).default('Tiempo Completo'),
-  
+
   // Información de seguridad social
   eps_id: z.string().optional(),
   arl_id: z.string().optional(),
   compensation_fund_id: z.string().optional(),
   pension_fund_id: z.string().optional(),
-  
+
   // Información bancaria
   bank_name: z.string().max(FIELD_LENGTHS.BANK_NAME_MAX, "El nombre del banco es demasiado largo").optional(),
   account_number: z.string().max(FIELD_LENGTHS.ACCOUNT_NUMBER_MAX, "El número de cuenta es demasiado largo").optional(),
   account_type: z.enum(['Ahorros', 'Corriente']).optional(),
-  
+
   // Información adicional
   profile_picture: z.string().max(FIELD_LENGTHS.PROFILE_PICTURE_MAX, "La URL de la foto de perfil es demasiado larga").nullable().optional(),
   notes: z.string().max(FIELD_LENGTHS.NOTES_MAX, "Las notas son demasiado largas").optional(),
   is_active: z.boolean().default(true),
-  
+
   // Campos del sistema
   document_type_id: z.string().optional(),
   contract_status: z.enum(["Active", "Inactive", "Pending", "Suspended"]).default("Active"),
@@ -58,5 +58,24 @@ export const userSchema = z.object({
   contract_status_id: z.string().min(1, "Estado de contrato requerido"),
 })
 
+export const clausulaSchema = z.object({
+  nombre: z.string().min(3, "El nombre debe tener al menos 3 caracteres").max(100),
+  descripcion: z.string().optional(),
+  concepto_id: z.string().min(1, "El concepto de nómina es requerido"),
+  activo: z.boolean().default(true),
+})
+
+export const usuarioClausulaSchema = z.object({
+  usuario_id: z.number(),
+  clausula_id: z.number(),
+  monto_mensual: z.number().min(0, "El monto debe ser positivo"),
+  fecha_inicio: z.string().min(1, "La fecha de inicio es requerida"),
+  fecha_fin: z.string().nullable().optional(),
+  activo: z.boolean().default(true),
+  notas_auditoria: z.string().optional(),
+})
+
 export type LoginInput = z.infer<typeof loginSchema>
 export type UserInput = z.infer<typeof userSchema>
+export type ClausulaInput = z.infer<typeof clausulaSchema>
+export type UsuarioClausulaInput = z.infer<typeof usuarioClausulaSchema>

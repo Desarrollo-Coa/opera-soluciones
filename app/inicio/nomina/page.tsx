@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getResumenNomina, getCostosPorCargo, getHistoricoNomina } from "@/actions/nomina";
 import { DashboardNominaClient } from "@/components/nomina/dashboard-client";
+import { ROLE_CODES } from "@/lib/constants";
 
 // Módulos específicos del área de Nómina
 const NOMINA_MODULES = [
@@ -44,7 +45,16 @@ const NOMINA_MODULES = [
         href: "/inicio/nomina/novedades",
     },
     {
-        title: "4. Generar Volantes",
+        title: "4. Clausulas Extralegales",
+        description: "Gestión de Auxilios, Rodamientos y Beneficios",
+        icon: FileText,
+        color: "text-amber-600",
+        bgColor: "bg-amber-100",
+        hoverColor: "hover:bg-amber-200",
+        href: "/inicio/nomina/clausulas",
+    },
+    {
+        title: "5. Generar Volantes",
         description: "Pre-liquidación, Aprobación y Pago de Nómina",
         icon: Receipt,
         color: "text-indigo-600",
@@ -71,9 +81,9 @@ export default async function NominaDashboardPage() {
         redirect("/login");
     }
 
-    // Protección: Solo Admin o RRHH deberían ver esto (Ejemplo básico)
-    if (userRole !== "admin" && userRole !== "rrhh") {
-        // redirect("/inicio"); // Se comenta para entorno dev si no tienes el rol exacto asignado
+    // Protección: Solo Admin o RRHH deberían ver esto
+    if (userRole !== ROLE_CODES.ADMIN && userRole !== ROLE_CODES.HR) {
+        redirect("/inicio");
     }
 
     const now = new Date();
@@ -111,7 +121,7 @@ export default async function NominaDashboardPage() {
                 </div>
 
                 {/* Tarjetas de acceso a los sub-módulos */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
                     {NOMINA_MODULES.map((module) => (
                         <Link key={module.title} href={module.href}>
                             <Card className={`h-full transition-colors ${module.hoverColor} cursor-pointer border-l-4 border-l-indigo-600`}>

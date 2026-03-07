@@ -39,7 +39,7 @@ export function getRoleDisplayName(roleCode: string): string {
  */
 export function getRoleCodeFromName(roleName: string): string {
   const normalizedName = roleName.toLowerCase().trim()
-  
+
   switch (normalizedName) {
     case "administrador":
       return ROLE_CODES.ADMIN
@@ -110,12 +110,12 @@ export function getRoleInitials(roleCode: string): string {
       return "AD"
     case ROLE_CODES.EMPLOYEE:
       return "EM"
-    case ROLE_CODES.SISO:
-      return "SI"
+    // case ROLE_CODES.SISO:
+    //   return "SI"
     case ROLE_CODES.HR:
       return "RH"
-    case ROLE_CODES.MANAGER:
-      return "GE"
+    // case ROLE_CODES.MANAGER:
+    //   return "GE"
     case ROLE_CODES.AUDITOR:
       return "AU"
     default:
@@ -152,17 +152,17 @@ export function getRoleOptions() {
  */
 export function getRoleOptionsForUser(currentUserRole: string) {
   const allOptions = getRoleOptions()
-  
+
   // Admin can assign any role
   if (currentUserRole === ROLE_CODES.ADMIN) {
     return allOptions
   }
-  
+
   // HR can assign all roles except admin
   if (currentUserRole === ROLE_CODES.HR) {
     return allOptions.filter(option => option.value !== ROLE_CODES.ADMIN)
   }
-  
+
   // Other roles cannot assign roles
   return []
 } 

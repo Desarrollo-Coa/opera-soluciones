@@ -92,21 +92,15 @@ export function EmployeesTable({ currentUserId, currentUserRole }: EmployeesTabl
 
   // Check if user can edit/delete employees
   const canManageEmployees = currentUserRole === ROLE_CODES.ADMIN || currentUserRole === ROLE_CODES.HR
-  
+
   // Check if user can edit specific employee (prevent self-editing for admins)
   const canEditEmployee = (employee: Employee) => {
-    if (!canManageEmployees) return false
-    // Prevent admin from editing themselves
-    if (currentUserRole === ROLE_CODES.ADMIN && employee.id === currentUserId) return false
-    return true
+    return canManageEmployees
   }
 
   // Check if user can delete specific employee
   const canDeleteEmployee = (employee: Employee) => {
-    if (!canManageEmployees) return false
-    // Prevent admin from deleting themselves
-    if (currentUserRole === ROLE_CODES.ADMIN && employee.id === currentUserId) return false
-    return true
+    return canManageEmployees
   }
 
   const getRoleBadgeVariant = (role: string) => {
@@ -140,13 +134,13 @@ export function EmployeesTable({ currentUserId, currentUserRole }: EmployeesTabl
   return (
     <>
       {/* Hidden button that can be triggered from parent */}
-      <button 
-        data-create-employee 
+      <button
+        data-create-employee
         onClick={handleCreateNew}
         className="hidden"
         aria-hidden="true"
       />
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Lista de Empleados</CardTitle>

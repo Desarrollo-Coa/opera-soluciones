@@ -30,6 +30,7 @@ import { ProfilePictureUpload } from "@/components/ui/profile-picture-upload"
 import { UniversalSelect } from "@/components/ui/universal-select"
 import { DocumentList } from "@/components/employees/document-list"
 import { DocumentUpload } from "@/components/employees/document-upload"
+import { EmployeeClausulasTab } from "@/components/employees/employee-clausulas-tab"
 import {
   getEpsAction,
   getArlAction,
@@ -257,6 +258,11 @@ function EmployeeActionContent() {
               <ShieldCheck className="h-4 w-4 mr-2 hidden md:inline" /> Seguridad Social
             </TabsTrigger>
             {isEdit && (
+              <TabsTrigger value="clausulas" className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Banknote className="h-4 w-4 mr-2 hidden md:inline" /> Cláusulas
+              </TabsTrigger>
+            )}
+            {isEdit && (
               <TabsTrigger value="documentos" className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <FileText className="h-4 w-4 mr-2 hidden md:inline" /> Documentos
               </TabsTrigger>
@@ -266,7 +272,7 @@ function EmployeeActionContent() {
           <form id="employee-form" action={formAction}>
             <input type="hidden" name="id" value={employeeId || ""} />
 
-            {/* Tab: Personal */}
+            {/* Tabs que pertenecen al formulario principal de perfil */}
             <TabsContent value="personal" forceMount className="mt-6 space-y-6 data-[state=inactive]:hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="md:col-span-1 border-none shadow-sm bg-slate-50/50">
@@ -554,35 +560,44 @@ function EmployeeActionContent() {
                 </CardContent>
               </Card>
             </TabsContent>
-            {/* Tab: Documentos */}
-            {isEdit && (
-              <TabsContent value="documentos" forceMount className="mt-6 space-y-6 data-[state=inactive]:hidden">
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2"><Files className="h-5 w-5 text-indigo-500" /> Repositorio de Documentos</CardTitle>
-                    <DocumentUpload
-                      employeeId={parseInt(employeeId!)}
-                      onUploadSuccess={async () => {
-                        const res = await fetch(`/api/documents?employeeId=${employeeId}`).then(r => r.json())
-                        setDocuments(res.documents || [])
-                      }}
-                      allowedTypeNames={["Contrato", "Cédula", "Hoja de Vida", "Certificación"]}
-                    />
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentList
-                      documents={documents}
-                      loading={docsLoading}
-                      onDelete={async () => {
-                        const res = await fetch(`/api/documents?employeeId=${employeeId}`).then(r => r.json())
-                        setDocuments(res.documents || [])
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
           </form>
+
+          {/* Tabs independientes con lógica propia (No anidar forms) */}
+          {/* Tab: Cláusulas */}
+          {isEdit && (
+            <TabsContent value="clausulas" forceMount className="mt-6 space-y-6 data-[state=inactive]:hidden">
+              <EmployeeClausulasTab employeeId={parseInt(employeeId!)} />
+            </TabsContent>
+          )}
+
+          {/* Tab: Documentos */}
+          {isEdit && (
+            <TabsContent value="documentos" forceMount className="mt-6 space-y-6 data-[state=inactive]:hidden">
+              <Card className="border-none shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2"><Files className="h-5 w-5 text-indigo-500" /> Repositorio de Documentos</CardTitle>
+                  <DocumentUpload
+                    employeeId={parseInt(employeeId!)}
+                    onUploadSuccess={async () => {
+                      const res = await fetch(`/api/documents?employeeId=${employeeId}`).then(r => r.json())
+                      setDocuments(res.documents || [])
+                    }}
+                    allowedTypeNames={["Contrato", "Cédula", "Hoja de Vida", "Certificación"]}
+                  />
+                </CardHeader>
+                <CardContent>
+                  <DocumentList
+                    documents={documents}
+                    loading={docsLoading}
+                    onDelete={async () => {
+                      const res = await fetch(`/api/documents?employeeId=${employeeId}`).then(r => r.json())
+                      setDocuments(res.documents || [])
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>

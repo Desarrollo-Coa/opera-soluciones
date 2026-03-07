@@ -7,7 +7,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { getRoleInitials } from "@/lib/role-utils"
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants"
+import { SUCCESS_MESSAGES, ERROR_MESSAGES, ROLE_CODES } from "@/lib/constants"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Home, Users, FileText, Settings, LogOut, Shield, User, FolderOpen } from "lucide-react"
+import { Home, Users, FileText, Settings, LogOut, Shield, User, FolderOpen, CalendarDays } from "lucide-react"
 
 import {
   Sidebar,
@@ -54,12 +54,42 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   }
 
   const getMenuItems = () => {
-    return [
+    const baseItems = [
       { icon: Home, label: "Inicio", href: "/inicio" },
       { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
+      { icon: CalendarDays, label: "Ausencias", href: "/ausencias" },
+    ];
+
+    if (userRole === ROLE_CODES.ADMIN) {
+      return [
+        ...baseItems,
+        { icon: Users, label: "Empleados", href: "/inicio/empleados" },
+        { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
+      ];
+    }
+
+    if (userRole === ROLE_CODES.HR) {
+      return [
+        ...baseItems,
+        { icon: Users, label: "Empleados", href: "/inicio/empleados" },
+        { icon: FileText, label: "Nómina", href: "/inicio/nomina" },
+        { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
+      ];
+    }
+
+    if (userRole === ROLE_CODES.EMPLOYEE) {
+      return [
+        ...baseItems,
+        { icon: FileText, label: "Mis Volantes", href: "/inicio/nomina/mis-volantes" },
+        { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
+      ];
+    }
+
+    return [
+      ...baseItems,
       { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
-    ]
-  }
+    ];
+  };
 
   const menuItems = getMenuItems()
 
@@ -91,7 +121,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                       <SidebarMenuButton
                         asChild
                         tooltip={item.label}
-                        className={`transition-all duration-200 h-12 ml-3 mr-4 w-[calc(100%-1.75rem)] rounded-full group-data-[collapsible=icon]:!m-0 group-data-[collapsible=icon]:!w-10 group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center ${isActive
+                        className={`transition-all duration-200 h-12 mx-3 w-[calc(100%-1.5rem)] rounded-full group-data-[collapsible=icon]:!m-0 group-data-[collapsible=icon]:!w-10 group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center ${isActive
                           ? "bg-[#C2E7FF] hover:bg-[#C2E7FF] text-[#001D35] group-data-[collapsible=icon]:bg-[#C2E7FF]"
                           : "text-[#444746] hover:bg-black/5 hover:text-[#1F1F1F]"
                           }`}

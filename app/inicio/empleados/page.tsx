@@ -53,7 +53,7 @@ export default function EmployeesPage() {
   const [user, setUser] = useState<User | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
@@ -68,7 +68,7 @@ export default function EmployeesPage() {
       try {
         setLoading(true)
         console.log(`[Employees] Fetching data (attempt ${retryCount + 1})`)
-        
+
         // Fetch user data and employees in parallel
         const [userResponse, employeesResponse] = await Promise.all([
           fetch('/api/auth/me', {
@@ -88,7 +88,7 @@ export default function EmployeesPage() {
             }
           })
         ])
-        
+
         // Handle user data
         if (userResponse.ok) {
           const userData = await userResponse.json()
@@ -106,7 +106,7 @@ export default function EmployeesPage() {
             return
           }
         }
-        
+
         // Handle employees data
         if (employeesResponse.ok) {
           const data = await employeesResponse.json()
@@ -114,7 +114,7 @@ export default function EmployeesPage() {
           setEmployees(data.employees || [])
         } else {
           console.error('[Employees] Error response:', employeesResponse.status, employeesResponse.statusText)
-          
+
           // Retry logic for database connection issues
           if (employeesResponse.status >= 500 && retryCount < 3) {
             console.log(`[Employees] Retrying in ${1000 * (retryCount + 1)}ms...`)
@@ -124,7 +124,7 @@ export default function EmployeesPage() {
         }
       } catch (error) {
         console.error("[Employees] Error fetching data:", error)
-        
+
         // Retry logic for network errors
         if (retryCount < 3) {
           console.log(`[Employees] Network error, retrying in ${1000 * (retryCount + 1)}ms...`)
@@ -147,7 +147,7 @@ export default function EmployeesPage() {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(employee => 
+      filtered = filtered.filter(employee =>
         `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -181,7 +181,7 @@ export default function EmployeesPage() {
       const response = await fetch(`/api/employees/${id}`, {
         method: 'DELETE'
       })
-      
+
       if (response.ok) {
         // Solo actualizar el estado si la petición fue exitosa
         setEmployees(prevEmployees => prevEmployees.filter(employee => employee.id !== id))
@@ -197,7 +197,7 @@ export default function EmployeesPage() {
   const handleToggleStatus = useCallback(async (id: number, currentStatus: boolean) => {
     try {
       console.log('Toggling status for employee', id, 'from', currentStatus, 'to', !currentStatus)
-      
+
       const response = await fetch(`/api/employees/${id}`, {
         method: 'PATCH',
         headers: {
@@ -205,12 +205,12 @@ export default function EmployeesPage() {
         },
         body: JSON.stringify({ is_active: !currentStatus })
       })
-      
+
       if (response.ok) {
         // Solo actualizar el estado si la petición fue exitosa
-        setEmployees(prevEmployees => 
-          prevEmployees.map(employee => 
-            employee.id === id 
+        setEmployees(prevEmployees =>
+          prevEmployees.map(employee =>
+            employee.id === id
               ? { ...employee, is_active: !currentStatus }
               : employee
           )
@@ -233,7 +233,7 @@ export default function EmployeesPage() {
   // Row coloring based on backend-provided days_until_termination
   const getRowClasses = (employee: Employee, index: number) => {
     const diffDays = employee.days_until_termination
-    
+
     // Default gray for rows without termination date
     if (diffDays === undefined || diffDays === null) {
       return index % 2 === 0 ? "border-b bg-gray-50 hover:bg-gray-100" : "border-b hover:bg-gray-50"
@@ -278,29 +278,20 @@ export default function EmployeesPage() {
 
   // Check if user can edit/delete employees
   const canManageEmployees = user?.role === ROLE_CODES.ADMIN || user?.role === ROLE_CODES.HR
-  
+
   // Check if user can edit specific employee (prevent self-editing for admins)
   const canEditEmployee = (employee: Employee) => {
-    if (!canManageEmployees) return false
-    // Prevent admin from editing themselves
-    if (user?.role === ROLE_CODES.ADMIN && employee.id === user.id) return false
-    return true
+    return canManageEmployees
   }
 
   // Check if user can delete specific employee
   const canDeleteEmployee = (employee: Employee) => {
-    if (!canManageEmployees) return false
-    // Prevent admin from deleting themselves
-    if (user?.role === ROLE_CODES.ADMIN && employee.id === user.id) return false
-    return true
+    return canManageEmployees
   }
 
   // Check if user can toggle employee status (activate/deactivate)
   const canToggleEmployeeStatus = (employee: Employee) => {
-    if (!canManageEmployees) return false
-    // Prevent admin from toggling their own status
-    if (user?.role === ROLE_CODES.ADMIN && employee.id === user.id) return false
-    return true
+    return canManageEmployees
   }
 
   const getRoleBadgeVariant = (role: string) => {
@@ -389,7 +380,7 @@ export default function EmployeesPage() {
                 <Filter className="h-4 w-4" />
               </Button>
               {canCreateEmployees && (
-                <Button 
+                <Button
                   size="sm"
                   className="h-8 px-3"
                   onClick={() => {
@@ -489,7 +480,7 @@ export default function EmployeesPage() {
                           </td>
                           <td className={`p-2 text-[12px] border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.email}>{employee.email}</td>
                           <td className={`p-2 text-[12px] border border-black text-gray-800`}>{employee.document_number || '-'}</td>
-                          <td className={`p-2 text-[12px] border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.position || '-' }>{employee.position || '-'}</td>
+                          <td className={`p-2 text-[12px] border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.position || '-'}>{employee.position || '-'}</td>
                           <td className={`p-2 text-[12px] font-semibold tabular-nums text-right border border-black text-gray-900`}>
                             {formatCurrency(employee.salary)}
                           </td>
@@ -508,17 +499,16 @@ export default function EmployeesPage() {
                               {employee.is_active ? "Activo" : "Inactivo"}
                             </Badge>
                           </td>
-                          <td className={`p-2 text-[12px] tabular-nums text-right border border-black ${
-                            employee.days_until_termination !== undefined && employee.days_until_termination !== null
-                              ? employee.days_until_termination < 0 
-                                ? 'text-red-600 font-semibold' 
+                          <td className={`p-2 text-[12px] tabular-nums text-right border border-black ${employee.days_until_termination !== undefined && employee.days_until_termination !== null
+                              ? employee.days_until_termination < 0
+                                ? 'text-red-600 font-semibold'
                                 : employee.days_until_termination <= 7
                                   ? 'text-orange-600 font-semibold'
                                   : 'text-gray-900'
                               : 'text-gray-500'
-                          }`}>
+                            }`}>
                             {employee.days_until_termination !== undefined && employee.days_until_termination !== null
-                              ? employee.days_until_termination < 0 
+                              ? employee.days_until_termination < 0
                                 ? `Exp (${Math.abs(employee.days_until_termination)})`
                                 : `${employee.days_until_termination}`
                               : '-'}
@@ -542,7 +532,7 @@ export default function EmployeesPage() {
                                   </DropdownMenuItem>
                                 )}
                                 {canDeleteEmployee(employee) && (
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     onClick={(e) => {
                                       e.preventDefault()
                                       setDeleteEmployeeId(employee.id)

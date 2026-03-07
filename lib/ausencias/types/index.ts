@@ -50,7 +50,8 @@ export interface TipoAusencia {
   TA_IDTIPO_AUSENCIA_PK: number;
   TA_NOMBRE: string;
   TA_DESCRIPCION?: string;
-  TA_PORCENTAJE_PAGO?: number;
+  TA_PORCENTAJE_PAGO: number;
+  TA_AFECTA_AUXILIO: boolean;
   TA_ACTIVO: boolean;
   TA_FECHA_CREACION?: string;
   TA_CREADO_POR?: number;
@@ -63,6 +64,7 @@ export interface TipoAusencia {
   descripcion?: string;
   is_active?: boolean;
   porcentaje_pago?: number;
+  afecta_auxilio?: boolean;
   created_at?: string;
   created_by?: number;
   updated_at?: string;

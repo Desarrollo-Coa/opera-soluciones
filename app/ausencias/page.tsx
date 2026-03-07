@@ -32,12 +32,13 @@ import {
   CalendarDays, Users, TrendingUp, Plus, BarChart3,
   Search, Download, Edit, Upload, X, FileText,
   ChevronLeft, ChevronRight, ArrowUpDown, LayoutDashboard,
-  ClipboardList, Home, ArrowLeft,
+  ClipboardList, Home, ArrowLeft, Settings2,
 } from "lucide-react"
 import Link from "next/link"
 import { UniversalSelect } from "@/components/ui/universal-select"
 import { exportStatsToExcel, exportAusenciasToExcel } from "@/lib/export-utils"
 import { cn } from "@/lib/utils"
+import { TipoAusenciaPanel } from "@/components/ausencias/tipo-ausencia-panel"
 
 // ──────────────────────────────────────────────
 // TIPOS
@@ -115,7 +116,7 @@ function getTipoBadgeClass(tipo: string) {
 // ──────────────────────────────────────────────
 // COMPONENTE PRINCIPAL
 // ──────────────────────────────────────────────
-type Tab = "dashboard" | "gestion"
+type Tab = "dashboard" | "gestion" | "config"
 
 export default function AusenciasPage() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard")
@@ -450,6 +451,16 @@ export default function AusenciasPage() {
             >
               <ClipboardList className="w-4 h-4" />
               Gestión
+            </button>
+            <button
+              onClick={() => setActiveTab("config")}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${activeTab === "config"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+                }`}
+            >
+              <Settings2 className="w-4 h-4" />
+              Tipos de Ausencia
             </button>
           </div>
         </div>
@@ -870,6 +881,14 @@ export default function AusenciasPage() {
         </div>
       )}
 
+      {/* ══════════════════════════════════════
+          TAB: CONFIGURACIÓN (Tipos de Ausencia)
+      ══════════════════════════════════════ */}
+      {activeTab === "config" && (
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+          <TipoAusenciaPanel />
+        </div>
+      )}
     </div>
   )
 }
