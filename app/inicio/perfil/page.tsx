@@ -88,13 +88,9 @@ export default function ProfilePage() {
       const today = new Date();
       let age = today.getFullYear() - birth.getFullYear();
       const m = today.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
-      }
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) { age--; }
       return age;
-    } catch (e) {
-      return '-';
-    }
+    } catch (e) { return '-'; }
   };
 
   const formatDate = (dateStr: string) => {
@@ -102,19 +98,17 @@ export default function ProfilePage() {
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return '-';
-      return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch (e) {
-      return '-';
-    }
+      return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+    } catch (e) { return '-'; }
   };
 
   if (loading) {
     return (
       <DashboardLayout userRole="ADMIN">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-3 border-[#1A73E8] border-t-transparent"></div>
-            <p className="text-[#5F6368] font-medium text-xs">Cargando perfil...</p>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-[#1A73E8] border-t-transparent"></div>
+            <p className="text-[#5F6368] font-medium animate-pulse">Sincronizando perfil...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -125,151 +119,144 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout userRole={user.role}>
-      <div className="max-w-[1300px] mx-auto h-[calc(100vh-80px)] flex flex-col items-stretch overflow-hidden px-2">
+      <div className="max-w-4xl mx-auto pb-12 animate-in fade-in zoom-in-95 duration-500">
 
-        <div className="flex-1 flex gap-3 min-h-0 py-2">
-          {/* Left Sidebar - Identity (Refined & Smaller) */}
-          <div className="w-64 flex-shrink-0 bg-white border border-[#DADCE0] rounded-2xl shadow-sm p-4 flex flex-col items-center animate-in fade-in slide-in-from-left-2 duration-300">
-            <div className="relative group">
-              <div className="w-20 h-20 rounded-full border-2 border-[#E8F0FE] p-0.5 overflow-hidden transition-transform duration-200 group-hover:scale-105">
-                <img
-                  src={user.profile_picture || `https://ui-avatars.com/api/?name=${user.first_name}+${user.last_name}&background=1A73E8&color=fff&size=160`}
-                  alt="Avatar"
-                  className="w-full h-full rounded-full object-cover"
-                />
-              </div>
-              <button className="absolute bottom-0 right-0 p-1 bg-white rounded-full shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors">
-                <Camera className="w-3 h-3 text-[#5F6368]" />
-              </button>
-            </div>
+        {/* --- HEADER SECTION --- */}
+        <div className="text-center space-y-3 mb-8 pt-4">
+          <h1 className="text-3xl font-medium text-[#202124]">Información Personal</h1>
+          <p className="text-[#5F6368] text-base max-w-lg mx-auto leading-relaxed">
+            Información básica sobre tu perfil, como tu nombre y foto, que usas en los servicios de SGI.
+          </p>
+        </div>
 
-            <div className="mt-2 text-center space-y-0">
-              <h1 className="text-sm font-medium text-[#202124] tracking-tight truncate w-full px-1">
-                {user.first_name} {user.last_name}
-              </h1>
-              <p className="text-[#1A73E8] font-medium text-[9px] uppercase tracking-widest opacity-90">
-                {user.position || 'Colaborador'}
-              </p>
-            </div>
-
-            <div className="w-full mt-3 bg-[#F8F9FA] rounded-xl p-3 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[8px] font-medium text-[#5F6368] uppercase opacity-70">Edad</span>
-                <span className="text-[11px] font-medium text-[#202124] tracking-tighter">{calculateAge(user.birth_date || '')} años</span>
+        {/* --- IDENTITY CARD (Centered Primary Info) --- */}
+        <section className="bg-white border border-[#DADCE0] rounded-3xl overflow-hidden shadow-sm transition-all hover:shadow-md mb-6">
+          <div className="h-32 bg-gradient-to-r from-[#E8F0FE] to-[#F1F3F4] relative">
+            <div className="absolute -bottom-12 left-8">
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-white">
+                  <img
+                    src={user.profile_picture || `https://ui-avatars.com/api/?name=${user.first_name}+${user.last_name}&background=1A73E8&color=fff&size=200`}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <button className="absolute bottom-1 right-1 p-2 bg-white rounded-full shadow-lg border border-[#DADCE0] hover:bg-gray-50 transition-all scale-90">
+                  <Camera className="w-4 h-4 text-[#1A73E8]" />
+                </button>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[8px] font-medium text-[#5F6368] uppercase opacity-70">Estado</span>
-                <Badge variant="outline" className="rounded-full px-1.5 py-0 h-3.5 text-[7.5px] uppercase font-medium border-[#DADCE0] bg-white text-[#3C4043]">
-                  {user.contract_status_name}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[8px] font-medium text-[#5F6368] uppercase opacity-70">Sede</span>
-                <span className="text-[11px] font-medium text-[#202124] tracking-tighter">Colombia</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[8px] font-medium text-[#5F6368] uppercase opacity-70">Permisos</span>
-                <span className="text-[11px] font-medium text-[#1A73E8] tracking-tighter uppercase">{user.role_name}</span>
-              </div>
-            </div>
-
-            <div className="w-full mt-auto pt-3 border-t border-[#F1F3F4]">
-              <p className="text-[8px] font-medium text-gray-400 uppercase tracking-widest text-center mb-1">ID Usuario</p>
-              <p className="text-[10px] font-medium text-gray-500 text-center">#{user.id}</p>
             </div>
           </div>
 
-          {/* Right Content - Ultra Compact Grid */}
-          <div className="flex-1 grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-right-2 duration-300">
-
-            {/* Profesional Summary */}
-            <BentoCard title="Laboral" icon={Briefcase}>
-              <div className="space-y-2.5">
-                <Highlight icon={Calendar} label="Vinculación" value={formatDate(user.hire_date || '')} />
-                <Highlight icon={Calculator} label="Base" value={user.salary ? formatCurrency(user.salary) : '---'} />
-                <Highlight icon={Briefcase} label="Cargo" value={user.position || '-'} />
-                <Highlight icon={Activity} label="Alta" value={formatDate(user.created_at || '')} />
+          <div className="pt-16 pb-8 px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold text-[#202124]">{user.first_name} {user.last_name}</h2>
+                  <Badge variant="outline" className="rounded-full bg-[#E6F4EA] text-[#137333] border-none px-3 font-medium text-[10px] uppercase tracking-wider">
+                    {user.contract_status_name}
+                  </Badge>
+                </div>
+                <p className="text-[#1A73E8] font-medium mt-1 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4" /> {user.position || 'Colaborador'}
+                </p>
               </div>
-            </BentoCard>
-
-            {/* Identities Card */}
-            <BentoCard title="Identidad" icon={Shield}>
-              <div className="space-y-2">
-                <CompactInfo label="Cédula / Documento" value={`${user.document_type} ${user.document_number}`} />
-                <CompactInfo label="Género / Identidad" value={user.gender === 'M' ? 'Masculino' : user.gender === 'F' ? 'Femenino' : 'Otro'} />
-                <CompactInfo label="Estado Civil" value={user.marital_status || 'Soltero/a'} />
-                <CompactInfo label="Nacimiento" value={formatDate(user.birth_date || '')} />
+              <div className="flex items-center gap-2 text-[#5F6368] text-sm font-medium">
+                <Shield className="w-4 h-4 text-emerald-500" strokeWidth={3} />
+                ID: {user.document_number || user.id}
               </div>
-            </BentoCard>
+            </div>
+          </div>
+        </section>
 
-            {/* Contact Information */}
-            <BentoCard title="Contacto" icon={Phone}>
-              <div className="space-y-2.5">
-                <Highlight icon={Mail} label="E-mail" value={user.email} />
-                <Highlight icon={Phone} label="Móvil" value={user.phone || 'No registrado'} />
-                <Highlight icon={MapPin} label="Dirección" value={user.address || 'No registrada'} />
-              </div>
-            </BentoCard>
+        {/* --- INFORMATION BLOCKS --- */}
+        <div className="space-y-6">
 
-            {/* Emergency Info - Highlighted */}
-            <BentoCard title="Emergencia" icon={HeartPulse} className="bg-[#FCE8E6]/20 border-[#FCE8E6]">
-              <div className="flex flex-col h-full space-y-2">
-                <p className="text-[9px] font-medium text-[#D93025] uppercase tracking-widest">Protocolo SOS</p>
-                <div className="bg-white p-2.5 rounded-xl border border-[#FCE8E6] shadow-sm flex-1">
-                  <p className="text-[11px] font-medium text-[#202124] mb-0.5">{user.emergency_contact_name || 'Sin asignar'}</p>
-                  <p className="text-[#D93025] font-medium text-base">{user.emergency_contact_phone || '---'}</p>
-                  <p className="text-[9px] text-[#5F6368] font-medium leading-tight uppercase opacity-60 mt-1">
-                    Contacto preferente
-                  </p>
+          {/* Personal Data Block */}
+          <SectionBlock title="Información de contacto" description="Tus datos de localización y comunicación empresarial.">
+            <InfoRow icon={Mail} label="Correo Electrónico" value={user.email} />
+            <InfoRow icon={Phone} label="Teléfono" value={user.phone || 'No registrado'} />
+            <InfoRow icon={MapPin} label="Dirección" value={user.address || 'No registrada'} />
+          </SectionBlock>
+
+          {/* Identity & Legal Block */}
+          <SectionBlock title="Acerca de ti" description="Información demográfica y de identificación legal.">
+            <InfoRow icon={User} label="Nombre Completo" value={`${user.first_name} ${user.last_name}`} />
+            <InfoRow icon={Calendar} label="Fecha de Nacimiento" value={`${formatDate(user.birth_date || '')} (${calculateAge(user.birth_date || '')} años)`} />
+            <InfoRow icon={Shield} label="Documento" value={`${user.document_type} ${user.document_number}`} />
+            <InfoRow icon={HeartPulse} label="Estado Civil" value={user.marital_status || 'Soltero/a'} />
+          </SectionBlock>
+
+          {/* Work & Laboral Block */}
+          <SectionBlock title="Vida Laboral" description="Tu vinculación actual con el equipo de Opera Soluciones.">
+            <InfoRow icon={Briefcase} label="Cargo Actual" value={user.position || '-'} />
+            <InfoRow icon={Calendar} label="Fecha de Ingreso" value={formatDate(user.hire_date || '')} />
+            <InfoRow icon={Calculator} label="Asignación Básica" value={user.salary ? formatCurrency(user.salary) : '---'} />
+            <InfoRow icon={Activity} label="Rol del Sistema" value={user.role_name} />
+          </SectionBlock>
+
+          {/* Emergency SOS Block */}
+          <SectionBlock title="Emergencia (SOS)" description="A quién contactar en casos fortuitos." highlight>
+            <div className="flex items-center justify-between group cursor-pointer p-4 rounded-2xl transition-colors hover:bg-red-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                  <HeartPulse className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900">{user.emergency_contact_name || 'Sin Asignar'}</h4>
+                  <p className="text-xs text-gray-500">Contacto de Emergencia</p>
                 </div>
               </div>
-            </BentoCard>
+              <div className="text-right">
+                <p className="text-lg font-bold text-red-600 tracking-wider font-inter">{user.emergency_contact_phone || '---'}</p>
+              </div>
+            </div>
+          </SectionBlock>
 
-          </div>
         </div>
+
+        {/* --- FOOTER INFO --- */}
+        <div className="mt-12 text-center text-[#70757A] text-[11px] font-medium uppercase tracking-[0.1em] opacity-60">
+          SGI OPERA SOLUCIONES • v2.0 • 2026
+        </div>
+
       </div>
-    </DashboardLayout >
+    </DashboardLayout>
   )
 }
 
 /**
- * Refined Bento Components
+ * --- REUSABLE COMPONENTS (GOOGLE STYLE) ---
  */
-function BentoCard({ title, icon: Icon, children, className = "" }: any) {
+
+function SectionBlock({ title, description, children, highlight = false }: any) {
   return (
-    <Card className={`bg-white border border-[#DADCE0] rounded-2xl shadow-none p-3 lg:p-4 flex flex-col ${className}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-1 bg-[#F8F9FA] rounded-lg">
-          <Icon className="w-3.5 h-3.5 text-[#1A73E8]" strokeWidth={3} />
-        </div>
-        <h3 className="text-[11px] font-medium text-[#202124] tracking-tight uppercase opacity-80">{title}</h3>
+    <Card className={`bg-white border border-[#DADCE0] rounded-3xl overflow-hidden shadow-none px-6 py-6 ${highlight ? 'border-red-100' : ''}`}>
+      <div className="mb-6">
+        <h3 className="text-lg font-medium text-[#202124]">{title}</h3>
+        <p className="text-[#5F6368] text-sm mt-1">{description}</p>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="divide-y divide-[#F1F3F4]">
         {children}
       </div>
     </Card>
   )
 }
 
-function Highlight({ icon: Icon, label, value }: any) {
+function InfoRow({ icon: Icon, label, value }: any) {
   return (
-    <div className="flex gap-2.5 items-center group">
-      <div className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-[#5F6368] group-hover:text-[#1A73E8] group-hover:bg-[#E8F0FE] transition-colors flex-shrink-0">
-        <Icon className="w-3 h-3" strokeWidth={3} />
+    <div className="flex items-center justify-between group cursor-pointer min-h-[64px] transition-colors hover:bg-gray-50 -mx-6 px-6">
+      <div className="flex items-center gap-4 w-1/3">
+        <Icon className="w-4 h-4 text-[#5F6368] group-hover:text-[#1A73E8] transition-colors" />
+        <span className="text-[13px] font-medium text-[#5F6368] group-hover:text-[#1A73E8] transition-colors uppercase tracking-tight opacity-70">
+          {label}
+        </span>
       </div>
-      <div className="min-w-0">
-        <p className="text-[8px] font-medium text-[#5F6368] uppercase tracking-wider leading-none mb-0.5 opacity-70">{label}</p>
-        <p className="text-[11px] font-medium text-[#202124] truncate tracking-tighter">{value}</p>
+      <div className="flex-1 text-right">
+        <span className="text-base text-[#202124] font-medium tracking-tight">
+          {value || '---'}
+        </span>
       </div>
-    </div>
-  )
-}
-
-function CompactInfo({ label, value }: any) {
-  return (
-    <div className="border-b border-[#F1F3F4] pb-1.5 last:border-none">
-      <p className="text-[8px] font-medium text-[#5F6368] uppercase tracking-widest opacity-60 mb-0.5">{label}</p>
-      <p className="text-[11px] font-medium text-[#3C4043] tracking-tighter">{value}</p>
     </div>
   )
 }

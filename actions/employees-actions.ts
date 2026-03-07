@@ -55,7 +55,7 @@ const employeeProfileSchema = z.object({
     salary: z.coerce.number().optional().nullable(),
 
     // Solo para creación
-    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").optional(),
+    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional(),
 });
 
 /**
@@ -138,10 +138,19 @@ export async function updateEmployeeProfileAction(
             ]
         );
 
+        // Si se proporcionó una nueva contraseña, la hasheamos y actualizamos
+        if (d.password) {
+            const passwordHash = await bcrypt.hash(d.password, 12);
+            await pool.execute(
+                `UPDATE OS_USUARIOS SET US_PASSWORD_HASH = ? WHERE US_IDUSUARIO_PK = ?`,
+                [passwordHash, d.id]
+            );
+        }
+
         revalidatePath(`/inicio/empleados/${d.id}`);
         revalidatePath('/inicio/empleados');
 
-        return { success: true, message: 'Perfil del empleado actualizado correctamente.' };
+        return { success: true, message: `Perfil del empleado actualizado correctamente.${d.password ? ' Contraseña actualizada.' : ''}` };
     } catch (error: any) {
         console.error('Error updating employee profile:', error);
         if (error.code === 'ER_DUP_ENTRY') {

@@ -176,24 +176,6 @@ function getRoleModules(role: string): Module[] {
       hoverColor: "hover:bg-indigo-50 hover:shadow-indigo-100",
       href: "/inicio/nomina/mis-volantes",
     },
-    {
-      title: "Mis Ausencias",
-      description: "Solicitud de permisos y registro de novedades",
-      icon: CalendarDays,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50/50",
-      hoverColor: "hover:bg-emerald-50 hover:shadow-emerald-100",
-      href: "/ausencias",
-    },
-    {
-      title: "SGI / Documentos",
-      description: "Manuales, políticas y documentos normativos",
-      icon: FileText,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50/50",
-      hoverColor: "hover:bg-purple-50 hover:shadow-purple-100",
-      href: "/inicio/sgi",
-    },
   ];
 
   if (role === ROLE_CODES.ADMIN) return adminModules;

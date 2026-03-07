@@ -56,13 +56,13 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   const getMenuItems = () => {
     const baseItems = [
       { icon: Home, label: "Inicio", href: "/inicio" },
-      { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
       { icon: CalendarDays, label: "Ausencias", href: "/ausencias" },
     ];
 
     if (userRole === ROLE_CODES.ADMIN) {
       return [
         ...baseItems,
+        { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
         { icon: Users, label: "Empleados", href: "/inicio/empleados" },
         { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
       ];
@@ -71,6 +71,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
     if (userRole === ROLE_CODES.HR) {
       return [
         ...baseItems,
+        { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
         { icon: Users, label: "Empleados", href: "/inicio/empleados" },
         { icon: FileText, label: "Nómina", href: "/inicio/nomina" },
         { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
@@ -79,7 +80,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
 
     if (userRole === ROLE_CODES.EMPLOYEE) {
       return [
-        ...baseItems,
+        ...baseItems.filter(item => item.href !== "/ausencias"),
         { icon: FileText, label: "Mis Volantes", href: "/inicio/nomina/mis-volantes" },
         { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
       ];
@@ -121,17 +122,17 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                       <SidebarMenuButton
                         asChild
                         tooltip={item.label}
-                        className={`transition-all duration-200 h-12 mx-3 w-[calc(100%-1.5rem)] rounded-full group-data-[collapsible=icon]:!m-0 group-data-[collapsible=icon]:!w-10 group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center ${isActive
-                          ? "bg-[#C2E7FF] hover:bg-[#C2E7FF] text-[#001D35] group-data-[collapsible=icon]:bg-[#C2E7FF]"
-                          : "text-[#444746] hover:bg-black/5 hover:text-[#1F1F1F]"
+                        className={`transition-all duration-200 h-11 mx-3 w-[calc(100%-1.5rem)] rounded-full group-data-[collapsible=icon]:!m-0 group-data-[collapsible=icon]:!w-10 group-data-[collapsible=icon]:!h-10 group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center ${isActive
+                          ? "bg-[#C2E7FF] hover:bg-[#D3EEFF] text-[#001D35] font-semibold"
+                          : "text-[#444746] hover:bg-gray-100 hover:text-[#1F1F1F]"
                           }`}
                       >
                         <a href={item.href} className="flex items-center gap-4 px-4 h-full w-full group-data-[collapsible=icon]:!px-0 group-data-[collapsible=icon]:justify-center">
                           <item.icon
-                            className={`!w-[22px] !h-[22px] shrink-0 group-data-[collapsible=icon]:!w-[20px] group-data-[collapsible=icon]:!h-[20px] ${isActive ? "text-[#001D35] fill-transparent" : "text-[#444746]"}`}
+                            className={`!w-[20px] !h-[20px] shrink-0 group-data-[collapsible=icon]:!w-[20px] group-data-[collapsible=icon]:!h-[20px] ${isActive ? "text-[#001D35]" : "text-[#5F6368]"}`}
                             strokeWidth={isActive ? 2.5 : 2}
                           />
-                          <span className={`text-[14px] leading-5 tracking-wide group-data-[collapsible=icon]:hidden ${isActive ? "font-w[600]" : "font-medium"}`}>
+                          <span className={`text-[14px] leading-5 tracking-wide group-data-[collapsible=icon]:hidden ${isActive ? "font-semibold" : "font-medium"}`}>
                             {item.label}
                           </span>
                         </a>

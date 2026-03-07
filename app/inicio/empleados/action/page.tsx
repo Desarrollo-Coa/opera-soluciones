@@ -330,6 +330,16 @@ function EmployeeActionContent() {
                       <Label htmlFor="document_number">Número de Documento</Label>
                       <Input id="document_number" name="document_number" defaultValue={initialData?.document_number} />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">{isEdit ? 'Cambiar Contraseña' : 'Contraseña Sistema *'}</Label>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder={isEdit ? "Dejar en blanco para no cambiar" : "Mínimo 6 caracteres"}
+                        required={!isEdit}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -400,12 +410,6 @@ function EmployeeActionContent() {
                       <Label htmlFor="emergency_contact_phone">Tel. Emergencia</Label>
                       <Input id="emergency_contact_phone" name="emergency_contact_phone" defaultValue={initialData?.emergency_contact_phone} placeholder="Número de contacto" />
                     </div>
-                    {!isEdit && (
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Contraseña Sistema *</Label>
-                        <Input id="password" name="password" type="password" required />
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>
