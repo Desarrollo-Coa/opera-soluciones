@@ -53,9 +53,9 @@ export function About() {
             transition={{ delay: 0.2 }}
             className="text-lg text-slate-600 leading-relaxed"
           >
-            Opera Soluciones es una empresa líder en mantenimiento, logística y construcción,
-            comprometida con la excelencia y la profesionalidad. Impulsamos el crecimiento
-            de nuestros clientes mediante soluciones integrales y servicios de alta calidad.
+            Opera Soluciones es una empresa líder en mantenimiento, logística y construcción.
+            Nuestro Sistema de Gestión Integral centraliza la operación para garantizar
+            estándares superiores en cada proceso interno de nuestra organización.
           </motion.p>
         </div>
 
@@ -102,13 +102,7 @@ export function About() {
                 height={500}
                 className="rounded-2xl object-cover w-full h-[450px]"
               />
-              <div className="absolute -bottom-6 -right-6 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 hidden md:block max-w-[200px]">
-                <div className="flex items-center gap-3 mb-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  <span className="font-bold text-slate-900">Certificados</span>
-                </div>
-                <p className="text-xs text-slate-500">Cumplimos con los más altos estándares de calidad internacional.</p>
-              </div>
+              {/* Imagen representativa de la operación */}
             </div>
           </motion.div>
         </div>

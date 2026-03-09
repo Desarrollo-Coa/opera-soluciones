@@ -41,3 +41,41 @@ export interface UsuarioClausulaRow extends RowDataPacket {
     notas_auditoria: string;
     nombre_clausula?: string; // Para joins
 }
+export interface LiquidacionDetalle {
+    id: number | string;
+    descripcion: string;
+    cantidad: number;
+    valor_unitario: number;
+    valor_total: number;
+    tipo: 'Devengo' | 'Deducción';
+}
+
+export interface LiquidacionFullData extends RowDataPacket {
+    id: number;
+    periodo_mes: number;
+    periodo_anio: number;
+    quincena: number;
+    fecha_liquidacion: string | Date;
+    total_devengado: number;
+    total_deducciones: number;
+    dias_trabajados: number;
+    dias_incapacidad: number;
+    neto_pagar: number;
+    ibc_salud: number;
+    estado: string;
+    first_name: string;
+    last_name: string;
+    document_number: string;
+    document_type?: string;
+    bank_name?: string;
+    account_number?: string;
+    account_type?: string;
+    work_schedule?: string;
+    eps_id?: string;
+    arl_id?: string;
+    pension_fund_id?: string;
+    cargo_nombre?: string;
+    sueldo_mensual_base: number;
+    logoUrl?: string | Buffer; // Inyectado para el PDF
+    detalles: LiquidacionDetalle[];
+}

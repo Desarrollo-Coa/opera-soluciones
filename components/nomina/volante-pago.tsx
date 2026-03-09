@@ -87,7 +87,7 @@ export function VolantePago({ data }: { data: VolanteData }) {
                     <Suspense fallback={<Button disabled size="sm" className="gap-2 bg-indigo-400"><Download className="h-4 w-4" /> Cargando...</Button>}>
                         <PDFDownloadLink
                             document={<VolantePDF data={data} />}
-                            fileName={`Volante - ${data.first_name} ${data.last_name} - ${MESES[data.periodo_mes - 1].toUpperCase()} - ${data.quincena === 1 ? 'PRIMERA' : 'SEGUNDA'} QUINCENA.pdf`}
+                            fileName={`Volante - ${data.document_number} - ${data.first_name} ${data.last_name} - ${MESES[data.periodo_mes - 1].toUpperCase()} - ${data.quincena === 1 ? 'PRIMERA' : 'SEGUNDA'} QUINCENA.pdf`}
                         >
                             {({ loading }) => (
                                 <Button variant="default" size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700" disabled={loading}>

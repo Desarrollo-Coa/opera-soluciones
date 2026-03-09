@@ -49,40 +49,54 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="email">Correo electrónico</Label>
-        <Input id="email" name="email" type="email" required placeholder="tu@email.com" disabled={isLoading} autoComplete="username" />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="email" className="text-slate-700 font-bold ml-1 text-xs uppercase tracking-wider">Correo electrónico</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          required
+          placeholder="nombre@ejemplo.com"
+          disabled={isLoading}
+          autoComplete="username"
+          className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:ring-sky-500/20 h-12 rounded-none transition-all"
+        />
       </div>
 
-      <div>
-        <Label htmlFor="password">Contraseña</Label>
-        <div className="relative">
+      <div className="space-y-2">
+        <Label htmlFor="password" className="text-slate-700 font-bold ml-1 text-xs uppercase tracking-wider">Contraseña</Label>
+        <div className="relative group">
           <Input
             id="password"
             name="password"
             type={showPassword ? "text" : "password"}
             required
-            placeholder="Tu contraseña"
+            placeholder="••••••••"
             disabled={isLoading}
             autoComplete="current-password"
+            className="bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:ring-sky-500/20 h-12 rounded-none transition-all"
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 transform -translate-y-1/2"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-600 transition-colors p-1"
             onClick={() => setShowPassword(!showPassword)}
             disabled={isLoading}
           >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button
+        type="submit"
+        className="w-full bg-sky-600 hover:bg-sky-700 text-white font-black h-12 rounded-none shadow-md transition-all active:scale-[0.98] uppercase tracking-widest"
+        disabled={isLoading}
+      >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Iniciando sesión...
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Entrando...
           </>
         ) : (
           "Iniciar Sesión"

@@ -20,7 +20,7 @@ export function MissionVision() {
           viewport={{ once: true }}
           className="text-4xl md:text-5xl font-bold text-center mb-16 tracking-tight"
         >
-          Nuestra <span className="text-blue-500">Misión</span> y <span className="text-red-500">Visión</span>
+          Misión y Visión
         </motion.h2>
 
         <div className="grid md:grid-cols-2 gap-10 max-w-6xl mx-auto">
@@ -40,10 +40,9 @@ export function MissionVision() {
               </CardHeader>
               <CardContent className="pt-4">
                 <p className="text-slate-400 text-lg leading-relaxed">
-                  Ofrecemos servicios de mantenimiento, logística y construcción con un
-                  enfoque inquebrantable en la <span className="text-blue-400 font-semibold">calidad y la eficiencia</span>. Superamos las expectativas de nuestros
-                  clientes mediante soluciones personalizadas, respaldadas por un equipo altamente
-                  calificado y tecnologías avanzadas.
+                  Consolidamos la operación de mantenimiento, logística y construcción con
+                  procesos definidos y eficientes. Aseguramos la correcta ejecución de cada
+                  proyecto mediante el uso de herramientas tecnológicas y personal calificado.
                 </p>
               </CardContent>
             </Card>
@@ -65,7 +64,9 @@ export function MissionVision() {
               </CardHeader>
               <CardContent className="pt-4">
                 <p className="text-slate-400 text-lg leading-relaxed">
-                  Ser la empresa líder reconocida por nuestra <span className="text-red-400 font-semibold">excelencia operativa</span>, innovación constante y compromiso con la sostenibilidad. Aspiramos a transformar el desarrollo de infraestructuras que mejoren la calidad de vida de las comunidades a nivel global.
+                  Liderar la eficiencia operativa en nuestros sectores de influencia, integrando
+                  la innovación y la sostenibilidad como bases fundamentales para el desarrollo
+                  continuo de nuestra infraestructura comercial y operativa.
                 </p>
               </CardContent>
             </Card>

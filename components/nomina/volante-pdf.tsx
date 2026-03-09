@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
+import { LiquidacionFullData, LiquidacionDetalle } from '@/types/db';
 
 // Register fonts if needed, or use standard ones
 // Font.register({ family: 'Inter', src: '...' });
@@ -217,9 +218,9 @@ const fmt = (n: number | string) => {
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-export function VolantePDF({ data }: { data: any }) {
-    const devengos = data.detalles.filter((d: any) => d.tipo === 'Devengo');
-    const deducciones = data.detalles.filter((d: any) => d.tipo === 'Deducción');
+export function VolantePDF({ data }: { data: LiquidacionFullData }) {
+    const devengos = data.detalles.filter((d: LiquidacionDetalle) => d.tipo === 'Devengo');
+    const deducciones = data.detalles.filter((d: LiquidacionDetalle) => d.tipo === 'Deducción');
     const hasBank = data.bank_name && data.bank_name.trim() !== '';
 
     return (
@@ -229,7 +230,7 @@ export function VolantePDF({ data }: { data: any }) {
                     {/* Header */}
                     <View style={styles.headerWrapper}>
                         <View style={styles.logoContainer}>
-                            <Image src="/recursos/logopera.png" style={styles.logo} />
+                            <Image src={data.logoUrl || "/recursos/logopera.png"} style={styles.logo} />
                             <Text style={styles.companyName}>OPERA SOLUCIONES S.A.S.</Text>
                         </View>
                         <Text style={styles.companyNit}>NIT: 901.714.147  |  Barranquilla, Atlántico</Text>

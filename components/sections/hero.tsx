@@ -9,11 +9,11 @@ import { ArrowRight, ShieldCheck, Zap, BarChart3 } from "lucide-react"
 export function Hero() {
   return (
     <section id="inicio" className="relative min-h-[95vh] flex items-center justify-center overflow-hidden bg-slate-950 pt-32 md:pt-40 pb-20">
-      {/* Mesh Gradient Background */}
+      {/* Mesh Gradient Background with Light Blue/Cyan */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/20 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-red-600/10 blur-[120px]" />
-        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-yellow-500/10 blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-sky-500/15 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-cyan-500/15 blur-[120px]" />
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-blue-500/10 blur-[120px]" />
       </div>
 
       {/* Grid Pattern */}
@@ -29,7 +29,7 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 mb-8 mt-4 md:mt-0 text-sm font-medium backdrop-blur-sm"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Innovación y Seguridad Garantizada</span>
+            <span>Gestión Estratégica Operativa</span>
           </motion.div>
 
           <motion.h1
@@ -43,16 +43,6 @@ export function Hero() {
               Opera Soluciones
             </span>
           </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-lg md:text-2xl mb-12 text-slate-400 max-w-2xl mx-auto leading-relaxed"
-          >
-            Lideramos el futuro del mantenimiento y la logística con soluciones
-            impulsadas por tecnología de vanguardia y excelencia operativa.
-          </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -80,29 +70,6 @@ export function Hero() {
             </Link>
           </motion.div>
 
-          {/* Stats/Floating elements */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 1 }}
-            className="grid grid-cols-2 md:grid-cols-3 gap-8 mt-20 pt-10 border-t border-slate-800/50"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <Zap className="w-6 h-6 text-yellow-500" />
-              <div className="text-2xl font-bold text-white">100%</div>
-              <div className="text-sm text-slate-500">Eficiencia Operativa</div>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <ShieldCheck className="w-6 h-6 text-blue-500" />
-              <div className="text-2xl font-bold text-white">24/7</div>
-              <div className="text-sm text-slate-500">Soporte Continuo</div>
-            </div>
-            <div className="hidden md:flex flex-col items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-red-500" />
-              <div className="text-2xl font-bold text-white">+500</div>
-              <div className="text-sm text-slate-500">Proyectos Exitosos</div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>

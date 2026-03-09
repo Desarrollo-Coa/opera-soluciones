@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { UniversalSelect } from "@/components/ui/universal-select";
 import { toast } from "sonner";
 import { generarLiquidacionQuincenal, getLiquidaciones, aprobarNominaPeriodo, eliminarLiquidacion, eliminarNominaPeriodo } from "@/actions/nomina";
-import { FileText, Play, Loader2, CheckCircle, Lock, Trash2, Users, Download } from "lucide-react";
+import { FileText, Play, Loader2, CheckCircle, Lock, Trash2, Users, Download, FileArchive } from "lucide-react";
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
 
@@ -197,6 +197,19 @@ export function LiquidacionesClient({
         ];
 
         XLSX.writeFile(wb, `Liquidaciones - ${MESES[parseInt(mes) - 1].toUpperCase()} - Q${quincena} - ${anio}.xlsx`);
+    };
+
+    const handleDownloadZip = () => {
+        if (!data || data.length === 0) {
+            toast.error("No hay liquidaciones para descargar");
+            return;
+        }
+
+        const url = `/api/nomina/zip-volantes?mes=${mes}&anio=${anio}&quincena=${quincena}`;
+
+        // Usamos toast para avisar que inició el proceso ya que puede tardar unos segundos
+        toast.info("Generando archivo ZIP de volantes, por favor espere...");
+        window.location.href = url;
     };
 
     const isPeriodoAprobado = data.length > 0 && data.every(d => d.estado === 'Aprobado');
@@ -384,15 +397,28 @@ export function LiquidacionesClient({
                     </div>
 
                     {data.length > 0 && (
-                        <Button
-                            variant="outline"
-                            className="h-11 px-4 text-xs font-bold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-sm gap-2 rounded-sm transition-all"
-                            onClick={handleDownloadExcel}
-                            disabled={loading}
-                        >
-                            <Download className="h-4 w-4" />
-                            Excel
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                className="h-11 px-4 text-xs font-bold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-sm gap-2 rounded-sm transition-all"
+                                onClick={handleDownloadExcel}
+                                disabled={loading}
+                                title="Exportar a Excel"
+                            >
+                                <Download className="h-4 w-4" />
+                                Excel
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="h-11 px-4 text-xs font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50 shadow-sm gap-2 rounded-sm transition-all"
+                                onClick={handleDownloadZip}
+                                disabled={loading}
+                                title="Descargar todos los volantes en ZIP"
+                            >
+                                <FileArchive className="h-4 w-4" />
+                                ZIP Volantes
+                            </Button>
+                        </div>
                     )}
 
                     {data.length > 0 && !isPeriodoAprobado && (

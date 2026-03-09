@@ -4,7 +4,7 @@ import { pool } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { ActionResponse } from '@/types/actions';
-import { ParametroNominaRow, EmpleadoLiquidacionRow } from '@/types/db';
+import { ParametroNominaRow, EmpleadoLiquidacionRow, LiquidacionFullData } from '@/types/db';
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -612,6 +612,82 @@ export async function getGlobalLockedPeriodsAction(): Promise<ActionResponse<Arr
              ORDER BY LQ_PERIODO_ANIO DESC, LQ_PERIODO_MES DESC, LQ_QUINCENA DESC`
         );
         return { success: true, data: rows };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+/**
+ * Obtener data completa para todos los volantes de un periodo (usado para download ZIP)
+ */
+export async function getLiquidacionesFullData(mes: number, anio: number, quincena: number): Promise<ActionResponse<LiquidacionFullData[]>> {
+    const user = await getAuthUser();
+    if (!user) return { success: false, message: 'No autorizado' };
+
+    try {
+        // 1. Obtener todas las maestras del periodo
+        const [rows] = await pool.execute<any[]>(
+            `SELECT 
+                l.LQ_IDLIQUIDACION_PK   as id,
+                l.LQ_PERIODO_MES        as periodo_mes,
+                l.LQ_PERIODO_ANIO       as periodo_anio,
+                l.LQ_QUINCENA           as quincena,
+                l.LQ_FECHA_LIQUIDACION  as fecha_liquidacion,
+                l.LQ_TOTAL_DEVENGADO    as total_devengado,
+                l.LQ_TOTAL_DEDUCCIONES  as total_deducciones,
+                l.LQ_DIAS_TRABAJADOS    as dias_trabajados,
+                l.LQ_DIAS_INCAPACIDAD   as dias_incapacidad,
+                l.LQ_NETO_PAGAR         as neto_pagar,
+                l.LQ_IBC_SALUD          as ibc_salud,
+                l.LQ_ESTADO             as estado,
+                u.US_NOMBRE             as first_name,
+                u.US_APELLIDO           as last_name,
+                u.US_NUMERO_DOCUMENTO   as document_number,
+                u.US_TIPO_DOCUMENTO     as document_type,
+                COALESCE(eb.EB_NOMBRE, u.US_NOMBRE_BANCO) as bank_name,
+                u.US_NUMERO_CUENTA      as account_number,
+                u.US_TIPO_CUENTA        as account_type,
+                u.US_HORARIO_TRABAJO    as work_schedule,
+                u.EP_IDEPS_FK           as eps_id,
+                u.AR_IDARL_FK           as arl_id,
+                u.PE_IDPENSION_FK       as pension_fund_id,
+                c.CA_NOMBRE             as cargo_nombre,
+                c.CA_SUELDO_BASE        as sueldo_mensual_base
+             FROM OS_LIQUIDACIONES l
+             JOIN OS_USUARIOS u ON l.US_IDUSUARIO_FK = u.US_IDUSUARIO_PK
+             LEFT JOIN OS_CARGOS c ON u.CA_IDCARGO_FK = c.CA_IDCARGO_PK
+             LEFT JOIN OS_ENTIDADES_BANCARIAS eb ON u.US_NOMBRE_BANCO = eb.EB_IDBANCO_PK
+             WHERE l.LQ_PERIODO_MES = ? AND l.LQ_PERIODO_ANIO = ? AND l.LQ_QUINCENA = ?`,
+            [mes, anio, quincena]
+        );
+
+        if (rows.length === 0) return { success: true, data: [] };
+
+        const ids = rows.map(r => r.id);
+
+        // 2. Obtener todos los detalles de una vez
+        const [detalles] = await pool.query<any[]>(
+            `SELECT 
+                LQ_IDLIQUIDACION_FK as liq_id,
+                DL_IDDETALLE_PK     as id,
+                DL_DESCRIPCION      as descripcion,
+                DL_CANTIDAD         as cantidad,
+                DL_VALOR_UNITARIO   as valor_unitario,
+                DL_VALOR_TOTAL      as valor_total,
+                DL_TIPO             as tipo
+             FROM OS_DETALLE_LIQUIDACION 
+             WHERE LQ_IDLIQUIDACION_FK IN (?)
+             ORDER BY DL_TIPO DESC, CN_IDCONCEPTO_FK ASC`,
+            [ids]
+        );
+
+        // 3. Agrupar detalles por liquidación
+        const result = rows.map(r => ({
+            ...r,
+            detalles: detalles.filter(d => d.liq_id === r.id)
+        }));
+
+        return { success: true, data: result };
     } catch (error: any) {
         return { success: false, message: error.message };
     }

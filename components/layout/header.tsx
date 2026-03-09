@@ -100,7 +100,7 @@ export function Header() {
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button
                     variant="default"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 rounded-lg transition-all"
+                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-6 rounded-lg transition-all"
                   >
                     Acceso al Sistema
                   </Button>

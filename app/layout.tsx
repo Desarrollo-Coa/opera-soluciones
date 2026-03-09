@@ -3,7 +3,8 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
-import { Toaster as SonnerToaster } from "sonner"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
+
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -23,11 +24,8 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        {/* <header className="w-full flex justify-center py-4">
-          <img src="/recursos/logopera.jpeg" alt="Opera Soluciones" className="h-12 w-auto" />
-        </header> */}
         {children}
-        <SonnerToaster richColors position="top-right" />
+        <SonnerToaster position="top-right" closeButton />
       </body>
     </html>
   )
