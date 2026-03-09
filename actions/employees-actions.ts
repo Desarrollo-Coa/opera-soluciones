@@ -110,6 +110,34 @@ export async function updateEmployeeProfileAction(
         console.log('Validation Success (Update)');
         const d = validatedData.data;
 
+        // --- BLOQUEO DE SEGURIDAD POR NÓMINA EN REVISIÓN ---
+        const [lqCalculadas]: any[] = await pool.execute(
+            'SELECT 1 FROM OS_LIQUIDACIONES WHERE LQ_ESTADO = "Calculado" LIMIT 1'
+        );
+
+        if (lqCalculadas.length > 0) {
+            // Si hay nóminas en revisión, obtener los datos actuales para comparar campos sensibles
+            const [current]: any[] = await pool.execute(
+                'SELECT CA_IDCARGO_FK, US_NOMBRE_BANCO, US_NUMERO_CUENTA, US_TIPO_CUENTA FROM OS_USUARIOS WHERE US_IDUSUARIO_PK = ?',
+                [d.id]
+            );
+
+            if (current.length > 0) {
+                const c = current[0];
+                const cargoChanged = d.cargo_id !== c.CA_IDCARGO_FK;
+                const bancoChanged = d.bank_name !== c.US_NOMBRE_BANCO;
+                const cuentaChanged = d.account_number !== c.US_NUMERO_CUENTA;
+                const tipoCuentaChanged = d.account_type !== c.US_TIPO_CUENTA;
+
+                if (cargoChanged || bancoChanged || cuentaChanged || tipoCuentaChanged) {
+                    return {
+                        success: false,
+                        message: "No se puede modificar el Cargo o la Información Bancaria mientras existan nóminas en revisión (Estado: Calculado). Por favor, anule o apruebe las nóminas pendientes primero."
+                    };
+                }
+            }
+        }
+
         await pool.execute(
             `UPDATE OS_USUARIOS SET 
         US_NOMBRE = ?, US_APELLIDO = ?, US_EMAIL = ?, 

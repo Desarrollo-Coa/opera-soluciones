@@ -24,7 +24,8 @@ import {
   Info,
   Loader2,
   FileText,
-  Files
+  Files,
+  Lock
 } from "lucide-react"
 import { ProfilePictureUpload } from "@/components/ui/profile-picture-upload"
 import { UniversalSelect } from "@/components/ui/universal-select"
@@ -44,6 +45,8 @@ import {
 } from "@/actions/reference-actions"
 import { getCargosAction } from "@/actions/nomina/cargos-actions"
 import { updateEmployeeProfileAction, createEmployeeAction } from "@/actions/employees-actions"
+import { getGlobalLockedPeriodsAction } from "@/actions/nomina/liquidacion-actions"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 const formatDateForInput = (date: any) => {
@@ -93,6 +96,7 @@ function EmployeeActionContent() {
   const [selectedARL, setSelectedARL] = useState<string>("")
   const [selectedPension, setSelectedPension] = useState<string>("")
   const [selectedCompensation, setSelectedCompensation] = useState<string>("")
+  const [lockedByPayroll, setLockedByPayroll] = useState(false)
 
   // Server Action Hook
   const [state, formAction, isPending] = useActionState(
@@ -128,7 +132,7 @@ function EmployeeActionContent() {
         const [
           contractRes, rolesRes, epsRes, arlRes,
           pensionRes, compensationRes, modalitiesRes,
-          cargosRes, banksRes, deptosRes
+          cargosRes, banksRes, deptosRes, lockedRes
         ] = await Promise.all([
           fetch('/api/reference/contract-statuses').then(r => r.json()),
           fetch('/api/reference/roles').then(r => r.json()),
@@ -139,8 +143,13 @@ function EmployeeActionContent() {
           getWorkModalitiesAction(),
           getCargosAction(),
           getBanksAction(),
-          getDepartmentsAction()
+          getDepartmentsAction(),
+          getGlobalLockedPeriodsAction()
         ])
+
+        if (lockedRes.success && lockedRes.data) {
+          setLockedByPayroll(lockedRes.data.some((p: any) => p.estado === 'Calculado'))
+        }
 
         setContractStatuses(contractRes.contract_statuses || [])
         setUserRoles(rolesRes.roles || [])
@@ -423,14 +432,18 @@ function EmployeeActionContent() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label>Cargo / Título</Label>
+                    <Label className="flex items-center gap-1.5">Cargo / Título {isEdit && lockedByPayroll && <Lock className="h-3 w-3 text-amber-500" />}</Label>
                     <UniversalSelect
                       value={selectedCargo}
                       onValueChange={setSelectedCargo}
                       options={cargos.map(c => ({ name: c.nombre, code: c.id.toString(), id: c.id }))}
                       placeholder="Seleccionar cargo..."
+                      disabled={isEdit && lockedByPayroll}
                     />
                     <input type="hidden" name="cargo_id" value={selectedCargo} />
+                    {isEdit && lockedByPayroll && (
+                      <p className="text-[10px] text-amber-600 font-medium">Bloqueado por nómina en revisión</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Modalidad de Trabajo</Label>
@@ -487,18 +500,19 @@ function EmployeeActionContent() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Entidad Bancaria</Label>
+                    <Label className="flex items-center gap-1.5">Entidad Bancaria {isEdit && lockedByPayroll && <Lock className="h-3 w-3 text-amber-500" />}</Label>
                     <UniversalSelect
                       value={selectedBank}
                       onValueChange={setSelectedBank}
                       options={banks.map(b => ({ name: b.nombre, code: b.nombre, id: b.id }))}
                       placeholder="Seleccionar banco..."
+                      disabled={isEdit && lockedByPayroll}
                     />
                     <input type="hidden" name="bank_name" value={selectedBank} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="account_type">Tipo de Cuenta</Label>
-                    <Select name="account_type" defaultValue={initialData?.account_type || "Ahorros"}>
+                    <Label className="flex items-center gap-1.5">Tipo de Cuenta {isEdit && lockedByPayroll && <Lock className="h-3 w-3 text-amber-500" />}</Label>
+                    <Select name="account_type" defaultValue={initialData?.account_type || "Ahorros"} disabled={isEdit && lockedByPayroll}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Ahorros">Ahorros</SelectItem>
@@ -507,9 +521,18 @@ function EmployeeActionContent() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="account_number">Número de Cuenta</Label>
-                    <Input id="account_number" name="account_number" defaultValue={initialData?.account_number} placeholder="Ej: 123456789" />
+                    <Label className="flex items-center gap-1.5">Número de Cuenta {isEdit && lockedByPayroll && <Lock className="h-3 w-3 text-amber-500" />}</Label>
+                    <Input id="account_number" name="account_number" defaultValue={initialData?.account_number} placeholder="Ej: 123456789" disabled={isEdit && lockedByPayroll} />
                   </div>
+                  {isEdit && lockedByPayroll && (
+                    <div className="col-span-full p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-900 shadow-sm">
+                      <Lock className="h-5 w-5 text-amber-600" />
+                      <div className="text-xs">
+                        <p className="font-bold uppercase">Campos maestros bloqueados</p>
+                        <p className="opacity-80">El cargo y la información bancaria no pueden editarse mientras existan nóminas en revisión para asegurar la precisión del reporte de pago.</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">Notas de Pago <Info className="h-3 w-3 text-slate-400" /></Label>
                     <Textarea name="notes" placeholder="Observaciones adicionales para el área de tesorería..." defaultValue={initialData?.notes} rows={3} />

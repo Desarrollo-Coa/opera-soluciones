@@ -10,13 +10,24 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Lock } from "lucide-react"
 import { CurrencyInput } from "@/components/ui/currency-input"
+import { getGlobalLockedPeriodsAction } from "@/actions/nomina/liquidacion-actions"
+import { cn } from "@/lib/utils"
 
 export function CargosClient({ cargos }: { cargos: CargoRow[] }) {
     const [isOpen, setIsOpen] = useState(false)
     const [editingCargo, setEditingCargo] = useState<CargoRow | null>(null)
     const [isPending, setIsPending] = useState(false)
+    const [lockedPeriods, setLockedPeriods] = useState<any[]>([])
+
+    useState(() => {
+        getGlobalLockedPeriodsAction().then(res => {
+            if (res.success && res.data) setLockedPeriods(res.data)
+        })
+    })
+
+    const isLocked = lockedPeriods.some(p => p.estado === 'Calculado')
 
     const handleOpenEdit = (cargo: CargoRow) => {
         setEditingCargo(cargo)
@@ -83,13 +94,30 @@ export function CargosClient({ cargos }: { cargos: CargoRow[] }) {
 
     return (
         <div className="space-y-4">
+            {isLocked && (
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-4 text-amber-900 shadow-sm mb-6 animate-in fade-in slide-in-from-top-1">
+                    <div className="p-2 bg-amber-100 rounded-full">
+                        <Lock className="h-5 w-5 text-amber-700" />
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm uppercase tracking-tight">Gestión de Cargos Bloqueada</p>
+                        <p className="text-xs opacity-90 leading-relaxed">Existen procesos de nómina activos (en revisión o aprobados). No se permiten cambios en la estructura de cargos o salarios base para mantener la integridad de los cálculos actuales.</p>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-slate-800">Cargos Activos en la Empresa ({cargos.length})</h2>
 
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
                     <DialogTrigger asChild>
-                        <Button onClick={handleOpenNew} className="bg-indigo-600 hover:bg-indigo-700">
-                            <Plus className="h-4 w-4 mr-2" /> Nuevo Cargo
+                        <Button
+                            onClick={handleOpenNew}
+                            className={cn("bg-indigo-600 hover:bg-indigo-700", isLocked && "bg-slate-400 cursor-not-allowed opacity-70")}
+                            disabled={isLocked}
+                        >
+                            {isLocked ? <Lock className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                            {isLocked ? "Cargos Bloqueados" : "Nuevo Cargo"}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
@@ -195,11 +223,23 @@ export function CargosClient({ cargos }: { cargos: CargoRow[] }) {
                                     <TableCell>{c.jornada_diaria_estandar} hrs</TableCell>
                                     <TableCell>{c.porcentaje_riesgo_arl}%</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(c)}>
-                                            <Pencil className="h-4 w-4 text-slate-500" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleOpenEdit(c)}
+                                            disabled={isLocked}
+                                            className={isLocked ? "opacity-30 cursor-not-allowed" : ""}
+                                        >
+                                            {isLocked ? <Lock className="h-4 w-4" /> : <Pencil className="h-4 w-4 text-slate-500" />}
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
-                                            <Trash2 className="h-4 w-4 text-red-400" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleDelete(c.id)}
+                                            disabled={isLocked}
+                                            className={isLocked ? "opacity-30 cursor-not-allowed" : ""}
+                                        >
+                                            <Trash2 className={cn("h-4 w-4", isLocked ? "text-slate-400" : "text-red-400")} />
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -208,6 +248,6 @@ export function CargosClient({ cargos }: { cargos: CargoRow[] }) {
                     </TableBody>
                 </Table>
             </div>
-        </div>
+        </div >
     )
 }

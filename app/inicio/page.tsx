@@ -12,7 +12,8 @@ import {
   UserCircle,
   Settings,
   Activity,
-  Briefcase
+  Briefcase,
+  Wallet2
 } from "lucide-react";
 import Link from "next/link";
 import { ROLE_CODES } from "@/lib/constants";
@@ -99,6 +100,15 @@ function getRoleModules(role: string): Module[] {
       href: "/inicio/reports",
     },
     {
+      title: "Préstamos y Créditos",
+      description: "Control de préstamos internos y tabla de pagos",
+      icon: Wallet2,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50/50",
+      hoverColor: "hover:bg-emerald-50 hover:shadow-emerald-100",
+      href: "/inicio/nomina/prestamos",
+    },
+    {
       title: "Configuración",
       description: "Parámetros globales y mantenimiento de plataforma",
       icon: Settings,
@@ -154,6 +164,15 @@ function getRoleModules(role: string): Module[] {
       bgColor: "bg-purple-50/50",
       hoverColor: "hover:bg-purple-50 hover:shadow-purple-100",
       href: "/inicio/sgi",
+    },
+    {
+      title: "Préstamos de Nómina",
+      description: "Gestión de créditos y cuotas",
+      icon: Wallet2,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50/50",
+      hoverColor: "hover:bg-emerald-50 hover:shadow-emerald-100",
+      href: "/inicio/nomina/prestamos",
     },
   ];
 

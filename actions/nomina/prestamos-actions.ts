@@ -1,0 +1,172 @@
+'use server'
+
+import { pool } from '@/lib/db';
+import { getAuthUser } from '@/lib/auth';
+import { revalidatePath } from 'next/cache';
+import { ActionResponse } from '@/types/actions';
+
+/**
+ * Crear un nuevo préstamo y generar su tabla de cuotas automáticamente
+ */
+export async function crearPrestamoAction(data: {
+    empleado_id: number;
+    monto_solicitado: number;
+    tasa_interes: number;
+    num_cuotas: number;
+    periodo_inicio_mes: number;
+    periodo_inicio_anio: number;
+    quincena_inicio: number;
+    motivo?: string;
+    fecha_desembolso?: string;
+}): Promise<ActionResponse> {
+    const user = await getAuthUser();
+    if (!user) return { success: false, message: 'No autorizado' };
+
+    // --- BLOQUEO DE SEGURIDAD POR NÓMINA ---
+    const [locked]: any[] = await pool.execute(
+        `SELECT LQ_IDLIQUIDACION_PK FROM OS_LIQUIDACIONES 
+         WHERE LQ_PERIODO_MES = ? AND LQ_PERIODO_ANIO = ? AND LQ_QUINCENA = ? 
+         AND LQ_ESTADO IN ('Calculado', 'Aprobado') LIMIT 1`,
+        [data.periodo_inicio_mes, data.periodo_inicio_anio, data.quincena_inicio]
+    );
+
+    if (locked.length > 0) {
+        return {
+            success: false,
+            message: `No se puede iniciar el préstamo en el periodo ${data.periodo_inicio_mes}/${data.periodo_inicio_anio} Q${data.quincena_inicio} porque ya existe una nómina generada o aprobada para esa fecha.`
+        };
+    }
+
+    // --- VALIDACIÓN DE FECHA VS PERIODO ---
+    if (data.fecha_desembolso) {
+        const d = new Date(data.fecha_desembolso + 'T12:00:00');
+        const dYear = d.getFullYear();
+        const dMonth = d.getMonth() + 1;
+        const dDay = d.getDate();
+
+        const isWrongManual = (dYear !== data.periodo_inicio_anio || dMonth !== data.periodo_inicio_mes);
+        const lastDayTotal = new Date(data.periodo_inicio_anio, data.periodo_inicio_mes, 0).getDate();
+
+        let isWrongDay = false;
+        if (Number(data.quincena_inicio) === 1) {
+            isWrongDay = dDay < 1 || dDay > 15;
+        } else {
+            isWrongDay = dDay < 16 || dDay > lastDayTotal;
+        }
+
+        if (isWrongManual || isWrongDay) {
+            return {
+                success: false,
+                message: `La fecha de desembolso (${data.fecha_desembolso}) no es válida para el periodo Q${data.quincena_inicio} de ${data.periodo_inicio_mes}/${data.periodo_inicio_anio}. Debe estar dentro del rango quincenal de días correspondiente.`
+            };
+        }
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Calcular totales (Sistema simple para préstamos de nómina)
+        // Montos e intereses
+        const montoPrincipal = Number(data.monto_solicitado);
+        const tasaMensual = Number(data.tasa_interes) / 100;
+        const numCuotas = Number(data.num_cuotas);
+
+        // Cálculo de interés simple sobre el total (o podrías usar francés, pero para nómina suele ser valor fijo)
+        const totalIntereses = montoPrincipal * tasaMensual * (numCuotas / 2); // Simpificado para quincenas
+        const totalAPagar = montoPrincipal + totalIntereses;
+        const valorCuotaBase = totalAPagar / numCuotas;
+
+        // 2. Insertar Cabecera
+        const [resPrestamo]: any = await connection.execute(
+            `INSERT INTO OS_PRESTAMOS 
+             (US_IDUSUARIO_FK, PR_MONTO_SOLICITADO, PR_TASA_INTERES_MENSUAL, PR_NUMERO_CUOTAS, 
+              PR_TOTAL_A_PAGAR, PR_SALDO_PENDIENTE, PR_FECHA_DESEMBOLSO, PR_MOTIVO, PR_CREADO_POR)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                data.empleado_id, montoPrincipal, data.tasa_interes, numCuotas,
+                totalAPagar, totalAPagar, data.fecha_desembolso || new Date().toISOString().split('T')[0],
+                data.motivo || 'Préstamo de nómina', user.id
+            ]
+        );
+
+        const prestamoId = resPrestamo.insertId;
+
+        // 3. Generar Cuotas
+        let curMes = data.periodo_inicio_mes;
+        let curAnio = data.periodo_inicio_anio;
+        let curQuincena = data.quincena_inicio;
+
+        for (let i = 1; i <= numCuotas; i++) {
+            const fechaEstimada = `${curAnio}-${String(curMes).padStart(2, '0')}-${curQuincena === 1 ? '15' : '30'}`;
+
+            await connection.execute(
+                `INSERT INTO OS_PRESTAMOS_CUOTAS 
+                 (PR_IDPRESTAMO_FK, PC_NUMERO_CUOTA, PC_VALOR_CUOTA, PC_VALOR_CAPITAL, PC_VALOR_INTERES,
+                  PC_PERIODO_ANIO, PC_PERIODO_MES, PC_QUINCENA, PC_FECHA_ESTIMADA)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    prestamoId, i, valorCuotaBase, montoPrincipal / numCuotas, totalIntereses / numCuotas,
+                    curAnio, curMes, curQuincena, fechaEstimada
+                ]
+            );
+
+            // Avanzar periodo
+            if (curQuincena === 1) {
+                curQuincena = 2;
+            } else {
+                curQuincena = 1;
+                curMes++;
+                if (curMes > 12) {
+                    curMes = 1;
+                    curAnio++;
+                }
+            }
+        }
+
+        await connection.commit();
+        revalidatePath('/inicio/nomina/prestamos');
+        return { success: true, message: 'Préstamo y tabla de cuotas generados correctamente.' };
+
+    } catch (error: any) {
+        await connection.rollback();
+        return { success: false, message: error.message };
+    } finally {
+        connection.release();
+    }
+}
+
+/**
+ * Obtener listado de préstamos activos
+ */
+export async function getPrestamosActivosAction(): Promise<ActionResponse<any[]>> {
+    try {
+        const [rows] = await pool.execute(
+            `SELECT p.*, u.US_NOMBRE as first_name, u.US_APELLIDO as last_name,
+                    (SELECT COUNT(*) FROM OS_PRESTAMOS_CUOTAS WHERE PR_IDPRESTAMO_FK = p.PR_IDPRESTAMO_PK AND PC_ESTADO = 'Pagado_Manual' OR PC_ESTADO = 'Procesado') as cuotas_pagadas
+             FROM OS_PRESTAMOS p
+             JOIN OS_USUARIOS u ON p.US_IDUSUARIO_FK = u.US_IDUSUARIO_PK
+             WHERE p.PR_ESTADO = 'Activo'
+             ORDER BY p.PR_FECHA_CREACION DESC`
+        );
+        return { success: true, data: rows as any[] };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}
+
+/**
+ * Obtener detalle de cuotas de un préstamo
+ */
+export async function getCuotasPrestamoAction(prestamoId: number): Promise<ActionResponse<any[]>> {
+    try {
+        const [rows] = await pool.execute(
+            `SELECT * FROM OS_PRESTAMOS_CUOTAS WHERE PR_IDPRESTAMO_FK = ? ORDER BY PC_NUMERO_CUOTA ASC`,
+            [prestamoId]
+        );
+        return { success: true, data: rows as any[] };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+}

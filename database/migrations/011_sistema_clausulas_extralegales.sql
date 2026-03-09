@@ -1,6 +1,6 @@
 -- Migración para el sistema de Cláusulas Extralegales
--- Autor: Antigravity AI (Senior Full-Stack Developer)
--- Fecha: 06-03-2026
+-- Autor: Carlos Muñoz  
+
 
 SET AUTOCOMMIT = 0;
 START TRANSACTION;

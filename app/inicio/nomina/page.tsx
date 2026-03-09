@@ -7,13 +7,16 @@ import {
     Settings2,
     FileText,
     Receipt,
-    Users
+    Users,
+    Wallet2
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getResumenNomina, getCostosPorCargo, getHistoricoNomina } from "@/actions/nomina";
 import { DashboardNominaClient } from "@/components/nomina/dashboard-client";
 import { ROLE_CODES } from "@/lib/constants";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LayoutGrid, BarChart3 } from "lucide-react";
 
 // Módulos específicos del área de Nómina
 const NOMINA_MODULES = [
@@ -61,6 +64,15 @@ const NOMINA_MODULES = [
         bgColor: "bg-indigo-100",
         hoverColor: "hover:bg-indigo-200",
         href: "/inicio/nomina/liquidaciones",
+    },
+    {
+        title: "6. Préstamos de Nómina",
+        description: "Gestión de créditos, cuotas e intereses automáticos",
+        icon: Wallet2,
+        color: "text-emerald-600",
+        bgColor: "bg-emerald-100",
+        hoverColor: "hover:bg-emerald-200",
+        href: "/inicio/nomina/prestamos",
     },
 ];
 
@@ -120,37 +132,50 @@ export default async function NominaDashboardPage() {
                     </div>
                 </div>
 
-                {/* Tarjetas de acceso a los sub-módulos */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-                    {NOMINA_MODULES.map((module) => (
-                        <Link key={module.title} href={module.href}>
-                            <Card className={`h-full transition-colors ${module.hoverColor} cursor-pointer border-l-4 border-l-indigo-600`}>
-                                <CardHeader>
-                                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg ${module.bgColor}`}>
-                                        <module.icon className={`h-6 w-6 ${module.color}`} />
-                                    </div>
-                                    <CardTitle className="text-xl">{module.title}</CardTitle>
-                                    <CardDescription className="pt-2">{module.description}</CardDescription>
-                                </CardHeader>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
+                <Tabs defaultValue="gestion" className="w-full">
+                    <TabsList className="bg-slate-100 p-1 rounded-2xl mb-8 inline-flex">
+                        <TabsTrigger value="gestion" className="rounded-xl px-8 flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <LayoutGrid className="h-4 w-4" /> Gestión Operativa
+                        </TabsTrigger>
+                        <TabsTrigger value="reportes" className="rounded-xl px-8 flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <BarChart3 className="h-4 w-4" /> Reportes & Dashboard
+                        </TabsTrigger>
+                    </TabsList>
 
-                {/* Dashboard Integrado */}
-                <div className="mt-8 pt-8 border-t">
-                    <h2 className="text-xl font-bold text-indigo-900 mb-6 flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Resumen Gerencial del Periodo
-                    </h2>
-                    <DashboardNominaClient
-                        initialResumen={initialResumen}
-                        initialCostos={initialCostos as any[]}
-                        initialHistorico={initialHistorico as any[]}
-                        initialMes={mesActual.toString()}
-                        initialAnio={anioActual.toString()}
-                    />
-                </div>
+                    <TabsContent value="gestion" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
+                            {NOMINA_MODULES.map((module) => (
+                                <Link key={module.title} href={module.href} className="group no-underline">
+                                    <Card className={`h-full transition-all duration-300 border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm hover:border-indigo-200 hover:shadow-md`}>
+                                        <CardHeader className="p-5 space-y-4">
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${module.bgColor}`}>
+                                                <module.icon className={`h-5 w-5 ${module.color}`} strokeWidth={2.5} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <CardTitle className="text-sm font-bold text-slate-900 tracking-tight group-hover:text-indigo-600 transition-colors">
+                                                    {module.title.replace(/^\d+\.\s*/, '')}
+                                                </CardTitle>
+                                                <CardDescription className="text-[11px] leading-tight text-slate-500 line-clamp-2">
+                                                    {module.description}
+                                                </CardDescription>
+                                            </div>
+                                        </CardHeader>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="reportes" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <DashboardNominaClient
+                            initialResumen={initialResumen}
+                            initialCostos={initialCostos as any[]}
+                            initialHistorico={initialHistorico as any[]}
+                            initialMes={mesActual.toString()}
+                            initialAnio={anioActual.toString()}
+                        />
+                    </TabsContent>
+                </Tabs>
             </div>
         </DashboardLayout>
     );

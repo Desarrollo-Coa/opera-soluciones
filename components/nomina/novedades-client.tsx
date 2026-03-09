@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UniversalSelect } from "@/components/ui/universal-select";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { toast } from "sonner";
+import { cn, isDateInPeriod } from "@/lib/utils";
 import { getNovedades, crearNovedad, eliminarNovedad, editarNovedad, getConceptos, isPeriodoAprobadoAction } from "@/actions/nomina";
 import { getEmployeesSimple } from "@/actions/employees-actions";
 import { Plus, Trash2, Loader2, Info, Lock, Pencil, Check, X } from "lucide-react";
@@ -34,6 +35,7 @@ interface Novedad {
     document_number?: string;
     quincena: number | null;
     id_usuario: number;
+    fecha_evento?: string | null;
 }
 
 interface NovedadesClientProps {
@@ -67,6 +69,7 @@ export function NovedadesClient({
     const [selectedConcepto, setSelectedConcepto] = useState('');
     const [valor, setValor] = useState('');
     const [obs, setObs] = useState('');
+    const [fechaEvento, setFechaEvento] = useState(new Date().toISOString().split('T')[0]);
 
     // Edit State
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -97,21 +100,41 @@ export function NovedadesClient({
         // En client component, necesitamos llamar a la acción.
     };
 
+
     useEffect(() => {
         refreshNovedades();
     }, [mes, anio, quincena]);
 
     const handleSave = async () => {
-        if (!selectedEmp || !selectedConcepto || !valor) {
+        if (!selectedEmp || !selectedConcepto || !valor || !fechaEvento) {
             toast.error("Complete los campos obligatorios");
+            return;
+        }
+
+        // Validación de Fecha vs Periodo
+        if (!isDateInPeriod(fechaEvento, anio, mes, quincena)) {
+            const periodLabel = quincena === "1" ? "1ra Quincena (Día 1-15)" : `2da Quincena (Día 16-${new Date(parseInt(anio), parseInt(mes), 0).getDate()})`;
+            toast.error(`La fecha del evento (${fechaEvento}) no corresponde al periodo seleccionado: ${MESES[parseInt(mes) - 1]} ${periodLabel}. Las novedades deben reportarse dentro de su quincena correspondiente.`);
             return;
         }
 
         setLoading(true);
         try {
+            const empId = parseInt(selectedEmp);
+
             if (editingId) {
-                // Modo Edición
-                const res = await editarNovedad(editingId, parseFloat(valor), obs);
+                // Modo Edición - Ahora permite actualizar empleado, concepto y periodo
+                const res = await editarNovedad(
+                    editingId,
+                    parseFloat(valor),
+                    obs,
+                    empId,
+                    selectedConcepto,
+                    parseInt(mes),
+                    parseInt(anio),
+                    parseInt(quincena),
+                    fechaEvento
+                );
                 if (res.success) {
                     toast.success("Novedad actualizada");
                     setEditingId(null);
@@ -126,13 +149,14 @@ export function NovedadesClient({
             } else {
                 // Modo Creación
                 const res = await crearNovedad({
-                    empleado_id: parseInt(selectedEmp),
+                    empleado_id: empId,
                     concepto_codigo: selectedConcepto,
                     periodo_mes: parseInt(mes),
                     periodo_anio: parseInt(anio),
                     quincena: parseInt(quincena),
                     valor_total: parseFloat(valor),
-                    observaciones: obs
+                    observaciones: obs,
+                    fecha_evento: fechaEvento
                 });
 
                 if (res.success) {
@@ -171,16 +195,18 @@ export function NovedadesClient({
 
     const handlePrepareEdit = (n: Novedad) => {
         setEditingId(n.id);
-        const emp = empleados.find(e => e.id === n.id_usuario); // Asumiendo que tenemos id_usuario o buscamos por nombre
-        // Nota: El UniversalSelect espera el 'code'. 
-        // Como el UniversalSelect de empleados usa document_number o id como code
-        setSelectedEmp(n.document_number || String(n.id_usuario || ''));
+        // Usar id_usuario (PK) para que coincida con el 'code' del UniversalSelect
+        setSelectedEmp(String(n.id_usuario));
         setSelectedConcepto(n.concepto_codigo);
         setValor(String(n.valor_total));
         setObs(n.observaciones || '');
+        setFechaEvento(n.fecha_evento ? new Date(n.fecha_evento).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
 
-        // Scroll al formulario
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Scroll al formulario (Card de registro)
+        const formElement = document.querySelector('.text-indigo-700');
+        if (formElement) {
+            formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     };
 
     const handleCancelEdit = () => {
@@ -189,6 +215,7 @@ export function NovedadesClient({
         setSelectedConcepto('');
         setValor('');
         setObs('');
+        setFechaEvento(new Date().toISOString().split('T')[0]);
     };
 
     return (
@@ -250,51 +277,71 @@ export function NovedadesClient({
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
+                            <div className={`space-y-2 ${isBloqueado ? 'opacity-60' : ''}`}>
                                 <Label>Empleado</Label>
                                 <UniversalSelect
                                     value={selectedEmp}
                                     onValueChange={setSelectedEmp}
                                     options={empleados.map(e => ({
-                                        name: `${e.last_name} ${e.first_name}`,
-                                        code: e.document_number || e.id.toString(),
+                                        name: `${e.last_name} ${e.first_name} (${e.document_number})`,
+                                        code: e.id.toString(),
                                         id: e.id
                                     }))}
                                     placeholder="Buscar trabajador..."
                                     searchPlaceholder="Escriba nombre, apellido o documento..."
+                                    disabled={loading || isBloqueado}
                                 />
                             </div>
-                            <div className="space-y-2">
+                            <div className={`space-y-2 ${isBloqueado ? 'opacity-60' : ''}`}>
                                 <Label>Concepto</Label>
                                 <UniversalSelect
                                     value={selectedConcepto}
                                     onValueChange={setSelectedConcepto}
-                                    options={conceptos.filter(c => c.es_novedad).map(c => ({
+                                    options={conceptos.filter(c => c.es_novedad && c.codigo !== 'DED003').map(c => ({
                                         name: c.nombre,
                                         code: c.codigo
                                     }))}
                                     placeholder="Seleccione concepto..."
                                     searchPlaceholder="Buscar concepto..."
+                                    disabled={loading || isBloqueado}
                                 />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2 md:col-span-1">
+                            <div className={`space-y-2 md:col-span-1 ${isBloqueado ? 'opacity-60' : ''}`}>
                                 <Label>Valor ($)</Label>
                                 <CurrencyInput
                                     id="valor"
                                     placeholder="0"
                                     value={valor}
                                     onChange={(val) => setValor(val)}
+                                    disabled={loading || isBloqueado}
                                 />
                             </div>
-                            <div className="space-y-2 md:col-span-2">
+                            <div className={`space-y-2 md:col-span-1 ${isBloqueado ? 'opacity-60' : ''}`}>
+                                <Label className="flex items-center justify-between">
+                                    Fecha del Evento
+                                    {fechaEvento && !isDateInPeriod(fechaEvento, anio, mes, quincena) && (
+                                        <span className="text-[10px] font-bold text-red-500 uppercase">Fuera de Periodo</span>
+                                    )}
+                                </Label>
+                                <Input
+                                    type="date"
+                                    value={fechaEvento}
+                                    onChange={(e) => setFechaEvento(e.target.value)}
+                                    disabled={loading || isBloqueado}
+                                    className={fechaEvento && !isDateInPeriod(fechaEvento, anio, mes, quincena) ? "border-red-500 bg-red-50" : ""}
+                                />
+                            </div>
+                            <div className={`space-y-2 md:col-span-2 ${isBloqueado ? 'opacity-60' : ''}`}>
                                 <Label>Observaciones (Opcional)</Label>
                                 <Input
                                     placeholder="Ej: Bono por cumplimiento meta ventas"
                                     value={obs}
                                     onChange={(e) => setObs(e.target.value)}
+                                    disabled={loading || isBloqueado}
+                                    className={isBloqueado ? 'bg-slate-50 cursor-not-allowed' : ''}
                                 />
                             </div>
                         </div>
@@ -303,10 +350,10 @@ export function NovedadesClient({
                             <Button
                                 onClick={handleSave}
                                 disabled={loading || isBloqueado}
-                                className={`flex-1 gap-2 ${isBloqueado ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                className={`flex-1 gap-2 transition-all ${isBloqueado ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'}`}
                             >
                                 {loading ? <Loader2 className="animate-spin h-4 w-4" /> : (isBloqueado ? <Lock className="h-4 w-4" /> : (editingId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />))}
-                                {isBloqueado ? "Periodo Cerrado" : (editingId ? "Actualizar Novedad" : "Agregar Novedad al Periodo")}
+                                {isBloqueado ? "Periodo Bloqueado" : (editingId ? "Actualizar Novedad" : "Agregar Novedad al Periodo")}
                             </Button>
 
                             {editingId && (
@@ -321,9 +368,16 @@ export function NovedadesClient({
             </div>
 
             {isBloqueado && (
-                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-center gap-3 text-amber-800">
-                    <Lock className="h-5 w-5" />
-                    <p className="text-sm font-medium">Este periodo ya ha sido **aprobado**. No se pueden agregar o eliminar novedades.</p>
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3 text-amber-900 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="bg-amber-100 p-2 rounded-full">
+                        <Lock className="h-5 w-5 text-amber-700" />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-sm">Registro Deshabilitado</p>
+                        <p className="text-xs mt-0.5 opacity-90">
+                            Este periodo ya cuenta con una nómina **en revisión** o **aprobada**. Para realizar cambios, se debe anular/borrar la liquidación actual del periodo {MESES[parseInt(mes) - 1]} de {anio}.
+                        </p>
+                    </div>
                 </div>
             )}
 
@@ -339,6 +393,7 @@ export function NovedadesClient({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Colaborador</TableHead>
+                                <TableHead>Fecha Evento</TableHead>
                                 <TableHead>Concepto</TableHead>
                                 <TableHead>Periodo</TableHead>
                                 <TableHead>Tipo</TableHead>
@@ -358,6 +413,9 @@ export function NovedadesClient({
                                 novedades.map((n) => (
                                     <TableRow key={n.id}>
                                         <TableCell className="font-medium">{n.last_name} {n.first_name}</TableCell>
+                                        <TableCell className="text-xs uppercase font-semibold text-slate-500">
+                                            {n.fecha_evento ? new Date(n.fecha_evento).toLocaleDateString() : '—'}
+                                        </TableCell>
                                         <TableCell>{n.concepto_nombre}</TableCell>
                                         <TableCell className="text-[10px] font-semibold text-muted-foreground uppercase">Q{n.quincena || '—'}</TableCell>
                                         <TableCell>

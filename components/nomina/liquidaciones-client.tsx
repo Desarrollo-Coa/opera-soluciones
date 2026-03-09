@@ -163,15 +163,27 @@ export function LiquidacionesClient({
             return;
         }
 
+        // Exportamos los datos con el valor numérico bruto para el Neto a Pagar
         const exportData = data.map(d => ({
             "Empleado": `${d.last_name} ${d.first_name}`.trim(),
             "Documento": d.document_number,
             "Banco": d.bank_name || 'No registrado',
             "No. Cuenta": d.account_number || 'No registrado',
-            "Neto a Pagar": formatCurrency(d.neto_pagar)
+            "Neto a Pagar": Number(d.neto_pagar)
         }));
 
         const ws = XLSX.utils.json_to_sheet(exportData);
+
+        // Aplicamos formato contable/moneda a la columna E (Neto a Pagar)
+        // La columna E es la quinta columna (index 4)
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: 4 }); // Columna E (0-indexed 4)
+            if (ws[cellAddress]) {
+                ws[cellAddress].t = 'n'; // Tipo número
+                ws[cellAddress].z = '$ #,##0.00'; // Formato contable para Excel
+            }
+        }
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Liquidaciones");
@@ -184,7 +196,7 @@ export function LiquidacionesClient({
             { wch: 15 }
         ];
 
-        XLSX.writeFile(wb, `Liquidaciones_${MESES[parseInt(mes) - 1]}_Q${quincena}_${anio}.xlsx`);
+        XLSX.writeFile(wb, `Liquidaciones - ${MESES[parseInt(mes) - 1].toUpperCase()} - Q${quincena} - ${anio}.xlsx`);
     };
 
     const isPeriodoAprobado = data.length > 0 && data.every(d => d.estado === 'Aprobado');

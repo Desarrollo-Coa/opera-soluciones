@@ -87,6 +87,17 @@ export async function getAllParametrosAction(): Promise<ActionResponse<Parametro
 }
 
 /**
+ * Verifica si un año tiene al menos una nómina en estado 'Calculado' o 'Aprobado'.
+ */
+async function isAnioBloqueado(anio: number): Promise<boolean> {
+    const [rows] = await pool.execute<any[]>(
+        'SELECT 1 FROM OS_LIQUIDACIONES WHERE LQ_PERIODO_ANIO = ? AND LQ_ESTADO = "Calculado" LIMIT 1',
+        [anio]
+    );
+    return rows.length > 0;
+}
+
+/**
  * Guarda o actualiza los parámetros para un año específico
  * Migración 007: nombre de columnas PN_ANIO_VIGENCIA, PN_SMMLV, etc.
  */
@@ -117,6 +128,14 @@ export async function upsertParametrosAction(
         }
 
         const { ano_vigencia, smmlv, auxilio_transporte, horas_semanales_maximas, horas_mensuales_promedio } = validatedData.data;
+
+        // --- BLOQUEO DE SEGURIDAD ---
+        if (await isAnioBloqueado(ano_vigencia)) {
+            return {
+                success: false,
+                message: `No se pueden modificar los parámetros del año ${ano_vigencia} porque ya existen nóminas en revisión o aprobadas. Debe anular dichas nóminas para poder realizar cambios globales.`
+            };
+        }
 
         // Verificar si el año ya existe
         const [existing] = await pool.execute<ParametrosRow[]>(

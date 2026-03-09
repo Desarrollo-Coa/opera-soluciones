@@ -21,7 +21,7 @@ export async function getResumenNomina(mes: number, anio: number): Promise<Actio
                 SUM(LQ_NETO_PAGAR) as total_neto,
                 SUM(LQ_COSTO_EMPRESA) as costo_total
              FROM OS_LIQUIDACIONES 
-             WHERE LQ_PERIODO_MES = ? AND LQ_PERIODO_ANIO = ? AND LQ_ESTADO != 'Anulado'`,
+             WHERE LQ_PERIODO_MES = ? AND LQ_PERIODO_ANIO = ? AND LQ_ESTADO = 'Aprobado'`,
             [mes, anio]
         );
 
@@ -49,7 +49,7 @@ export async function getCostosPorCargo(mes: number, anio: number): Promise<Acti
              FROM OS_LIQUIDACIONES l
              JOIN OS_USUARIOS u ON l.US_IDUSUARIO_FK = u.US_IDUSUARIO_PK
              JOIN OS_CARGOS c ON u.CA_IDCARGO_FK = c.CA_IDCARGO_PK
-             WHERE l.LQ_PERIODO_MES = ? AND l.LQ_PERIODO_ANIO = ? AND l.LQ_ESTADO != 'Anulado'
+             WHERE l.LQ_PERIODO_MES = ? AND l.LQ_PERIODO_ANIO = ? AND l.LQ_ESTADO = 'Aprobado'
              GROUP BY c.CA_IDCARGO_PK
              ORDER BY costo_empresa DESC`,
             [mes, anio]
@@ -76,7 +76,7 @@ export async function getHistoricoNomina(): Promise<ActionResponse> {
                 LQ_PERIODO_ANIO as periodo_anio, 
                 SUM(LQ_COSTO_EMPRESA) as total_costo
              FROM OS_LIQUIDACIONES
-             WHERE LQ_ESTADO != 'Anulado'
+             WHERE LQ_ESTADO = 'Aprobado'
              GROUP BY LQ_PERIODO_ANIO, LQ_PERIODO_MES
              ORDER BY LQ_PERIODO_ANIO DESC, LQ_PERIODO_MES DESC
              LIMIT 6`

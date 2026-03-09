@@ -96,7 +96,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" className="border-r border-gray-200/60 bg-[#F8FAFC]">
+      <Sidebar collapsible="icon" className="border-r border-gray-200/60 bg-[#F8FAFC] print:hidden">
         <SidebarHeader className="flex flex-row items-center gap-3 p-4 pb-2 pt-6 pl-5 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
           <Image
             src="/recursos/logopera.png"
@@ -146,15 +146,36 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset className="flex-1 flex flex-col min-w-0 bg-white w-full overflow-x-hidden min-h-screen">
+      <SidebarInset className="flex-1 flex flex-col min-w-0 bg-white w-full overflow-x-hidden min-h-screen print:h-auto">
         {/* Top bar */}
-        <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 h-16 flex items-center px-4 sm:px-6 sticky top-0 z-30 gap-4">
+        <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 h-16 flex items-center px-4 sm:px-6 sticky top-0 z-30 gap-4 print:hidden">
+          {/* Estilo para impresión limpia */}
+          <style dangerouslySetInnerHTML={{
+            __html: `
+            @media print {
+              .print\\:hidden, [role="status"], [data-radix-portal], [data-sonner-toaster] { 
+                display: none !important; 
+              }
+              body { background: white !important; }
+              /* Ocultar scrol y forzar visibilidad */
+              html, body, [data-sidebar-provider], [data-sidebar-inset], main { 
+                overflow: visible !important; 
+                height: auto !important;
+              }
+              * { scrollbar-width: none !important; }
+              ::-webkit-scrollbar { display: none !important; }
+            }
+          `}} />
           <SidebarTrigger className="-ml-2 text-gray-500 hover:text-gray-900 focus:ring-gray-200 hover:bg-gray-100/50 rounded-full" />
 
           <div className="flex items-center space-x-4 ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full flex items-center justify-center p-0 overflow-hidden ring-2 ring-transparent transition-all hover:ring-gray-200">
+                <Button
+                  variant="ghost"
+                  suppressHydrationWarning
+                  className="relative h-9 w-9 rounded-full flex items-center justify-center p-0 overflow-hidden ring-2 ring-transparent transition-all hover:ring-gray-200"
+                >
                   <Avatar className="h-9 w-9">
                     <AvatarFallback className="bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-semibold text-sm">
                       {getRoleInitials(userRole)}
@@ -183,8 +204,8 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 w-full overflow-x-auto bg-[#F8FAFC]">
-          <div className="w-full h-full p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto rounded-xl">
+        <main className="flex-1 w-full overflow-x-auto bg-[#F8FAFC] print:bg-white print:p-0">
+          <div className="w-full h-full p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto rounded-xl print:p-0">
             {children}
           </div>
         </main>

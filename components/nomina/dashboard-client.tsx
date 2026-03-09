@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, Badge, Skeleton } from "@/components/ui/shadcn-lite";
 import { getResumenNomina, getCostosPorCargo, getHistoricoNomina } from "@/actions/nomina";
-import { Users, DollarSign, PieChart, TrendingUp, AlertCircle, Info } from "lucide-react";
+import { Users, DollarSign, PieChart, TrendingUp, AlertCircle, Info, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UniversalSelect } from "@/components/ui/universal-select";
 import { Label } from "@/components/ui/label";
@@ -59,86 +59,83 @@ export function DashboardNominaClient({
     return (
         <div className="space-y-6">
             {/* Filtros de Resumen */}
-            <Card>
-                <CardContent className="flex items-end gap-4 pt-6">
-                    <div className="grid grid-cols-2 gap-4 flex-1 max-w-sm">
-                        <div className="space-y-2">
-                            <Label>Mes Resumen</Label>
-                            <UniversalSelect
-                                value={mes}
-                                onValueChange={setMes}
-                                options={["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((m, i) => ({
-                                    name: m,
-                                    code: (i + 1).toString()
-                                }))}
-                                placeholder="Mes"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Año</Label>
-                            <UniversalSelect
-                                value={anio}
-                                onValueChange={setAnio}
-                                options={[
-                                    { name: "2025", code: "2025" },
-                                    { name: "2026", code: "2026" }
-                                ]}
-                                placeholder="Año"
-                            />
-                        </div>
+            <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg">
+                        <Calendar className="h-5 w-5 text-indigo-600" />
                     </div>
-                </CardContent>
-            </Card>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Periodo de Análisis</p>
+                        <p className="text-sm font-bold text-slate-700">{["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][parseInt(mes) - 1]} {anio}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <div className="w-32">
+                        <UniversalSelect
+                            value={mes}
+                            onValueChange={setMes}
+                            options={["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((m, i) => ({
+                                name: m,
+                                code: (i + 1).toString()
+                            }))}
+                        />
+                    </div>
+                    <div className="w-24">
+                        <UniversalSelect
+                            value={anio}
+                            onValueChange={setAnio}
+                            options={[{ name: "2025", code: "2025" }, { name: "2026", code: "2026" }]}
+                        />
+                    </div>
+                </div>
+            </div>
 
             {/* Metricas Principales */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-indigo-700">Trabajadores Activos</CardTitle>
-                        <Users className="h-4 w-4 text-indigo-600" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="bg-white border-slate-100 shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
+                        <CardTitle className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trabajadores</CardTitle>
+                        <Users className="h-3.5 w-3.5 text-indigo-500" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-16" /> : resumen?.total_empleados || 0}</div>
-                        <p className="text-xs text-muted-foreground">Liquidados este periodo</p>
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl font-bold text-slate-900">{loading ? <Skeleton className="h-6 w-12" /> : resumen?.total_empleados || 0}</div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-green-700">Total Devengado</CardTitle>
-                        <DollarSign className="h-4 w-4 text-green-600" />
+                <Card className="bg-white border-slate-100 shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
+                        <CardTitle className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Devengado</CardTitle>
+                        <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600 text-ellipsis overflow-hidden">
-                            {loading ? <Skeleton className="h-8 w-24" /> : formatSMLV(resumen?.total_devengados)}
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl font-bold text-slate-900">
+                            {loading ? <Skeleton className="h-6 w-20" /> : formatSMLV(resumen?.total_devengados)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Sueldos + Auxilios + Otros</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-red-50 to-white border-red-100">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-red-700">Deducciones Totales</CardTitle>
-                        <AlertCircle className="h-4 w-4 text-red-600" />
+                <Card className="bg-white border-slate-100 shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
+                        <CardTitle className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Deducciones</CardTitle>
+                        <AlertCircle className="h-3.5 w-3.5 text-rose-500" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
-                            {loading ? <Skeleton className="h-8 w-24" /> : formatSMLV(resumen?.total_deducciones)}
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl font-bold text-slate-900">
+                            {loading ? <Skeleton className="h-6 w-20" /> : formatSMLV(resumen?.total_deducciones)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Aportes salud/pension/novedades</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-600/10 border-2">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-blue-800 uppercase tracking-tighter">Costo Total Empresa</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-blue-700" />
+                <Card className="bg-indigo-600 border-indigo-700 shadow-md">
+                    <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4 text-white">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider opacity-80">Costo Total</CardTitle>
+                        <TrendingUp className="h-3.5 w-3.5 opacity-80" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black text-blue-900">
-                            {loading ? <Skeleton className="h-8 w-24" /> : formatSMLV(resumen?.costo_total)}
+                    <CardContent className="px-4 pb-4">
+                        <div className="text-xl font-black text-white">
+                            {loading ? <Skeleton className="h-6 w-20 bg-white/20" /> : formatSMLV(resumen?.costo_total)}
                         </div>
-                        <p className="text-xs text-blue-600 font-medium">Impacto financiero total</p>
                     </CardContent>
                 </Card>
             </div>

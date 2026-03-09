@@ -176,13 +176,39 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
                 }
             }
 
+            // --- PROCESAR CUOTAS DE PRÉSTAMOS ---
+            const [cuotas] = await connection.execute<any[]>(
+                `SELECT pc.*, pr.PR_NUMERO_CUOTAS
+                 FROM OS_PRESTAMOS_CUOTAS pc
+                 JOIN OS_PRESTAMOS pr ON pc.PR_IDPRESTAMO_FK = pr.PR_IDPRESTAMO_PK
+                 WHERE pr.US_IDUSUARIO_FK = ? AND pc.PC_ESTADO = 'Pendiente'
+                 AND pc.PC_PERIODO_ANIO = ? AND pc.PC_PERIODO_MES = ? AND pc.PC_QUINCENA = ?`,
+                [emp.id, anio, mes, quincena]
+            );
+
+            let totalPrestamos = 0;
+            const detallesPrestamos: any[] = [];
+            for (const c of cuotas) {
+                totalPrestamos += Number(c.PC_VALOR_CUOTA);
+                detallesPrestamos.push([
+                    'DED003',
+                    `Préstamo (Cuota ${c.PC_NUMERO_CUOTA}/${c.PR_NUMERO_CUOTAS})`,
+                    1,
+                    Number(c.PC_VALOR_CUOTA),
+                    Number(c.PC_VALOR_CUOTA),
+                    'Deducción',
+                    false,
+                    c.PC_IDCUOTA_PK // ID para actualizar luego
+                ]);
+            }
+
             // IBC Quincenal
             const ibc = sueldoProporcional + adicionalIBC;
             const saludEmpleado = ibc * 0.04;
             const pensionEmpleado = ibc * 0.04;
 
             const totalDevengado = sueldoProporcional + auxilioTransporte + devengosExtras + totalClausulas;
-            const totalDeducciones = saludEmpleado + pensionEmpleado + deduccionesExtras;
+            const totalDeducciones = saludEmpleado + pensionEmpleado + deduccionesExtras + totalPrestamos;
             const netoPagar = totalDevengado - totalDeducciones;
 
             // 4. Insertar Maestra
@@ -234,6 +260,33 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
                      (LQ_IDLIQUIDACION_FK, CN_IDCONCEPTO_FK, DL_DESCRIPCION, DL_CANTIDAD, DL_VALOR_UNITARIO, DL_VALOR_TOTAL, DL_TIPO, DL_AFECTA_IBC_SALUD)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                     [liqId, n.CN_IDCONCEPTO_FK, n.concepto_nombre, 1, n.NO_VALOR_TOTAL, n.NO_VALOR_TOTAL, n.tipo, n.afecta_ibc_salud]
+                );
+            }
+
+            // 7. Detalles Préstamos y Actualizar Estado de Cuota
+            for (const p of detallesPrestamos) {
+                await connection.execute(
+                    `INSERT INTO OS_DETALLE_LIQUIDACION 
+                     (LQ_IDLIQUIDACION_FK, CN_IDCONCEPTO_FK, DL_DESCRIPCION, DL_CANTIDAD, DL_VALOR_UNITARIO, DL_VALOR_TOTAL, DL_TIPO, DL_AFECTA_IBC_SALUD)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [liqId, p[0], p[1], p[2], p[3], p[4], p[5], p[6]]
+                );
+
+                // Marcar cuota como procesada y vincularla a esta liquidación
+                await connection.execute(
+                    `UPDATE OS_PRESTAMOS_CUOTAS 
+                     SET PC_ESTADO = 'Procesado', LQ_IDLIQUIDACION_FK = ? 
+                     WHERE PC_IDCUOTA_PK = ?`,
+                    [liqId, p[7]]
+                );
+
+                // Actualizar saldo del préstamo
+                await connection.execute(
+                    `UPDATE OS_PRESTAMOS pr
+                     JOIN OS_PRESTAMOS_CUOTAS pc ON pr.PR_IDPRESTAMO_PK = pc.PR_IDPRESTAMO_FK
+                     SET pr.PR_SALDO_PENDIENTE = pr.PR_SALDO_PENDIENTE - pc.PC_VALOR_CUOTA
+                     WHERE pc.PC_IDCUOTA_PK = ?`,
+                    [p[7]]
                 );
             }
 
@@ -428,10 +481,32 @@ export async function eliminarLiquidacion(id: number): Promise<ActionResponse> {
         if (existing.length === 0) throw new Error("Liquidación no encontrada.");
         if (existing[0].LQ_ESTADO === 'Aprobado') throw new Error("No se puede eliminar una liquidación aprobada.");
 
-        await pool.execute('DELETE FROM OS_DETALLE_LIQUIDACION WHERE LQ_IDLIQUIDACION_FK = ?', [id]);
-        await pool.execute('DELETE FROM OS_LIQUIDACIONES WHERE LQ_IDLIQUIDACION_PK = ?', [id]);
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
 
-        return { success: true, message: "Liquidación eliminada correctamente." };
+            // Revertir cuotas de préstamos si existen
+            await connection.execute(
+                `UPDATE OS_PRESTAMOS pr
+                 JOIN OS_PRESTAMOS_CUOTAS pc ON pr.PR_IDPRESTAMO_PK = pc.PR_IDPRESTAMO_FK
+                 SET pr.PR_SALDO_PENDIENTE = pr.PR_SALDO_PENDIENTE + pc.PC_VALOR_CUOTA,
+                     pc.PC_ESTADO = 'Pendiente',
+                     pc.LQ_IDLIQUIDACION_FK = NULL
+                 WHERE pc.LQ_IDLIQUIDACION_FK = ?`,
+                [id]
+            );
+
+            await connection.execute('DELETE FROM OS_DETALLE_LIQUIDACION WHERE LQ_IDLIQUIDACION_FK = ?', [id]);
+            await connection.execute('DELETE FROM OS_LIQUIDACIONES WHERE LQ_IDLIQUIDACION_PK = ?', [id]);
+
+            await connection.commit();
+            return { success: true, message: "Liquidación eliminada correctamente." };
+        } catch (error: any) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     } catch (error: any) {
         return { success: false, message: error.message };
     }
@@ -448,22 +523,45 @@ export async function eliminarNominaPeriodo(mes: number, anio: number, quincena:
         const isAprobado = await isPeriodoAprobadoAction(mes, anio, quincena);
         if (isAprobado) throw new Error("No se puede eliminar un periodo que ya tiene liquidaciones aprobadas.");
 
-        // Borrar todos los detalles de ese periodo
-        await pool.execute(
-            `DELETE det FROM OS_DETALLE_LIQUIDACION det
-             JOIN OS_LIQUIDACIONES liq ON det.LQ_IDLIQUIDACION_FK = liq.LQ_IDLIQUIDACION_PK
-             WHERE liq.LQ_PERIODO_MES = ? AND liq.LQ_PERIODO_ANIO = ? AND liq.LQ_QUINCENA = ?`,
-            [mes, anio, quincena]
-        );
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
 
-        // Borrar las maestras
-        await pool.execute(
-            'DELETE FROM OS_LIQUIDACIONES WHERE LQ_PERIODO_MES = ? AND LQ_PERIODO_ANIO = ? AND LQ_QUINCENA = ?',
-            [mes, anio, quincena]
-        );
+            // Revertir todas las cuotas asociadas a las liquidaciones que vamos a borrar
+            await connection.execute(
+                `UPDATE OS_PRESTAMOS pr
+                 JOIN OS_PRESTAMOS_CUOTAS pc ON pr.PR_IDPRESTAMO_PK = pc.PR_IDPRESTAMO_FK
+                 JOIN OS_LIQUIDACIONES liq ON pc.LQ_IDLIQUIDACION_FK = liq.LQ_IDLIQUIDACION_PK
+                 SET pr.PR_SALDO_PENDIENTE = pr.PR_SALDO_PENDIENTE + pc.PC_VALOR_CUOTA,
+                     pc.PC_ESTADO = 'Pendiente',
+                     pc.LQ_IDLIQUIDACION_FK = NULL
+                 WHERE liq.LQ_PERIODO_MES = ? AND liq.LQ_PERIODO_ANIO = ? AND liq.LQ_QUINCENA = ?`,
+                [mes, anio, quincena]
+            );
 
-        revalidatePath('/inicio/nomina/liquidaciones');
-        return { success: true, message: "Todos los borradores del periodo han sido eliminados." };
+            // Borrar todos los detalles de ese periodo
+            await connection.execute(
+                `DELETE det FROM OS_DETALLE_LIQUIDACION det
+                 JOIN OS_LIQUIDACIONES liq ON det.LQ_IDLIQUIDACION_FK = liq.LQ_IDLIQUIDACION_PK
+                 WHERE liq.LQ_PERIODO_MES = ? AND liq.LQ_PERIODO_ANIO = ? AND liq.LQ_QUINCENA = ?`,
+                [mes, anio, quincena]
+            );
+
+            // Borrar las maestras
+            await connection.execute(
+                'DELETE FROM OS_LIQUIDACIONES WHERE LQ_PERIODO_MES = ? AND LQ_PERIODO_ANIO = ? AND LQ_QUINCENA = ?',
+                [mes, anio, quincena]
+            );
+
+            await connection.commit();
+            revalidatePath('/inicio/nomina/liquidaciones');
+            return { success: true, message: "Todos los borradores del periodo han sido eliminados." };
+        } catch (error: any) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     } catch (error: any) {
         return { success: false, message: error.message };
     }
@@ -497,6 +595,24 @@ export async function getMisVolantesAction(): Promise<ActionResponse<any[]>> {
         return { success: true, data: rows };
     } catch (error: any) {
         console.error('Error fetching user volantes:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+/**
+ * Obtener todos los periodos (mes, año, quincena) que tienen liquidaciones en estado 'Calculado' o 'Aprobado'.
+ * Útil para bloqueos visuales en el frontend.
+ */
+export async function getGlobalLockedPeriodsAction(): Promise<ActionResponse<Array<{ mes: number; anio: number; quincena: number; estado: string }>>> {
+    try {
+        const [rows] = await pool.execute<any[]>(
+            `SELECT DISTINCT LQ_PERIODO_MES as mes, LQ_PERIODO_ANIO as anio, LQ_QUINCENA as quincena, LQ_ESTADO as estado
+             FROM OS_LIQUIDACIONES 
+             WHERE LQ_ESTADO IN ('Calculado', 'Aprobado')
+             ORDER BY LQ_PERIODO_ANIO DESC, LQ_PERIODO_MES DESC, LQ_QUINCENA DESC`
+        );
+        return { success: true, data: rows };
+    } catch (error: any) {
         return { success: false, message: error.message };
     }
 }

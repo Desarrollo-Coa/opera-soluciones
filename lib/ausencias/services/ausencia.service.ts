@@ -93,23 +93,33 @@ export class AusenciaService {
     const current = await this.obtenerPorId(id);
     if (!current) throw new Error('Ausencia no encontrada');
 
-    // 2. Verificar si ya existe una liquidación para este colaborador que cubra este periodo
-    // Se considera que no se puede editar si hay una liquidación en estado 'Calculado' o 'Aprobado'
-    // que se cruce con el rango de la ausencia.
+    // 2. Verificar si ya existe una liquidación para este colaborador que se cruce con el periodo de la ausencia
+    // Una liquidación [Mes, Año, Quincena] bloquea si hay solapamiento de fechas.
     const [liquidaciones]: any[] = await executeQuery(
-      `SELECT LQ_IDLIQUIDACION_PK FROM OS_LIQUIDACIONES 
+      `SELECT LQ_IDLIQUIDACION_PK, LQ_QUINCENA, LQ_PERIODO_MES, LQ_PERIODO_ANIO 
+       FROM OS_LIQUIDACIONES 
        WHERE US_IDUSUARIO_FK = ? 
        AND LQ_ESTADO IN ('Calculado', 'Aprobado')
-       AND (
-         (LQ_PERIODO_MES = MONTH(?) AND LQ_PERIODO_ANIO = YEAR(?))
-         OR 
-         (LQ_PERIODO_MES = MONTH(?) AND LQ_PERIODO_ANIO = YEAR(?))
-       )`,
-      [current.US_IDUSUARIO_FK, current.AU_FECHA_INICIO, current.AU_FECHA_INICIO, current.AU_FECHA_FIN, current.AU_FECHA_FIN]
+       AND LQ_PERIODO_ANIO = YEAR(?)`,
+      [current.US_IDUSUARIO_FK, current.AU_FECHA_INICIO]
     );
 
-    if (liquidaciones && liquidaciones.length > 0) {
-      throw new Error('No se puede editar la ausencia porque ya existe una liquidación generada o aprobada para este periodo.');
+    for (const liq of liquidaciones) {
+      const q = liq.LQ_QUINCENA;
+      const m = liq.LQ_PERIODO_MES;
+      const a = liq.LQ_PERIODO_ANIO;
+
+      // Definir rango de la liquidación
+      const qStart = new Date(a, m - 1, q === 1 ? 1 : 16);
+      const qEnd = new Date(a, m - 1, q === 1 ? 15 : new Date(a, m, 0).getDate());
+
+      const aStart = new Date(current.AU_FECHA_INICIO);
+      const aEnd = new Date(current.AU_FECHA_FIN);
+
+      // Si hay solapamiento (Max(Start) <= Min(End))
+      if (Math.max(qStart.getTime(), aStart.getTime()) <= Math.min(qEnd.getTime(), aEnd.getTime())) {
+        throw new Error(`No se puede editar: la ausencia se solapa con la nómina ${m}/${a} Q${q} que ya fue generada o aprobada.`);
+      }
     }
 
     const campos = [];
@@ -150,21 +160,26 @@ export class AusenciaService {
     const current = await this.obtenerPorId(id);
     if (!current) throw new Error('Ausencia no encontrada');
 
-    // 2. Verificar liquidaciones existentes
+    // 2. Verificar si ya existe una liquidación que se cruce
     const [liquidaciones]: any[] = await executeQuery(
-      `SELECT LQ_IDLIQUIDACION_PK FROM OS_LIQUIDACIONES 
+      `SELECT LQ_IDLIQUIDACION_PK, LQ_QUINCENA, LQ_PERIODO_MES, LQ_PERIODO_ANIO 
+       FROM OS_LIQUIDACIONES 
        WHERE US_IDUSUARIO_FK = ? 
        AND LQ_ESTADO IN ('Calculado', 'Aprobado')
-       AND (
-         (LQ_PERIODO_MES = MONTH(?) AND LQ_PERIODO_ANIO = YEAR(?))
-         OR 
-         (LQ_PERIODO_MES = MONTH(?) AND LQ_PERIODO_ANIO = YEAR(?))
-       )`,
-      [current.US_IDUSUARIO_FK, current.AU_FECHA_INICIO, current.AU_FECHA_INICIO, current.AU_FECHA_FIN, current.AU_FECHA_FIN]
+       AND LQ_PERIODO_ANIO = YEAR(?)`,
+      [current.US_IDUSUARIO_FK, current.AU_FECHA_INICIO]
     );
 
-    if (liquidaciones && liquidaciones.length > 0) {
-      throw new Error('No se puede eliminar la ausencia porque ya existe una liquidación generada o aprobada para este periodo.');
+    for (const liq of liquidaciones) {
+      const qStart = new Date(liq.LQ_PERIODO_ANIO, liq.LQ_PERIODO_MES - 1, liq.LQ_QUINCENA === 1 ? 1 : 16);
+      const qEnd = new Date(liq.LQ_PERIODO_ANIO, liq.LQ_PERIODO_MES - 1, liq.LQ_QUINCENA === 1 ? 15 : new Date(liq.LQ_PERIODO_ANIO, liq.LQ_PERIODO_MES, 0).getDate());
+
+      const aStart = new Date(current.AU_FECHA_INICIO);
+      const aEnd = new Date(current.AU_FECHA_FIN);
+
+      if (Math.max(qStart.getTime(), aStart.getTime()) <= Math.min(qEnd.getTime(), aEnd.getTime())) {
+        throw new Error(`No se puede eliminar: la ausencia se solapa con la nómina ${liq.LQ_PERIODO_MES}/${liq.LQ_PERIODO_ANIO} Q${liq.LQ_QUINCENA} que ya fue generada o aprobada.`);
+      }
     }
 
     // Migración 007: AU_ACTIVO, AU_IDAUSENCIA_PK

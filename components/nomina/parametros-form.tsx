@@ -3,21 +3,23 @@
 import { useEffect, useState, useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { upsertParametrosAction, type ParametrosRow } from "@/actions/nomina/parametros-actions"
+import { getGlobalLockedPeriodsAction } from "@/actions/nomina/liquidacion-actions"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Save, History } from "lucide-react"
+import { Save, History, Lock } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CurrencyInput } from "@/components/ui/currency-input"
+import { cn } from "@/lib/utils"
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
     const { pending } = useFormStatus()
     return (
-        <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white" disabled={pending}>
-            {pending ? "Guardando..." : "Guardar Parámetros"}
-            {!pending && <Save className="ml-2 h-4 w-4" />}
+        <Button type="submit" className={cn("bg-indigo-600 hover:bg-indigo-700 text-white", (pending || disabled) && "bg-slate-400 hover:bg-slate-400")} disabled={pending || disabled}>
+            {pending ? "Guardando..." : (disabled ? "Año Bloqueado" : "Guardar Parámetros")}
+            {!pending && (disabled ? <Lock className="ml-2 h-4 w-4" /> : <Save className="ml-2 h-4 w-4" />)}
         </Button>
     )
 }
@@ -25,12 +27,19 @@ function SubmitButton() {
 export function ParametrosForm({ initialData, allParametros = [] }: { initialData?: ParametrosRow, allParametros?: ParametrosRow[] }) {
     const currentYear = new Date().getFullYear();
     const [selectedYear, setSelectedYear] = useState<number>(initialData?.ano_vigencia ?? currentYear);
+    const [lockedPeriods, setLockedPeriods] = useState<Array<{ anio: number, estado: string }>>([])
 
     // hook de React 19 para Actions: useActionState
     const [state, formAction] = useActionState(upsertParametrosAction, {
         success: false,
         message: "",
     })
+
+    useEffect(() => {
+        getGlobalLockedPeriodsAction().then(res => {
+            if (res.success && res.data) setLockedPeriods(res.data)
+        })
+    }, [])
 
     // Mostrar toast al detectar un cambio de estado en el submit
     useEffect(() => {
@@ -74,6 +83,15 @@ export function ParametrosForm({ initialData, allParametros = [] }: { initialDat
             </CardHeader>
 
             <form action={formAction} key={selectedYear}>
+                {lockedPeriods.some(p => p.anio === selectedYear && p.estado === 'Calculado') && (
+                    <div className="mx-6 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-900 shadow-sm animate-in fade-in slide-in-from-top-1">
+                        <Lock className="h-5 w-5 text-amber-600" />
+                        <div className="text-xs">
+                            <p className="font-bold uppercase">Año Bloqueado por Nómina en Revisión</p>
+                            <p className="opacity-80">Existen procesos de liquidación actualmente en revisión para el año {selectedYear}. No se permiten cambios de parámetros globales hasta que se aprueben o anulen las nóminas pendientes.</p>
+                        </div>
+                    </div>
+                )}
                 <CardContent className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
                         <div className="space-y-3">
@@ -118,6 +136,7 @@ export function ParametrosForm({ initialData, allParametros = [] }: { initialDat
                                 className="h-11 rounded-xl bg-gray-50/50 border-gray-200"
                                 defaultValue={historyData?.smmlv ?? ""}
                                 placeholder="Ingrese el SMMLV del año"
+                                disabled={lockedPeriods.some(p => p.anio === selectedYear && p.estado === 'Calculado')}
                             />
                             {state.errors?.smmlv && (
                                 <p className="text-sm text-red-500 font-medium">{state.errors.smmlv[0]}</p>
@@ -136,6 +155,7 @@ export function ParametrosForm({ initialData, allParametros = [] }: { initialDat
                                 className="h-11 rounded-xl bg-gray-50/50 border-gray-200"
                                 defaultValue={historyData?.auxilio_transporte ?? ""}
                                 placeholder="Ingrese auxilio de transporte"
+                                disabled={lockedPeriods.some(p => p.anio === selectedYear && p.estado === 'Calculado')}
                             />
                             {state.errors?.auxilio_transporte && (
                                 <p className="text-sm text-red-500 font-medium">{state.errors.auxilio_transporte[0]}</p>
@@ -152,6 +172,7 @@ export function ParametrosForm({ initialData, allParametros = [] }: { initialDat
                                 className="h-11 rounded-xl bg-gray-50/50 border-gray-200"
                                 defaultValue={historyData?.horas_semanales_maximas ?? ""}
                                 placeholder="Ej: 44"
+                                disabled={lockedPeriods.some(p => p.anio === selectedYear && p.estado === 'Calculado')}
                             />
                             {state.errors?.horas_semanales_maximas && (
                                 <p className="text-sm text-red-500 font-medium">{state.errors.horas_semanales_maximas[0]}</p>
@@ -170,6 +191,7 @@ export function ParametrosForm({ initialData, allParametros = [] }: { initialDat
                                 className="h-11 rounded-xl bg-gray-50/50 border-gray-200"
                                 defaultValue={historyData?.horas_mensuales_promedio ?? ""}
                                 placeholder="Ej: 220 o 240"
+                                disabled={lockedPeriods.some(p => p.anio === selectedYear && p.estado === 'Calculado')}
                             />
                             {state.errors?.horas_mensuales_promedio && (
                                 <p className="text-sm text-red-500 font-medium">{state.errors.horas_mensuales_promedio[0]}</p>
@@ -190,7 +212,7 @@ export function ParametrosForm({ initialData, allParametros = [] }: { initialDat
                         Restaurar vista inicial
                     </Button>
                     <div className="flex gap-3">
-                        <SubmitButton />
+                        <SubmitButton disabled={lockedPeriods.some(p => p.anio === selectedYear && p.estado === 'Calculado')} />
                     </div>
                 </CardFooter>
             </form>

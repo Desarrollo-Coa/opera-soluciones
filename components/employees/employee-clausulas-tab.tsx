@@ -10,12 +10,14 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit, Trash2, Save, X, Banknote, Calendar, Info, ArrowRight } from 'lucide-react'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { toast } from 'sonner'
 import { getClausulasMaster, getClausulasUsuario, upsertUsuarioClausula, deleteUsuarioClausula, getValoresComunesAction } from '@/actions/nomina/clausulas-actions'
+import { getGlobalLockedPeriodsAction } from '@/actions/nomina/liquidacion-actions'
+import { Plus, Edit, Trash2, Save, X, Banknote, Calendar, Info, ArrowRight, Lock } from 'lucide-react'
 import { ClausulaRow, UsuarioClausulaRow } from '@/types/db'
 import { formatCurrency } from '@/lib/currency-utils'
+import { cn } from '@/lib/utils'
 
 interface EmployeeClausulasTabProps {
     employeeId: number
@@ -28,6 +30,7 @@ export function EmployeeClausulasTab({ employeeId }: EmployeeClausulasTabProps) 
     const [loading, setLoading] = useState(true)
     const [isAdding, setIsAdding] = useState(false)
     const [editingAssignmentId, setEditingAssignmentId] = useState<number | undefined>(undefined)
+    const [lockedPeriods, setLockedPeriods] = useState<Array<{ mes: number; anio: number; quincena: number }>>([])
 
     // Form state for assignment
     const [formData, setFormData] = useState({
@@ -41,12 +44,14 @@ export function EmployeeClausulasTab({ employeeId }: EmployeeClausulasTabProps) 
 
     const loadData = async () => {
         setLoading(true)
-        const [resUser, resMaster] = await Promise.all([
+        const [resUser, resMaster, resLocked] = await Promise.all([
             getClausulasUsuario(employeeId),
-            getClausulasMaster()
+            getClausulasMaster(),
+            getGlobalLockedPeriodsAction()
         ])
         if (resUser.success) setClausulasUsuario(resUser.data || [])
         if (resMaster.success) setClausulasMaster(resMaster.data || [])
+        if (resLocked.success && resLocked.data) setLockedPeriods(resLocked.data)
         setLoading(false)
     }
 
@@ -65,13 +70,32 @@ export function EmployeeClausulasTab({ employeeId }: EmployeeClausulasTabProps) 
         }
     }, [formData.clausula_id])
 
+    const isAssignmentLocked = (start: string | Date, end: string | Date | null) => {
+        if (!start) return false;
+        const dateStart = new Date(start);
+        const dateEnd = end ? new Date(end) : new Date(2100, 0, 1); // Infinity-ish
+
+        return lockedPeriods.some(p => {
+            const qStart = new Date(p.anio, p.mes - 1, p.quincena === 1 ? 1 : 16);
+            const qEnd = p.quincena === 1
+                ? new Date(p.anio, p.mes - 1, 15)
+                : new Date(p.anio, p.mes, 0);
+
+            return (dateStart <= qEnd) && (dateEnd >= qStart);
+        });
+    };
+
     const handleEdit = (assign: UsuarioClausulaRow) => {
+        if (isAssignmentLocked(assign.fecha_inicio, assign.fecha_fin)) {
+            toast.error("Esta cláusula está bloqueada por una nómina ya generada.");
+            return;
+        }
         setEditingAssignmentId(assign.id)
         setFormData({
             clausula_id: assign.clausula_id.toString(),
             monto_mensual: Number(assign.monto_mensual),
-            fecha_inicio: assign.fecha_inicio.split('T')[0],
-            fecha_fin: assign.fecha_fin ? assign.fecha_fin.split('T')[0] : '',
+            fecha_inicio: new Date(assign.fecha_inicio).toISOString().split('T')[0],
+            fecha_fin: assign.fecha_fin ? new Date(assign.fecha_fin).toISOString().split('T')[0] : '',
             activo: !!assign.activo,
             notas_auditoria: assign.notas_auditoria || ''
         })
@@ -143,6 +167,15 @@ export function EmployeeClausulasTab({ employeeId }: EmployeeClausulasTabProps) 
                         <CardTitle className="text-base">{editingAssignmentId ? 'Editar Asignación' : 'Nueva Asignación de Cláusula'}</CardTitle>
                     </CardHeader>
                     <CardContent>
+                        {isAssignmentLocked(formData.fecha_inicio, formData.fecha_fin) && (
+                            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-start gap-2 text-amber-900 shadow-sm mb-4 animate-in fade-in slide-in-from-top-1">
+                                <Lock className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+                                <div className="text-[11px]">
+                                    <p className="font-semibold uppercase tracking-tight">Periodo Cerrado en Nómina</p>
+                                    <p className="opacity-90 leading-tight">No se puede {editingAssignmentId ? 'modificar' : 'asignar'} para este periodo porque ya existe una nómina generada o aprobada.</p>
+                                </div>
+                            </div>
+                        )}
                         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label>Definición de Cláusula *</Label>
@@ -227,7 +260,18 @@ export function EmployeeClausulasTab({ employeeId }: EmployeeClausulasTabProps) 
                                 </div>
                                 <div className="flex gap-2 ml-auto">
                                     <Button type="button" variant="outline" size="sm" onClick={resetForm}><X className="h-3 w-3 mr-1" /> Cerrar</Button>
-                                    <Button type="submit" size="sm" className="bg-indigo-600 hover:bg-indigo-700"><Save className="h-3 w-3 mr-1" /> {editingAssignmentId ? 'Actualizar' : 'Asignar'}</Button>
+                                    <Button
+                                        type="submit"
+                                        size="sm"
+                                        className={cn(
+                                            "bg-indigo-600 hover:bg-indigo-700",
+                                            isAssignmentLocked(formData.fecha_inicio, formData.fecha_fin) && "bg-slate-400 hover:bg-slate-400 cursor-not-allowed"
+                                        )}
+                                        disabled={isAssignmentLocked(formData.fecha_inicio, formData.fecha_fin)}
+                                    >
+                                        {isAssignmentLocked(formData.fecha_inicio, formData.fecha_fin) ? <Lock className="h-3 w-3 mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                                        {isAssignmentLocked(formData.fecha_inicio, formData.fecha_fin) ? 'Bloqueado' : (editingAssignmentId ? 'Actualizar' : 'Asignar')}
+                                    </Button>
                                 </div>
                             </div>
                         </form>
@@ -280,12 +324,21 @@ export function EmployeeClausulasTab({ employeeId }: EmployeeClausulasTabProps) 
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-1">
-                                                <Button variant="ghost" size="icon" onClick={() => handleEdit(cl)}>
-                                                    <Edit className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(cl.id)}>
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
+                                                {isAssignmentLocked(cl.fecha_inicio, cl.fecha_fin) ? (
+                                                    <div className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md text-slate-400">
+                                                        <Lock className="h-3 w-3" />
+                                                        <span className="text-[10px] font-medium">Bloqueado</span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <Button variant="ghost" size="icon" onClick={() => handleEdit(cl)}>
+                                                            <Edit className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(cl.id)}>
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

@@ -61,6 +61,17 @@ export async function getCargosAction(): Promise<ActionResponse<any[]>> {
 }
 
 /**
+ * Verifica si hay nóminas activas (Calculadas o Aprobadas). 
+ * Bloquearía cambios globales que afecten cálculos en curso.
+ */
+async function isCargosBloqueados(): Promise<boolean> {
+    const [rows] = await pool.execute<any[]>(
+        'SELECT 1 FROM OS_LIQUIDACIONES WHERE LQ_ESTADO = "Calculado" LIMIT 1'
+    );
+    return rows.length > 0;
+}
+
+/**
  * Crear o actualizar un cargo
  * Migración 007: OS_CARGOS con columnas CA_
  */
@@ -77,6 +88,14 @@ export async function upsertCargoAction(
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 if (payload.id) userId = parseInt(payload.id);
             } catch (e) { }
+        }
+
+        // --- BLOQUEO POR NÓMINA ACTIVA ---
+        if (await isCargosBloqueados()) {
+            return {
+                success: false,
+                message: 'No se pueden crear ni modificar cargos mientras existan procesos de nómina en revisión o aprobados. Anule los procesos actuales para poder gestionar los sueldos base.'
+            };
         }
 
         // Limpiar formato COP ($ 1.200.000 → 1200000)
@@ -155,6 +174,14 @@ export async function upsertCargoAction(
  */
 export async function deleteCargoAction(id: number): Promise<ActionResponse<void>> {
     try {
+        // --- BLOQUEO POR NÓMINA ACTIVA ---
+        if (await isCargosBloqueados()) {
+            return {
+                success: false,
+                message: 'No se pueden eliminar cargos mientras existan procesos de nómina en revisión o aprobados.'
+            };
+        }
+
         // Validar si hay empleados usándolo antes de borrar
         const [users] = await pool.execute<RowDataPacket[]>(
             `SELECT US_IDUSUARIO_PK FROM OS_USUARIOS WHERE CA_IDCARGO_FK = ? LIMIT 1`, [id]
