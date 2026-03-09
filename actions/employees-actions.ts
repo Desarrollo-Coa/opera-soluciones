@@ -54,8 +54,8 @@ const employeeProfileSchema = z.object({
     // Sueldo (aunque se guarde en cargos, se permite en el schema para fluidez)
     salary: z.coerce.number().optional().nullable(),
 
-    // Solo para creación
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional(),
+    // Solo para creación o cambio opcional
+    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional().nullable(),
 });
 
 /**

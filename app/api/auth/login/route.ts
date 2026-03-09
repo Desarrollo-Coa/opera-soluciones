@@ -7,7 +7,24 @@ import { ERROR_MESSAGES, SUCCESS_MESSAGES, type RoleCode, ROLE_CODES, DEFAULT_VA
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const contentType = request.headers.get("content-type")
+    console.log("[Login API] Request Content-Type:", contentType)
+
+    if (!contentType?.includes("application/json")) {
+      return NextResponse.json({
+        error: "Content-Type must be application/json"
+      }, { status: 400 })
+    }
+
+    const text = await request.text()
+    console.log("[Login API] Raw body length:", text.length)
+    if (!text) {
+      return NextResponse.json({
+        error: "Request body is empty"
+      }, { status: 400 })
+    }
+
+    const body = JSON.parse(text)
     const { email, password } = loginSchema.parse(body)
 
     // Find user by email with active contract status
