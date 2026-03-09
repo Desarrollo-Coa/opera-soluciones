@@ -69,7 +69,7 @@ export function NovedadesClient({
     const [selectedConcepto, setSelectedConcepto] = useState('');
     const [valor, setValor] = useState('');
     const [obs, setObs] = useState('');
-    const [fechaEvento, setFechaEvento] = useState(new Date().toISOString().split('T')[0]);
+    const [fechaEvento, setFechaEvento] = useState(new Date().toLocaleDateString('en-CA'));
 
     // Edit State
     const [editingId, setEditingId] = useState<number | null>(null);

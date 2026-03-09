@@ -66,9 +66,9 @@ export function PrestamosClient({ initialPrestamos, employees }: PrestamosClient
     const [cuotas, setCuotas] = useState('1');
     const [mesInicio, setMesInicio] = useState((new Date().getMonth() + 1).toString());
     const [anioInicio, setAnioInicio] = useState(new Date().getFullYear().toString());
-    const [quincenaInicio, setQuincenaInicio] = useState('1');
+    const [quincenaInicio, setQuincenaInicio] = useState(new Date().getDate() <= 15 ? '1' : '2');
     const [motivo, setMotivo] = useState('');
-    const [fechaDesembolso, setFechaDesembolso] = useState(new Date().toISOString().split('T')[0]);
+    const [fechaDesembolso, setFechaDesembolso] = useState(new Date().toLocaleDateString('en-CA'));
 
     // Detail modal state
     const [selectedPrestamo, setSelectedPrestamo] = useState<Prestamo | null>(null);

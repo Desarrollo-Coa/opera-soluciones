@@ -16,7 +16,8 @@ export default async function NovedadesPage({ searchParams }: { searchParams: Pr
     const params = await searchParams;
     const mesActual = parseInt(params.mes || (now.getMonth() + 1).toString());
     const anioActual = parseInt(params.anio || now.getFullYear().toString());
-    const quincenaActual = parseInt(params.quincena || "1");
+    const defaultQuincena = now.getDate() <= 15 ? "1" : "2";
+    const quincenaActual = parseInt(params.quincena || defaultQuincena);
 
     // Fetch initial data
     const [resNovedades, resEmpleados, resConceptos, isBloqueado] = await Promise.all([
