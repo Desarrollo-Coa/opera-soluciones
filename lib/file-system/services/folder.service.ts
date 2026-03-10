@@ -1,5 +1,6 @@
 import { executeQuery } from '@/lib/db';
 import { FileFolder, CreateFolderData } from '../types';
+import { FileService } from './file.service';
 
 export class FolderService {
   /**
@@ -127,11 +128,34 @@ export class FolderService {
   }
 
   /**
-   * Eliminar carpeta (soft delete)
+   * Eliminar carpeta (soft delete + eliminación recursiva de archivos y subcarpetas)
    */
   async eliminar(id: number): Promise<void> {
+    const fileService = new FileService();
+
+    // 1. Obtener y eliminar todos los archivos hijos para que se borren físicamente de DigitalOcean
+    const files = await executeQuery(
+      'SELECT AF_IDARCHIVO_PK as id FROM OS_ARCHIVOS WHERE CF_IDCARPETA_FK = ? AND AF_ACTIVO = TRUE',
+      [id]
+    ) as { id: number }[];
+
+    for (const f of files) {
+      await fileService.eliminar(f.id);
+    }
+
+    // 2. Obtener y eliminar recursivamente todas las subcarpetas
+    const subfolders = await executeQuery(
+      'SELECT CF_IDCARPETA_PK as id FROM OS_CARPETAS WHERE CF_IDCARPETA_PADRE_FK = ? AND CF_ACTIVO = TRUE',
+      [id]
+    ) as { id: number }[];
+
+    for (const sf of subfolders) {
+      await this.eliminar(sf.id);
+    }
+
+    // 3. Finalmente, eliminar definitivamente esta carpeta
     await executeQuery(
-      'UPDATE OS_CARPETAS SET CF_ACTIVO = FALSE, CF_FECHA_ACTUALIZACION = CURRENT_TIMESTAMP WHERE CF_IDCARPETA_PK = ?',
+      'DELETE FROM OS_CARPETAS WHERE CF_IDCARPETA_PK = ?',
       [id]
     );
   }

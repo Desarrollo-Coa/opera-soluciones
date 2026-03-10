@@ -180,9 +180,9 @@ export class FileService {
       }
     }
 
-    // Marcar como inactivo en la base de datos
+    // Eliminar archivo de la base de datos definitivamente (hard delete)
     await executeQuery(
-      'UPDATE OS_ARCHIVOS SET AF_ACTIVO = FALSE, AF_FECHA_ACTUALIZACION = CURRENT_TIMESTAMP WHERE AF_IDARCHIVO_PK = ?',
+      'DELETE FROM OS_ARCHIVOS WHERE AF_IDARCHIVO_PK = ?',
       [id]
     );
   }

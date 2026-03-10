@@ -62,6 +62,7 @@ export interface FileSystemItem {
   description?: string;
   created_by: number;
   is_active: boolean;
+  file_url?: string;
 }
 
 export interface BreadcrumbItem {

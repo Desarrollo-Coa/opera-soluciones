@@ -14,21 +14,21 @@ export async function GET(
     const folderId = parseInt(id);
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
-    
+
     if (action === 'breadcrumbs') {
       const breadcrumbs = await folderService.obtenerBreadcrumbs(folderId);
       return NextResponse.json(breadcrumbs);
     }
-    
+
     const folder = await folderService.obtenerPorId(folderId);
-    
+
     if (!folder) {
       return NextResponse.json(
         { error: 'Carpeta no encontrada' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(folder);
   } catch (error) {
     console.error('Error al obtener carpeta:', error);
@@ -48,9 +48,9 @@ export async function PUT(
     const folderId = parseInt(id);
     const body = await request.json();
     const { name, description } = body as Partial<CreateFolderData>;
-    
+
     await folderService.actualizar(folderId, { name, description });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error al actualizar carpeta:', error);
@@ -61,6 +61,13 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, context);
+}
+
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -68,7 +75,7 @@ export async function DELETE(
   try {
     const { id } = await context.params;
     const folderId = parseInt(id);
-    
+
     // Obtener ID del usuario desde el token
     const userId = getUserIdFromToken(request);
     if (!userId) {
@@ -97,9 +104,9 @@ export async function DELETE(
         { status: 401 }
       );
     }
-    
+
     await folderService.eliminar(folderId);
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error al eliminar carpeta:', error);

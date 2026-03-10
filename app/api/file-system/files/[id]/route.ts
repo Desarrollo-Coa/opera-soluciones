@@ -11,16 +11,16 @@ export async function GET(
   try {
     const { id } = await context.params;
     const fileId = parseInt(id);
-    
+
     const file = await fileService.obtenerPorId(fileId);
-    
+
     if (!file) {
       return NextResponse.json(
         { error: 'Archivo no encontrado' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(file);
   } catch (error) {
     console.error('Error al obtener archivo:', error);
@@ -40,9 +40,9 @@ export async function PUT(
     const fileId = parseInt(id);
     const body = await request.json();
     const { name, description } = body;
-    
+
     await fileService.actualizar(fileId, { name, description });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error al actualizar archivo:', error);
@@ -53,6 +53,13 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, context);
+}
+
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -60,7 +67,7 @@ export async function DELETE(
   try {
     const { id } = await context.params;
     const fileId = parseInt(id);
-    
+
     // Obtener ID del usuario desde el token
     const userId = getUserIdFromToken(request);
     if (!userId) {
@@ -89,9 +96,9 @@ export async function DELETE(
         { status: 401 }
       );
     }
-    
+
     await fileService.eliminar(fileId);
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error al eliminar archivo:', error);
