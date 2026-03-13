@@ -46,7 +46,15 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
 
         const p = params[0];
 
-        // 2. Obtener empleados activos
+        // 2. Definir fechas de la quincena para filtrar empleados y buscar ausencias/novedades
+        const ultimoDiaMes = new Date(anio, mes, 0).getDate();
+        const fechaInicioQ = quincena === 1 ? `${anio}-${mes.toString().padStart(2, '0')}-01` : `${anio}-${mes.toString().padStart(2, '0')}-16`;
+        const fechaFinQ = quincena === 1 ? `${anio}-${mes.toString().padStart(2, '0')}-15` : `${anio}-${mes.toString().padStart(2, '0')}-${ultimoDiaMes}`;
+
+        // 3. Obtener empleados que deben ser incluidos en este periodo:
+        // - Activos
+        // - Fecha de contratación <= fin de quincena
+        // - Fecha de retiro es NULL o >= inicio de quincena
         const [empleados] = await connection.execute<EmpleadoLiquidacionRow[]>(
             `SELECT u.US_IDUSUARIO_PK as id, u.US_NOMBRE as first_name, u.US_APELLIDO as last_name,
                     c.CA_IDCARGO_PK as cargo_id, c.CA_SUELDO_BASE as sueldo_base, 
@@ -54,12 +62,12 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
                     u.US_FECHA_CONTRATACION as fecha_contratacion, u.US_FECHA_RETIRO as fecha_retiro
              FROM OS_USUARIOS u
              JOIN OS_CARGOS c ON u.CA_IDCARGO_FK = c.CA_IDCARGO_PK
-             WHERE u.US_ACTIVO = TRUE AND u.US_FECHA_ELIMINACION IS NULL`
+             WHERE u.US_ACTIVO = TRUE 
+               AND u.US_FECHA_ELIMINACION IS NULL
+               AND u.US_FECHA_CONTRATACION <= ?
+               AND (u.US_FECHA_RETIRO IS NULL OR u.US_FECHA_RETIRO >= ?)`,
+            [fechaFinQ, fechaInicioQ]
         );
-
-        // Definir fechas de la quincena para buscar ausencias
-        const fechaInicioQ = quincena === 1 ? `${anio}-${mes.toString().padStart(2, '0')}-01` : `${anio}-${mes.toString().padStart(2, '0')}-16`;
-        const fechaFinQ = quincena === 1 ? `${anio}-${mes.toString().padStart(2, '0')}-15` : new Date(anio, mes, 0).toISOString().split('T')[0];
 
         let liquidadosCount = 0;
 
@@ -138,7 +146,6 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
             }
 
             // --- CÁLCULOS QUINCENALES (Estándar 30 días con excepción de Febrero) ---
-            const ultimoDiaMes = new Date(anio, mes, 0).getDate();
             // Por defecto 15 días, excepto la Q2 de Febrero que son los días reales restantes
             const diasTotalesQuincena = (mes === 2 && quincena === 2) ? (ultimoDiaMes - 15) : 15;
             let diasBaseQuincena = diasTotalesQuincena;
@@ -415,7 +422,7 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
  * Obtener listado de liquidaciones para un periodo
  * Migración 007: OS_LIQUIDACIONES, OS_USUARIOS, OS_CARGOS
  */
-export async function getLiquidaciones(mes: number, anio: number, quincena: number): Promise<ActionResponse<{ rows: any[], totalEmployees: number }>> {
+export async function getLiquidaciones(mes: number, anio: number, quincena: number): Promise<ActionResponse<{ rows: any[], totalEmployees: number, totalNomina: number }>> {
     const user = await getAuthUser();
     if (!user) return { success: false, message: 'No autorizado' };
 
@@ -445,11 +452,14 @@ export async function getLiquidaciones(mes: number, anio: number, quincena: numb
         // Obtener total de empleados activos para el ratio
         const [total] = await pool.execute<any[]>('SELECT COUNT(*) as count FROM OS_USUARIOS WHERE US_ACTIVO = TRUE AND US_FECHA_ELIMINACION IS NULL');
 
+        const totalNomina = rows.reduce((acc, curr) => acc + Number(curr.neto_pagar), 0);
+
         return {
             success: true,
             data: {
                 rows,
-                totalEmployees: total[0]?.count || 0
+                totalEmployees: total[0]?.count || 0,
+                totalNomina
             }
         };
     } catch (error: any) {

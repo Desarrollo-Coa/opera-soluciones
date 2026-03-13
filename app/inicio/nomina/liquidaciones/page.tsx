@@ -20,34 +20,18 @@ export default async function LiquidacionesPage({ searchParams }: { searchParams
     const result = await getLiquidaciones(mesActual, anioActual, quincenaActual);
     const initialData = result.success ? result.data?.rows : [];
     const initialTotal = result.success ? result.data?.totalEmployees || 0 : 0;
+    const initialTotalNomina = result.success ? result.data?.totalNomina || 0 : 0;
 
     return (
         <DashboardLayout userRole={user.role}>
-            <div className="space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" asChild className="h-7 w-7">
-                                <Link href="/inicio/nomina"><ArrowLeft className="h-4 w-4" /></Link>
-                            </Button>
-                            <h1 className="text-2xl font-bold tracking-tight text-indigo-900 leading-tight">
-                                Pre-Liquidación y Volantes
-                            </h1>
-                        </div>
-                        <p className="text-sm text-muted-foreground ml-9">
-                            Gestión y generación de pagos por periodo.
-                        </p>
-                    </div>
-                </div>
-
-                <LiquidacionesClient
-                    initialData={initialData || []}
-                    initialTotal={initialTotal}
-                    initialMes={mesActual.toString()}
-                    initialAnio={anioActual.toString()}
-                    initialQuincena={quincenaActual.toString()}
-                />
-            </div>
+            <LiquidacionesClient
+                initialData={initialData || []}
+                initialTotal={initialTotal}
+                initialTotalNomina={initialTotalNomina}
+                initialMes={mesActual.toString()}
+                initialAnio={anioActual.toString()}
+                initialQuincena={quincenaActual.toString()}
+            />
         </DashboardLayout>
     );
 }

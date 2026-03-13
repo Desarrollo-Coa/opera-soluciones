@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { UniversalSelect } from "@/components/ui/universal-select";
 import { toast } from "sonner";
 import { generarLiquidacionQuincenal, getLiquidaciones, aprobarNominaPeriodo, eliminarLiquidacion, eliminarNominaPeriodo } from "@/actions/nomina";
-import { FileText, Play, Loader2, CheckCircle, Lock, Trash2, Users, Download, FileArchive } from "lucide-react";
+import { FileText, Play, Loader2, CheckCircle, Lock, Trash2, Users, Download, FileArchive, ArrowLeft } from "lucide-react";
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
 
@@ -45,12 +45,14 @@ interface Liquidacion {
 export function LiquidacionesClient({
     initialData,
     initialTotal = 0,
+    initialTotalNomina = 0,
     initialMes = (new Date().getMonth() + 1).toString(),
     initialAnio = new Date().getFullYear().toString(),
     initialQuincena = '1'
 }: {
     initialData: Liquidacion[],
     initialTotal?: number,
+    initialTotalNomina?: number,
     initialMes?: string,
     initialAnio?: string,
     initialQuincena?: string
@@ -61,6 +63,7 @@ export function LiquidacionesClient({
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<Liquidacion[]>(initialData);
     const [totalEmployees, setTotalEmployees] = useState(initialTotal);
+    const [totalNomina, setTotalNomina] = useState(initialTotalNomina);
 
     // Table state
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -73,6 +76,7 @@ export function LiquidacionesClient({
             if (res.success && res.data) {
                 setData(res.data.rows);
                 setTotalEmployees(res.data.totalEmployees);
+                setTotalNomina(res.data.totalNomina);
             } else {
                 toast.error(res.message);
             }
@@ -318,6 +322,34 @@ export function LiquidacionesClient({
 
     return (
         <div className="space-y-4">
+            {/* Cabecera con Título y Total */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" asChild className="h-7 w-7">
+                            <Link href="/inicio/nomina"><ArrowLeft className="h-4 w-4" /></Link>
+                        </Button>
+                        <h1 className="text-2xl font-bold tracking-tight text-indigo-900 leading-tight">
+                            Pre-Liquidación y Volantes
+                        </h1>
+                    </div>
+                    <p className="text-sm text-muted-foreground ml-9">
+                        Gestión y generación de pagos por periodo.
+                    </p>
+                </div>
+
+                {data.length > 0 && (
+                    <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Total Presupuesto Nómina</span>
+                        <div className="flex items-center gap-3 px-5 py-3 bg-emerald-600 text-white rounded-lg shadow-md border border-emerald-500">
+                            <span className="text-lg font-black font-mono">
+                                {formatCurrency(totalNomina)}
+                            </span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Barra de controles en 2 filas y 2 columnas con diseño cuadrado */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-sm border border-slate-200 shadow-sm">
 
@@ -389,9 +421,9 @@ export function LiquidacionesClient({
 
                 {/* Fila 2, Col 2: Estatus y Aprobación Final */}
                 <div className="flex items-center justify-start md:justify-end gap-3">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 rounded-sm border border-sky-100">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-sky-50 rounded-sm border border-sky-100">
                         <div className="h-2 w-2 rounded-sm bg-sky-500 animate-pulse" />
-                        <span className="text-[12px] font-bold text-sky-700">
+                        <span className="text-[11px] font-bold text-sky-700">
                             {data.length} de {totalEmployees} Procesados
                         </span>
                     </div>
