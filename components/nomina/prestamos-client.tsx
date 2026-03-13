@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { UniversalSelect } from "@/components/ui/universal-select";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { toast } from "sonner";
-import { Banknote, Calendar, Plus, Info, Loader2, ListOrdered, User, Eye, ArrowRight, Wallet2, Lock } from "lucide-react";
-import { crearPrestamoAction, getPrestamosActivosAction, getCuotasPrestamoAction } from "@/actions/nomina/prestamos-actions";
+import { Banknote, Calendar, Plus, Info, Loader2, ListOrdered, User, Eye, ArrowRight, Wallet2, Lock, Trash2, AlertTriangle } from "lucide-react";
+import { crearPrestamoAction, getPrestamosActivosAction, getCuotasPrestamoAction, eliminarPrestamoAction } from "@/actions/nomina/prestamos-actions";
 import { getGlobalLockedPeriodsAction } from "@/actions/nomina/liquidacion-actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { cn, isDateInPeriod } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -36,7 +36,7 @@ interface Prestamo {
     PR_SALDO_PENDIENTE: number;
     PR_FECHA_DESEMBOLSO: string;
     PR_MOTIVO: string;
-    cuotas_pagadas: number;
+    cuotas_procesadas: number;
 }
 
 interface Cuota {
@@ -160,12 +160,8 @@ export function PrestamosClient({ initialPrestamos, employees }: PrestamosClient
             return;
         }
 
-        // Validación de Fecha vs Periodo
-        if (!isDateInPeriod(fechaDesembolso, anioInicio, mesInicio, quincenaInicio)) {
-            const periodLabel = quincenaInicio === "1" ? "1ra Quincena (Día 1-15)" : `2da Quincena (Día 16-${new Date(parseInt(anioInicio), parseInt(mesInicio), 0).getDate()})`;
-            toast.error(`La fecha del préstamo (${fechaDesembolso}) no corresponde al periodo de inicio: ${MESES[parseInt(mesInicio) - 1]} ${periodLabel}`);
-            return;
-        }
+        // Validación de Fecha vs Periodo REMOVED AS PER USER REQUEST
+
 
         setLoading(true);
         try {
@@ -214,6 +210,27 @@ export function PrestamosClient({ initialPrestamos, employees }: PrestamosClient
             setLoadingCuotas(false);
         }
     };
+
+    const handleDelete = async (prestamoId: number) => {
+        if (!confirm("¿Está seguro de eliminar este préstamo? Esta acción es irreversible y eliminará todo el plan de cuotas.")) return;
+
+        setLoading(true);
+        try {
+            const res = await eliminarPrestamoAction(prestamoId);
+            if (res.success) {
+                toast.success(res.message);
+                await refreshPrestamos();
+            } else {
+                toast.error(res.message);
+            }
+        } catch (error) {
+            toast.error("Error al eliminar el préstamo");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
 
     return (
         <div className="space-y-6">
@@ -282,12 +299,12 @@ export function PrestamosClient({ initialPrestamos, employees }: PrestamosClient
                                                     <div className="flex flex-col gap-1 w-24">
                                                         <div className="flex justify-between text-[10px] font-bold text-indigo-700 uppercase">
                                                             <span>Cuotas</span>
-                                                            <span>{p.cuotas_pagadas}/{p.PR_NUMERO_CUOTAS}</span>
+                                                            <span>{p.cuotas_procesadas}/{p.PR_NUMERO_CUOTAS}</span>
                                                         </div>
                                                         <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                                             <div
                                                                 className="h-full bg-indigo-600 transition-all duration-500"
-                                                                style={{ width: `${(p.cuotas_pagadas / p.PR_NUMERO_CUOTAS) * 100}%` }}
+                                                                style={{ width: `${(p.cuotas_procesadas / p.PR_NUMERO_CUOTAS) * 100}%` }}
                                                             />
                                                         </div>
                                                     </div>
@@ -296,15 +313,28 @@ export function PrestamosClient({ initialPrestamos, employees }: PrestamosClient
                                                     {formatCurrency(p.PR_SALDO_PENDIENTE)}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-2"
-                                                        onClick={() => showDetails(p)}
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                        Ver Plan
-                                                    </Button>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-2"
+                                                            onClick={() => showDetails(p)}
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                            Ver Plan
+                                                        </Button>
+                                                        {p.cuotas_procesadas === 0 && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                onClick={() => handleDelete(p.PR_IDPRESTAMO_PK)}
+                                                                disabled={loading}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -444,11 +474,9 @@ export function PrestamosClient({ initialPrestamos, employees }: PrestamosClient
                                     type="date"
                                     value={fechaDesembolso}
                                     onChange={(e) => setFechaDesembolso(e.target.value)}
-                                    className={cn("h-11 rounded-xl", !isDateInPeriod(fechaDesembolso, anioInicio, mesInicio, quincenaInicio) ? "border-red-500 bg-red-50" : "")}
+                                    className="h-11 rounded-xl"
                                 />
-                                {!isDateInPeriod(fechaDesembolso, anioInicio, mesInicio, quincenaInicio) && fechaDesembolso && (
-                                    <p className="text-[10px] text-red-600 font-bold uppercase animate-pulse">Fecha fuera del periodo seleccionado</p>
-                                )}
+
                             </div>
 
                             <div className="space-y-2">

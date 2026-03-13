@@ -37,30 +37,8 @@ export async function crearPrestamoAction(data: {
         };
     }
 
-    // --- VALIDACIÓN DE FECHA VS PERIODO ---
-    if (data.fecha_desembolso) {
-        const d = new Date(data.fecha_desembolso + 'T12:00:00');
-        const dYear = d.getFullYear();
-        const dMonth = d.getMonth() + 1;
-        const dDay = d.getDate();
+    // --- VALIDACIÓN DE FECHA VS PERIODO REMOVED AS PER USER REQUEST ---
 
-        const isWrongManual = (dYear !== data.periodo_inicio_anio || dMonth !== data.periodo_inicio_mes);
-        const lastDayTotal = new Date(data.periodo_inicio_anio, data.periodo_inicio_mes, 0).getDate();
-
-        let isWrongDay = false;
-        if (Number(data.quincena_inicio) === 1) {
-            isWrongDay = dDay < 1 || dDay > 15;
-        } else {
-            isWrongDay = dDay < 16 || dDay > lastDayTotal;
-        }
-
-        if (isWrongManual || isWrongDay) {
-            return {
-                success: false,
-                message: `La fecha de desembolso (${data.fecha_desembolso}) no es válida para el periodo Q${data.quincena_inicio} de ${data.periodo_inicio_mes}/${data.periodo_inicio_anio}. Debe estar dentro del rango quincenal de días correspondiente.`
-            };
-        }
-    }
 
     const connection = await pool.getConnection();
 
@@ -99,7 +77,9 @@ export async function crearPrestamoAction(data: {
         let curQuincena = data.quincena_inicio;
 
         for (let i = 1; i <= numCuotas; i++) {
-            const fechaEstimada = `${curAnio}-${String(curMes).padStart(2, '0')}-${curQuincena === 1 ? '15' : '30'}`;
+            const lastDayOfMonth = new Date(curAnio, curMes, 0).getDate();
+            const day = curQuincena === 1 ? 15 : Math.min(30, lastDayOfMonth);
+            const fechaEstimada = `${curAnio}-${String(curMes).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
             await connection.execute(
                 `INSERT INTO OS_PRESTAMOS_CUOTAS 
@@ -144,7 +124,7 @@ export async function getPrestamosActivosAction(): Promise<ActionResponse<any[]>
     try {
         const [rows] = await pool.execute(
             `SELECT p.*, u.US_NOMBRE as first_name, u.US_APELLIDO as last_name,
-                    (SELECT COUNT(*) FROM OS_PRESTAMOS_CUOTAS WHERE PR_IDPRESTAMO_FK = p.PR_IDPRESTAMO_PK AND PC_ESTADO = 'Pagado_Manual' OR PC_ESTADO = 'Procesado') as cuotas_pagadas
+                    (SELECT COUNT(*) FROM OS_PRESTAMOS_CUOTAS WHERE PR_IDPRESTAMO_FK = p.PR_IDPRESTAMO_PK AND (PC_ESTADO != 'Pendiente' OR LQ_IDLIQUIDACION_FK IS NOT NULL)) as cuotas_procesadas
              FROM OS_PRESTAMOS p
              JOIN OS_USUARIOS u ON p.US_IDUSUARIO_FK = u.US_IDUSUARIO_PK
              WHERE p.PR_ESTADO = 'Activo'
@@ -170,3 +150,55 @@ export async function getCuotasPrestamoAction(prestamoId: number): Promise<Actio
         return { success: false, message: error.message };
     }
 }
+
+/**
+ * Eliminar un préstamo (solo si no tiene cuotas procesadas/asociadas a nómina)
+ */
+export async function eliminarPrestamoAction(prestamoId: number): Promise<ActionResponse> {
+    const user = await getAuthUser();
+    if (!user) return { success: false, message: 'No autorizado' };
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Verificar si tiene cuotas procesadas
+        const [cuotas]: any[] = await connection.execute(
+            `SELECT COUNT(*) as total FROM OS_PRESTAMOS_CUOTAS 
+             WHERE PR_IDPRESTAMO_FK = ? AND (PC_ESTADO != 'Pendiente' OR LQ_IDLIQUIDACION_FK IS NOT NULL)`,
+            [prestamoId]
+        );
+
+        if (cuotas[0].total > 0) {
+            await connection.rollback();
+            return {
+                success: false,
+                message: 'No se puede eliminar el préstamo porque ya tiene cuotas procesadas o asociadas a una nómina.'
+            };
+        }
+
+        // 2. Eliminar cuotas
+        await connection.execute(
+            `DELETE FROM OS_PRESTAMOS_CUOTAS WHERE PR_IDPRESTAMO_FK = ?`,
+            [prestamoId]
+        );
+
+        // 3. Eliminar cabecera
+        await connection.execute(
+            `DELETE FROM OS_PRESTAMOS WHERE PR_IDPRESTAMO_PK = ?`,
+            [prestamoId]
+        );
+
+        await connection.commit();
+        revalidatePath('/inicio/nomina/prestamos');
+        return { success: true, message: 'Préstamo eliminado correctamente.' };
+
+    } catch (error: any) {
+        await connection.rollback();
+        return { success: false, message: error.message };
+    } finally {
+        connection.release();
+    }
+}
+
