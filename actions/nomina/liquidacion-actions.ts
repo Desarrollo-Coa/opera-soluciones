@@ -50,7 +50,8 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
         const [empleados] = await connection.execute<EmpleadoLiquidacionRow[]>(
             `SELECT u.US_IDUSUARIO_PK as id, u.US_NOMBRE as first_name, u.US_APELLIDO as last_name,
                     c.CA_IDCARGO_PK as cargo_id, c.CA_SUELDO_BASE as sueldo_base, 
-                    c.CA_APLICA_AUXILIO as aplica_auxilio_transporte, c.CA_PORCENTAJE_RIESGO_ARL as porcentaje_riesgo_arl
+                    c.CA_APLICA_AUXILIO as aplica_auxilio_transporte, c.CA_PORCENTAJE_RIESGO_ARL as porcentaje_riesgo_arl,
+                    u.US_FECHA_CONTRATACION as fecha_contratacion, u.US_FECHA_RETIRO as fecha_retiro
              FROM OS_USUARIOS u
              JOIN OS_CARGOS c ON u.CA_IDCARGO_FK = c.CA_IDCARGO_PK
              WHERE u.US_ACTIVO = TRUE AND u.US_FECHA_ELIMINACION IS NULL`
@@ -136,30 +137,125 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
                 detallesClausulas.push([cl.concepto_id, cl.nombre, 1, Number(cl.UC_MONTO_MENSUAL) / 2, montoQuincenal, 'Devengo', false]);
             }
 
-            // --- CÁLCULOS QUINCENALES (15 días base) ---
-            let diasTrabajadosEfectivos = 15 - totalDiasAusencia;
+            // --- CÁLCULOS QUINCENALES (Estándar 30 días con excepción de Febrero) ---
+            const ultimoDiaMes = new Date(anio, mes, 0).getDate();
+            // Por defecto 15 días, excepto la Q2 de Febrero que son los días reales restantes
+            const diasTotalesQuincena = (mes === 2 && quincena === 2) ? (ultimoDiaMes - 15) : 15;
+            let diasBaseQuincena = diasTotalesQuincena;
+
+            // 1. Ajuste por Fecha de Contratación (Ingresos proporcionales)
+            if (emp.fecha_contratacion) {
+                let yIng = 0, mIng = 0, dIng = 0;
+                let isValida = false;
+
+                if (emp.fecha_contratacion instanceof Date) {
+                    yIng = emp.fecha_contratacion.getUTCFullYear();
+                    mIng = emp.fecha_contratacion.getUTCMonth() + 1;
+                    dIng = emp.fecha_contratacion.getUTCDate();
+                    isValida = !isNaN(emp.fecha_contratacion.getTime());
+                } else if (typeof emp.fecha_contratacion === 'string') {
+                    const parts = emp.fecha_contratacion.split(/-|\//);
+                    if (parts.length >= 3) {
+                        yIng = parseInt(parts[0], 10);
+                        mIng = parseInt(parts[1], 10);
+                        dIng = parseInt(parts[2].substring(0, 2), 10);
+                        isValida = !isNaN(yIng) && !isNaN(mIng) && !isNaN(dIng);
+                    }
+                }
+
+                if (isValida) {
+                    if (yIng === anio && mIng === mes) {
+                        if (quincena === 1) {
+                            if (dIng >= 1) {
+                                // El día de contratación SÍ se cuenta como día laborado
+                                diasBaseQuincena = Math.max(0, 15 - dIng + 1);
+                            }
+                        } else if (quincena === 2) {
+                            if (dIng >= 16) {
+                                // Si es Febrero usamos el límite real, si no, base 30 (el 31 no suma más días)
+                                const limiteSuperior = (mes === 2) ? ultimoDiaMes : 30;
+                                const diaIngresoAjustado = Math.min(limiteSuperior, dIng);
+                                diasBaseQuincena = Math.max(0, limiteSuperior - diaIngresoAjustado + 1);
+                            }
+                        }
+                    } else {
+                        const fechaFinQNum = anio * 10000 + mes * 100 + (quincena === 1 ? 15 : ultimoDiaMes);
+                        const fechaIngNum = yIng * 10000 + mIng * 100 + dIng;
+                        if (fechaIngNum > fechaFinQNum) {
+                            diasBaseQuincena = 0;
+                        }
+                    }
+                }
+            }
+
+            // 2. Ajuste por Fecha de Retiro (Egresos proporcionales)
+            if (emp.fecha_retiro) {
+                let yRet = 0, mRet = 0, dRet = 0;
+                let isValida = false;
+
+                if (emp.fecha_retiro instanceof Date) {
+                    yRet = emp.fecha_retiro.getUTCFullYear();
+                    mRet = emp.fecha_retiro.getUTCMonth() + 1;
+                    dRet = emp.fecha_retiro.getUTCDate();
+                    isValida = !isNaN(emp.fecha_retiro.getTime());
+                } else if (typeof emp.fecha_retiro === 'string') {
+                    const parts = emp.fecha_retiro.split(/-|\//);
+                    if (parts.length >= 3) {
+                        yRet = parseInt(parts[0], 10);
+                        mRet = parseInt(parts[1], 10);
+                        dRet = parseInt(parts[2].substring(0, 2), 10);
+                        isValida = !isNaN(yRet) && !isNaN(mRet) && !isNaN(dRet);
+                    }
+                }
+
+                if (isValida) {
+                    if (yRet === anio && mRet === mes) {
+                        if (quincena === 1) {
+                            if (dRet < 15) {
+                                diasBaseQuincena = Math.min(diasBaseQuincena, dRet);
+                            }
+                        } else if (quincena === 2) {
+                            if (dRet < 16) {
+                                diasBaseQuincena = 0;
+                            } else {
+                                // En meses de 31, el día 31 no suma días adicionales (topado a 15)
+                                const diaRetiroAjustado = Math.min(dRet, (mes === 2) ? ultimoDiaMes : 30);
+                                diasBaseQuincena = Math.min(diasBaseQuincena, diaRetiroAjustado - 16 + 1);
+                            }
+                        }
+                    } else {
+                        const inicioDia = quincena === 1 ? 1 : 16;
+                        const fechaInicioQNum = anio * 10000 + mes * 100 + inicioDia;
+                        const fechaRetNum = yRet * 10000 + mRet * 100 + dRet;
+                        if (fechaRetNum < fechaInicioQNum) {
+                            diasBaseQuincena = 0;
+                        }
+                    }
+                }
+            }
+
+            // Días laborados efectivos (restando ausencias)
+            let diasTrabajadosEfectivos = diasBaseQuincena - totalDiasAusencia;
             if (diasTrabajadosEfectivos < 0) diasTrabajadosEfectivos = 0;
 
-            // Días para el cálculo de auxilio de transporte
-            let diasParaAuxilio = 15 - diasAFuturoParaDescontarAuxilio;
+            let diasParaAuxilio = diasBaseQuincena - diasAFuturoParaDescontarAuxilio;
             if (diasParaAuxilio < 0) diasParaAuxilio = 0;
 
-            const sueldoQuincenalBase = (emp.sueldo_base / 30) * 15;
+            // Cálculo del valor día estándar (Sueldo / 30)
+            const valorDia = emp.sueldo_base / 30;
+            const sueldoQuincenalBase = valorDia * diasBaseQuincena;
 
-            // Sueldo Proporcional = (Días Trabajados * 100%) + (Días Ausencia * %pago)
-            // Pero para simplificar el volante, pagamos el básico de 15 días y descontamos el resto en deducciones
-            // O pagamos el neto proporcional. Elegimos pagar el neto proporcional para Sueldo Básico.
-            let sueldoProporcional = (emp.sueldo_base / 30) * diasTrabajadosEfectivos;
+            let sueldoProporcional = valorDia * diasTrabajadosEfectivos;
 
             for (const aus of ausencias) {
                 const pctPago = Number(aus.porcentaje_pago) / 100;
-                sueldoProporcional += (emp.sueldo_base / 30) * Number(aus.dias) * pctPago;
+                sueldoProporcional += valorDia * Number(aus.dias) * pctPago;
             }
 
-            // Auxilio de transporte
+            // Auxilio de transporte sobre base 30
             let auxilioTransporte = 0;
             if (emp.aplica_auxilio_transporte && emp.sueldo_base <= (p.smmlv * 2)) {
-                auxilioTransporte = ((p.auxilio_transporte / 2) / 15) * diasParaAuxilio;
+                auxilioTransporte = (p.auxilio_transporte / 30) * diasParaAuxilio;
             }
 
             // --- PROCESAR NOVEDADES ---
@@ -202,13 +298,16 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
                 ]);
             }
 
-            // IBC Quincenal
+            // IBC Quincenal: Se basa en lo realmente devengado (Sueldo Proporcional)
             const ibc = sueldoProporcional + adicionalIBC;
             const saludEmpleado = ibc * 0.04;
             const pensionEmpleado = ibc * 0.04;
 
-            const totalDevengado = sueldoProporcional + auxilioTransporte + devengosExtras + totalClausulas;
-            const totalDeducciones = saludEmpleado + pensionEmpleado + deduccionesExtras + totalPrestamos;
+            // Total Devengado: Usamos el sueldo base del periodo (15d o 13d) y descontamos ausencias en las deducciones
+            // para mayor claridad en el volante, pero financieramente el neto es el mismo.
+            // Para cumplir con la suma: Neto = TotalDev - TotalDed
+            const totalDevengado = sueldoQuincenalBase + auxilioTransporte + devengosExtras + totalClausulas;
+            const totalDeducciones = saludEmpleado + pensionEmpleado + totalDescuentoAusencias + deduccionesExtras + totalPrestamos;
             const netoPagar = totalDevengado - totalDeducciones;
 
             // 4. Insertar Maestra
@@ -231,13 +330,15 @@ export async function generarLiquidacionQuincenal(mes: number, anio: number, qui
 
             // 5. Detalles
             const detalles = [
-                ['DEV001', 'Sueldo Básico (15d)', 1, sueldoQuincenalBase, sueldoProporcional, 'Devengo', true],
+                // Mostramos el sueldo base total del periodo (15d o 13d feb)
+                ['DEV001', `Sueldo Básico (${diasBaseQuincena}d)`, 1, sueldoQuincenalBase, sueldoQuincenalBase, 'Devengo', true],
                 ['DEV002', 'Auxilio de Transporte', 1, p.auxilio_transporte / 2, auxilioTransporte, 'Devengo', false],
                 ['DED001', 'Salud (4%)', 1, ibc, saludEmpleado, 'Deducción', false],
                 ['DED002', 'Pensión (4%)', 1, ibc, pensionEmpleado, 'Deducción', false],
                 ...detallesClausulas
             ];
 
+            // Descuento explícito de ausencias (si las hay)
             if (totalDescuentoAusencias > 0) {
                 detalles.push(['DED004', `Ausencias/Incapacidades (${totalDiasAusencia}d)`, totalDiasAusencia, emp.sueldo_base / 30, totalDescuentoAusencias, 'Deducción', false]);
             }
