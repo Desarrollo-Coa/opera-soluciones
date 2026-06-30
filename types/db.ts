@@ -20,6 +20,8 @@ export interface EmpleadoLiquidacionRow extends RowDataPacket {
     sueldo_base: number;  // alias de CA_SUELDO_BASE
     aplica_auxilio_transporte: number; // alias de CA_APLICA_AUXILIO
     porcentaje_riesgo_arl: number;     // alias de CA_PORCENTAJE_RIESGO_ARL
+    fecha_contratacion: string | Date | null; // US_FECHA_CONTRATACION
+    fecha_retiro: string | Date | null;       // US_FECHA_RETIRO
 }
 
 export interface ClausulaRow extends RowDataPacket {

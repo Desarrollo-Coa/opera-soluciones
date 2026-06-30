@@ -1,0 +1,165 @@
+'use client';
+
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { Camera, X, RefreshCw, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+interface CameraCaptureProps {
+    onCapture: (base64Image: string) => void;
+    onCancel: () => void;
+    title?: string;
+}
+
+export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía" }: CameraCaptureProps) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const startCamera = useCallback(async () => {
+        setError(null);
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' }, // Front camera preferred
+                audio: false
+            });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+        } catch (err: any) {
+            console.error("Error accessing camera:", err);
+            setError("No se pudo acceder a la cámara. Verifica los permisos de tu navegador.");
+        }
+    }, []);
+
+    const stopCamera = useCallback(() => {
+        setStream(currentStream => {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            return null;
+        });
+    }, []);
+
+    useEffect(() => {
+        startCamera();
+        return () => stopCamera();
+    }, [startCamera, stopCamera]);
+
+    const capturePhoto = () => {
+        if (!videoRef.current || !canvasRef.current) return;
+
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+
+        if (!context) return;
+
+        // Configurar canvas al tamaño real del video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Dibujar el frame actual
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Añadir marca de agua
+        const textDate = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
+        
+        // Estilos para marca de agua
+        context.fillStyle = "rgba(0, 0, 0, 0.5)";
+        context.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+        context.font = "bold 18px Arial";
+        context.fillStyle = "white";
+        context.textAlign = "left";
+        context.fillText(textDate, 20, canvas.height - 15);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setCapturedImage(dataUrl);
+        stopCamera();
+    };
+
+    const retakePhoto = () => {
+        setCapturedImage(null);
+        startCamera();
+    };
+
+    const confirmPhoto = () => {
+        if (capturedImage) {
+            onCapture(capturedImage);
+        }
+    };
+
+    return (
+        <Card className="w-full max-w-md mx-auto">
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>Asegúrate de tener buena iluminación</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {error ? (
+                    <div className="p-4 bg-red-50 text-red-600 rounded-md text-sm">
+                        {error}
+                        <Button 
+                            variant="outline" 
+                            className="mt-2 w-full"
+                            onClick={startCamera}
+                        >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Reintentar
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="relative rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center">
+                        {capturedImage ? (
+                            <img src={capturedImage} alt="Captura" className="w-full h-full object-cover" />
+                        ) : (
+                            <video 
+                                ref={videoRef} 
+                                autoPlay 
+                                playsInline 
+                                muted 
+                                className="w-full h-full object-cover"
+                            />
+                        )}
+                        <canvas ref={canvasRef} className="hidden" />
+                    </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                    {!capturedImage ? (
+                        <>
+                            <Button variant="outline" className="flex-1" onClick={() => {
+                                stopCamera();
+                                onCancel();
+                            }}>
+                                <X className="w-4 h-4 mr-2" />
+                                Cancelar
+                            </Button>
+                            <Button className="flex-1" onClick={capturePhoto} disabled={!stream}>
+                                <Camera className="w-4 h-4 mr-2" />
+                                Capturar
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button variant="outline" className="flex-1" onClick={retakePhoto}>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retomar
+                            </Button>
+                            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={confirmPhoto}>
+                                <Check className="w-4 h-4 mr-2" />
+                                Usar Foto
+                            </Button>
+                        </>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}

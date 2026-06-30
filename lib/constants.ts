@@ -17,6 +17,8 @@ export const ROLE_CODES = {
   EMPLOYEE: 'EMPLOYEE',
   HR: 'HR',
   AUDITOR: 'AUDITOR',
+  SISO: 'SISO',
+  MANAGER: 'MANAGER',
 } as const;
 
 /**

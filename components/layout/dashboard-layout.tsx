@@ -35,10 +35,10 @@ import {
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  userRole: string
+  userRole?: string
 }
 
-export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
+export function DashboardLayout({ children, userRole = "ADMIN" }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -64,6 +64,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
         ...baseItems,
         { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
         { icon: Users, label: "Empleados", href: "/inicio/empleados" },
+        { icon: FileText, label: "Contable y financiero v2", href: "/inicio/contable-v2" },
         { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
       ];
     }
@@ -74,6 +75,7 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
         { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
         { icon: Users, label: "Empleados", href: "/inicio/empleados" },
         { icon: FileText, label: "Nómina", href: "/inicio/nomina" },
+        { icon: FileText, label: "Contable y financiero v2", href: "/inicio/contable-v2" },
         { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
       ];
     }

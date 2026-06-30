@@ -183,7 +183,7 @@ export function EmployeeDetails({ employee, onClose, onEdit }: EmployeeDetailsPr
             <DocumentList 
               documents={documents} 
               loading={loading}
-              onDelete={fetchDocuments}
+              onDeleteSuccess={fetchDocuments}
             />
           </TabsContent>
 

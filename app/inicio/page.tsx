@@ -13,7 +13,8 @@ import {
   Settings,
   Activity,
   Briefcase,
-  Wallet2
+  Wallet2,
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 import { ROLE_CODES } from "@/lib/constants";
@@ -117,6 +118,15 @@ function getRoleModules(role: string): Module[] {
       hoverColor: "hover:bg-slate-50 hover:shadow-slate-100",
       href: "/inicio/settings",
     },
+    {
+      title: "Seguimiento Trabajador OS",
+      description: "Panel de control de autorreportes de inicio y fin de labores",
+      icon: Clock,
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50/50",
+      hoverColor: "hover:bg-yellow-50 hover:shadow-yellow-100",
+      href: "/inicio/seguimiento-os",
+    }
   ];
 
   const hrModules: Module[] = [
@@ -174,6 +184,15 @@ function getRoleModules(role: string): Module[] {
       hoverColor: "hover:bg-emerald-50 hover:shadow-emerald-100",
       href: "/inicio/nomina/prestamos",
     },
+    {
+      title: "Seguimiento Trabajador OS",
+      description: "Panel de control de autorreportes de inicio y fin de labores",
+      icon: Clock,
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50/50",
+      hoverColor: "hover:bg-yellow-50 hover:shadow-yellow-100",
+      href: "/inicio/seguimiento-os",
+    }
   ];
 
   const employeeModules: Module[] = [

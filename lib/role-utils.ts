@@ -104,7 +104,9 @@ export function getRoleColor(roleCode: string): string {
  * Get role icon initials for avatars
  * Obtener iniciales de icono de rol para avatares
  */
-export function getRoleInitials(roleCode: string): string {
+export function getRoleInitials(roleCode?: string | null): string {
+  if (!roleCode || typeof roleCode !== 'string') return "??";
+
   switch (roleCode) {
     case ROLE_CODES.ADMIN:
       return "AD"

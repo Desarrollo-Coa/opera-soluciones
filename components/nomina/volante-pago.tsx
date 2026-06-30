@@ -4,51 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Printer, Download } from "lucide-react";
 import React, { Suspense, lazy } from "react";
+import { LiquidacionFullData, LiquidacionDetalle } from "@/types/db";
 import { VolantePDF } from "./volante-pdf";
 
 // Lazy loading PDF components instead of next/dynamic to avoid Turbopack issues
 const PDFDownloadLink = lazy(() =>
     import("@react-pdf/renderer").then((mod) => ({ default: mod.PDFDownloadLink }))
 );
-
-interface VolanteDetalle {
-    id: number;
-    descripcion: string;
-    cantidad: number;
-    valor_unitario: number;
-    valor_total: number;
-    tipo: 'Devengo' | 'Deducción';
-}
-
-interface VolanteData {
-    id: number;
-    first_name: string;
-    last_name: string;
-    document_number: string;
-    document_type: string; // CC, CE, etc.
-    periodo_mes: number;
-    periodo_anio: number;
-    quincena: number;
-    cargo_nombre: string;
-    sueldo_mensual_base: number;
-    dias_trabajados: number;
-    dias_incapacidad: number;
-    horas_mes?: number;
-    work_schedule?: string;
-    neto_pagar: number;
-    total_devengado: number;
-    total_deducciones: number;
-    ibc_salud?: number;
-    bank_name?: string;
-    account_number?: string;
-    account_type?: string;
-    eps_id?: string;
-    arl_id?: string;
-    pension_fund_id?: string;
-    fecha_liquidacion: string | Date;
-    estado: string;
-    detalles: VolanteDetalle[];
-}
 
 const fmt = (n: number | string) => {
     const parts = Number(n).toFixed(2).split('.');
@@ -58,7 +20,7 @@ const fmt = (n: number | string) => {
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-export function VolantePago({ data }: { data: VolanteData }) {
+export function VolantePago({ data }: { data: LiquidacionFullData }) {
     const handlePrint = () => { window.print(); };
 
     const devengos = data.detalles.filter(d => d.tipo === 'Devengo');
