@@ -173,8 +173,26 @@ export default function SeguimientoTrabajadorOSPage() {
                             ) : reportados.length === 0 ? (
                                 <EmptyState icon={<Users className="w-12 h-12 text-gray-300" />} title="Sin registros" description="Nadie se ha reportado aún en la fecha seleccionada." />
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-                                    {reportados.map(emp => <EmpleadoCard key={emp.id} empleado={emp} onRefresh={fetchData} />)}
+                                <div className="space-y-6">
+                                    {/* Trabajando Activos */}
+                                    {reportados.filter(emp => !emp.reportes.descanso).length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-gray-500 mb-3 flex items-center"><div className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div> Trabajando ({reportados.filter(emp => !emp.reportes.descanso).length})</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
+                                                {reportados.filter(emp => !emp.reportes.descanso).map(emp => <EmpleadoCard key={emp.id} empleado={emp} onRefresh={fetchData} />)}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* En Descanso */}
+                                    {reportados.filter(emp => emp.reportes.descanso).length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-gray-500 mb-3 flex items-center"><Coffee className="w-3.5 h-3.5 text-orange-500 mr-2" /> En Descanso ({reportados.filter(emp => emp.reportes.descanso).length})</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
+                                                {reportados.filter(emp => emp.reportes.descanso).map(emp => <EmpleadoCard key={emp.id} empleado={emp} onRefresh={fetchData} />)}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </TabsContent>
@@ -276,7 +294,7 @@ function EmpleadoCard({ empleado, onRefresh }: { empleado: EmpleadoAutorreporte,
                 <Card className="overflow-hidden border border-gray-200 shadow-sm flex flex-col bg-white h-full">
                     {/* Cabecera Tipo Producto (Imagen Principal) */}
                     {tieneFoto && (
-                <div className="flex h-24 w-full bg-gray-100 overflow-hidden relative border-b border-gray-100">
+                <div className="flex h-14 w-full bg-gray-100 overflow-hidden relative border-b border-gray-100">
                     {empleado.reportes.inicio?.foto && (
                         <Dialog>
                             <DialogTrigger asChild>
