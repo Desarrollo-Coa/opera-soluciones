@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { CameraCapture } from '@/components/autorreporte/CameraCapture';
-import { loginAutorreporte, registrarAutorreporteAction, getPreguntasAutorreporteAction, verificarDisponibilidadReporteAction } from '@/actions/autorreporte-actions';
+import { loginAutorreporte, registrarAutorreporteAction, getPreguntasAutorreporteAction, verificarDisponibilidadReporteAction, getDailyStatusAction } from '@/actions/autorreporte-actions';
 import { TipoAutorreporte } from '@/types/autorreporte';
 import { LogIn, LogOut, Coffee, Camera, RefreshCw, ChevronRight, ShieldCheck, UserCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -21,6 +21,7 @@ export default function AutorreportePage() {
     
     // Estado de sesión
     const [user, setUser] = useState<{ id: number; first_name: string; last_name: string } | null>(null);
+    const [dailyStatus, setDailyStatus] = useState<{ hasInicio: boolean; hasDescanso: boolean; hasFin: boolean } | null>(null);
     
     // Estado de flujo
     const [activeAction, setActiveAction] = useState<TipoAutorreporte | null>(null);
@@ -33,7 +34,7 @@ export default function AutorreportePage() {
 
     // Cargar sesión persistente al montar
     useEffect(() => {
-        const storedUser = localStorage.getItem('kiosko_user');
+        const storedUser = localStorage.getItem('app_user');
         if (storedUser) {
             try {
                 const parsedUser = JSON.parse(storedUser);
@@ -44,8 +45,12 @@ export default function AutorreportePage() {
                         setPreguntas(res.data);
                     }
                 });
+                // Cargar también el estado del día
+                getDailyStatusAction(parsedUser.id).then(res => {
+                    if (res.success) setDailyStatus(res);
+                });
             } catch (e) {
-                localStorage.removeItem('kiosko_user');
+                localStorage.removeItem('app_user');
             }
         }
     }, []);
@@ -60,11 +65,16 @@ export default function AutorreportePage() {
                 setSuccessMessage(null);
                 
                 // Guardar en local para evitar pérdida por recarga
-                localStorage.setItem('kiosko_user', JSON.stringify(result.user));
+                localStorage.setItem('app_user', JSON.stringify(result.user));
 
                 const resPreguntas = await getPreguntasAutorreporteAction();
                 if (resPreguntas.success && resPreguntas.data) {
                     setPreguntas(resPreguntas.data);
+                }
+                
+                const statusRes = await getDailyStatusAction(result.user.id);
+                if (statusRes.success) {
+                    setDailyStatus(statusRes);
                 }
             } else {
                 toast.error("Acceso denegado", { description: result.message });
@@ -128,7 +138,8 @@ export default function AutorreportePage() {
         setSuccessMessage(null);
         setRespuestas({});
         setStep('ACTIONS');
-        localStorage.removeItem('kiosko_user');
+        setDailyStatus(null);
+        localStorage.removeItem('app_user');
     };
 
     const iniciarAccion = async (tipo: TipoAutorreporte) => {
@@ -275,8 +286,8 @@ export default function AutorreportePage() {
 
     // VISTA PRINCIPAL (LOGIN O ACCIONES)
     return (
-        <div className="min-h-screen bg-[#f0f4f9] flex items-center justify-center p-4 font-sans selection:bg-blue-100 selection:text-blue-900">
-            <div className="w-full max-w-[440px] bg-white rounded-[28px] p-10 shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-[#dadce0]/50 relative overflow-hidden">
+        <div className="min-h-[100dvh] bg-white flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+            <div className="w-full max-w-md mx-auto p-6 pt-12 flex flex-col flex-1 relative">
                 
                 {/* Logo & Header */}
                 <div className="flex flex-col items-center mb-10 text-center">
@@ -356,55 +367,72 @@ export default function AutorreportePage() {
                                 </Button>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 gap-4">
-                                <button 
-                                    onClick={() => iniciarAccion('INICIO')}
-                                    className="group flex items-center justify-between p-5 bg-white border border-[#dadce0] hover:border-[#1a73e8] rounded-[20px] transition-all hover:shadow-md text-left"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-[#e8f0fe] text-[#1a73e8] flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <Camera className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-[#202124] font-medium text-[17px]">Inicio de Labores</h3>
-                                            <p className="text-[#5f6368] text-sm mt-0.5">Reportar entrada con foto</p>
-                                        </div>
+                            <div className="grid grid-cols-1 gap-3">
+                                {dailyStatus?.hasFin || dailyStatus?.hasDescanso ? (
+                                    <div className="bg-[#f8f9fa] text-center p-6 rounded-2xl border border-[#dadce0]/50 text-[#5f6368]">
+                                        <p className="font-medium text-lg text-[#202124]">
+                                            {dailyStatus.hasDescanso ? "Día de Descanso" : "Jornada Finalizada"}
+                                        </p>
+                                        <p className="text-sm mt-1">Ya no tienes más acciones disponibles por hoy.</p>
                                     </div>
-                                    <ChevronRight className="w-5 h-5 text-[#5f6368] group-hover:text-[#1a73e8]" />
-                                </button>
-                                
-                                <button 
-                                    onClick={() => iniciarAccion('DESCANSO')}
-                                    disabled={isLoading}
-                                    className="group flex items-center justify-between p-5 bg-white border border-[#dadce0] hover:border-[#f28b82] rounded-[20px] transition-all hover:shadow-md text-left disabled:opacity-50"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-[#fce8e6] text-[#d93025] flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <Coffee className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-[#202124] font-medium text-[17px]">Descanso</h3>
-                                            <p className="text-[#5f6368] text-sm mt-0.5">Pausa activa o almuerzo</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-[#5f6368] group-hover:text-[#d93025]" />
-                                </button>
+                                ) : (
+                                    <>
+                                        {!dailyStatus?.hasInicio && (
+                                            <button 
+                                                onClick={() => iniciarAccion('INICIO')}
+                                                className="group flex items-center justify-between p-4 bg-white border border-[#dadce0] hover:border-[#1a73e8] rounded-2xl transition-all active:bg-gray-50 text-left"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full bg-[#e8f0fe] text-[#1a73e8] flex items-center justify-center">
+                                                        <Camera className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-[#202124] font-medium text-[17px]">Inicio de Labores</h3>
+                                                        <p className="text-[#5f6368] text-sm mt-0.5">Reportar entrada con foto</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-5 h-5 text-[#5f6368] group-hover:text-[#1a73e8]" />
+                                            </button>
+                                        )}
+                                        
+                                        {!dailyStatus?.hasInicio && (
+                                            <button 
+                                                onClick={() => iniciarAccion('DESCANSO')}
+                                                disabled={isLoading}
+                                                className="group flex items-center justify-between p-4 bg-white border border-[#dadce0] hover:border-[#f28b82] rounded-2xl transition-all active:bg-gray-50 text-left disabled:opacity-50"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full bg-[#fce8e6] text-[#d93025] flex items-center justify-center">
+                                                        <Coffee className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-[#202124] font-medium text-[17px]">Descanso</h3>
+                                                        <p className="text-[#5f6368] text-sm mt-0.5">Día libre o en casa</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-5 h-5 text-[#5f6368] group-hover:text-[#d93025]" />
+                                            </button>
+                                        )}
 
-                                <button 
-                                    onClick={() => iniciarAccion('FIN')}
-                                    className="group flex items-center justify-between p-5 bg-white border border-[#dadce0] hover:border-[#5f6368] rounded-[20px] transition-all hover:shadow-md text-left"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-[#f1f3f4] text-[#5f6368] flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <LogOut className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-[#202124] font-medium text-[17px]">Fin de Labores</h3>
-                                            <p className="text-[#5f6368] text-sm mt-0.5">Reportar salida con foto</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-[#5f6368]" />
-                                </button>
+                                        {dailyStatus?.hasInicio && !dailyStatus?.hasFin && (
+                                            <button 
+                                                onClick={() => iniciarAccion('FIN')}
+                                                className="group flex items-center justify-between p-4 bg-white border border-[#dadce0] hover:border-[#5f6368] rounded-2xl transition-all active:bg-gray-50 text-left"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full bg-[#f1f3f4] text-[#5f6368] flex items-center justify-center">
+                                                        <LogOut className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-[#202124] font-medium text-[17px]">Fin de Labores</h3>
+                                                        <p className="text-[#5f6368] text-sm mt-0.5">Reportar salida con foto</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-5 h-5 text-[#5f6368]" />
+                                            </button>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

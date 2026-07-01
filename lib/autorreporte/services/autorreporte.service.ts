@@ -92,11 +92,10 @@ export class AutorreporteService {
                 FROM OS_USUARIOS u
                 JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK
                 WHERE u.US_ACTIVO = 1 
-                   OR EXISTS (SELECT 1 FROM OS_AUTORREPORTES WHERE US_IDUSUARIO_FK = u.US_IDUSUARIO_PK AND AR_FECHA_REGISTRO = ? AND AR_ACTIVO = 1)
-                   OR EXISTS (SELECT 1 FROM OS_AUSENCIAS WHERE US_IDUSUARIO_FK = u.US_IDUSUARIO_PK AND ? BETWEEN AU_FECHA_INICIO AND AU_FECHA_FIN AND AU_ACTIVO = 1)
+                  AND ur.RO_NOMBRE != 'ADMINISTRADOR'
             `;
 
-            const rows = await executeQuery(query, [fecha, fecha, fecha, fecha, fecha, fecha]) as RowDataPacket[];
+            const rows = await executeQuery(query, [fecha, fecha, fecha, fecha]) as RowDataPacket[];
 
             const resultados: EmpleadoAutorreporte[] = rows.map((row: any) => {
                 const emp: EmpleadoAutorreporte = {

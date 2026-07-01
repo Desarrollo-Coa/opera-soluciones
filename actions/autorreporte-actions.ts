@@ -51,7 +51,7 @@ export async function registrarAutorreporteAction(
     try {
         let fotoUrl: string | null = null;
 
-        if (fotoBase64 && (tipo === 'INICIO' || tipo === 'FIN')) {
+        if (fotoBase64) {
             // Convert base64 to buffer
             const base64Data = fotoBase64.replace(/^data:image\/\w+;base64,/, '');
             const buffer = Buffer.from(base64Data, 'base64');
@@ -143,5 +143,28 @@ export async function verificarDisponibilidadReporteAction(userId: number, tipo:
     } catch (error) {
         console.error('[Autorreporte Actions] Error validando disponibilidad:', error);
         return { disponible: false, message: 'Error de validación.' };
+    }
+}
+
+export async function getDailyStatusAction(userId: number) {
+    try {
+        const tzOffset = -5 * 60;
+        const localDate = new Date(Date.now() + tzOffset * 60 * 1000);
+        const fechaRegistro = localDate.toISOString().split('T')[0];
+
+        const query = `SELECT AR_TIPO FROM OS_AUTORREPORTES WHERE US_IDUSUARIO_FK = ? AND AR_FECHA_REGISTRO = ? AND AR_ACTIVO = 1`;
+        const rows = await executeQuery(query, [userId, fechaRegistro]) as RowDataPacket[];
+
+        const tipos = rows.map(r => r.AR_TIPO);
+        
+        return { 
+            success: true, 
+            hasInicio: tipos.includes('INICIO'),
+            hasDescanso: tipos.includes('DESCANSO'),
+            hasFin: tipos.includes('FIN')
+        };
+    } catch (error) {
+        console.error('[Autorreporte Actions] Error obteniendo estado diario:', error);
+        return { success: false, hasInicio: false, hasDescanso: false, hasFin: false };
     }
 }
