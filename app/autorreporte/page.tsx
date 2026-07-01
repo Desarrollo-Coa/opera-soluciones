@@ -258,14 +258,13 @@ export default function AutorreportePage() {
     // VISTA DE CÁMARA
     if ((activeAction === 'INICIO' || activeAction === 'FIN') && step === 'CAMERA') {
         return (
-            <div className="min-h-screen bg-black/95 flex flex-col items-center justify-center p-0 sm:p-6 font-sans">
-                <div className="w-full max-w-md w-full bg-black sm:bg-[#202124] sm:rounded-[32px] sm:shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-auto border sm:border-white/10">
-                    <div className="p-6 text-center z-10 bg-gradient-to-b from-black/80 to-transparent">
-                        <h2 className="text-white text-xl font-medium tracking-wide">Sonríe a la cámara</h2>
-                        <p className="text-white/60 text-sm mt-1">{user?.first_name} {user?.last_name}</p>
+            <div className="min-h-[100dvh] bg-black flex flex-col font-sans">
+                <div className="w-full h-full flex flex-col flex-grow relative">
+                    <div className="absolute top-0 left-0 w-full p-4 z-10 bg-gradient-to-b from-black/80 to-transparent">
+                        <p className="text-white/80 text-sm font-medium">{user?.first_name} {user?.last_name}</p>
                     </div>
                     
-                    <div className="flex-grow flex items-center justify-center relative bg-black">
+                    <div className="flex-grow flex items-center justify-center relative bg-black h-full">
                         <CameraCapture 
                             title=""
                             onCancel={() => setStep('FORM')}

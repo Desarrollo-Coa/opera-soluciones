@@ -24,7 +24,11 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
         setError(null);
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user' }, // Front camera preferred
+                video: { 
+                    facingMode: 'user', // Front camera preferred
+                    width: { ideal: 720 },
+                    height: { ideal: 1280 }
+                }, 
                 audio: false
             });
             setStream(mediaStream);
@@ -96,12 +100,8 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
     };
 
     return (
-        <Card className="w-full max-w-md mx-auto">
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>Asegúrate de tener buena iluminación</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <div className="w-full max-w-md mx-auto flex flex-col h-full bg-black">
+            <div className="flex-1 space-y-0 flex flex-col">
                 {error ? (
                     <div className="p-4 bg-red-50 text-red-600 rounded-md text-sm">
                         {error}
@@ -115,7 +115,7 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
                         </Button>
                     </div>
                 ) : (
-                    <div className="relative rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center">
+                    <div className="relative w-full h-full flex-1 flex items-center justify-center bg-black overflow-hidden">
                         {capturedImage ? (
                             <img src={capturedImage} alt="Captura" className="w-full h-full object-cover" />
                         ) : (
@@ -124,14 +124,14 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
                                 autoPlay 
                                 playsInline 
                                 muted 
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover scale-x-[-1]"
                             />
                         )}
                         <canvas ref={canvasRef} className="hidden" />
                     </div>
                 )}
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 p-4 bg-black/90 pb-8">
                     {!capturedImage ? (
                         <>
                             <Button variant="outline" className="flex-1" onClick={() => {
@@ -159,7 +159,7 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
                         </>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }
