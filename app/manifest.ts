@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'SGI Opera Soluciones',
     short_name: 'SGI App',
     description: 'Sistema de Gestión Integral - App de Autorreporte y Seguimiento',
-    start_url: '/',
+    start_url: '/autorreporte',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#1a73e8',
