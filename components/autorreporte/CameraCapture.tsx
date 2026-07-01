@@ -64,7 +64,7 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
 
         if (!context) return;
 
-        // Configurar canvas al tamaño real del video
+        // Configurar canvas al tamaño real del video (lo que dé el celular nativamente)
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
 
@@ -124,7 +124,7 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
                                 autoPlay 
                                 playsInline 
                                 muted 
-                                className="w-full h-full object-cover scale-x-[-1]"
+                                className="w-full h-full object-cover"
                             />
                         )}
                         <canvas ref={canvasRef} className="hidden" />
