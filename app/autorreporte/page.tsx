@@ -264,12 +264,14 @@ export default function AutorreportePage() {
                         <p className="text-white/80 text-sm font-medium">{user?.first_name} {user?.last_name}</p>
                     </div>
                     
-                    <div className="flex-grow flex items-center justify-center relative bg-black h-full">
-                        <CameraCapture 
-                            title=""
-                            onCancel={() => setStep('FORM')}
-                            onCapture={(base64) => handleReport(activeAction, base64)}
-                        />
+                    <div className="flex-grow flex relative bg-black w-full h-full">
+                        <div className="absolute inset-0">
+                            <CameraCapture 
+                                title=""
+                                onCancel={() => setStep('FORM')}
+                                onCapture={(base64) => handleReport(activeAction, base64)}
+                            />
+                        </div>
                     </div>
                     
                     {isLoading && (

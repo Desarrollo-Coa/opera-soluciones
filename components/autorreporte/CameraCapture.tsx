@@ -63,12 +63,32 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
 
         if (!context) return;
 
-        // Configurar canvas al tamaño real del video (lo que dé el celular nativamente)
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        // Definir relación de aspecto vertical para celulares (ej. 3:4 o 9:16)
+        const targetAspectRatio = 3 / 4; 
+        
+        let cropX = 0;
+        let cropY = 0;
+        let cropWidth = video.videoWidth;
+        let cropHeight = video.videoHeight;
 
-        // Dibujar el frame actual
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const videoAspectRatio = video.videoWidth / video.videoHeight;
+
+        if (videoAspectRatio > targetAspectRatio) {
+            cropWidth = video.videoHeight * targetAspectRatio;
+            cropX = (video.videoWidth - cropWidth) / 2;
+        } else {
+            cropHeight = video.videoWidth / targetAspectRatio;
+            cropY = (video.videoHeight - cropHeight) / 2;
+        }
+
+        canvas.width = cropWidth;
+        canvas.height = cropHeight;
+
+        // Dibujar el frame recortado
+        // Invertir el contexto horizontalmente para que la FOTO también quede como espejo si el usuario lo desea.
+        // Pero para el autorreporte es mejor que el texto sea legible, así que no invertiremos el canvas, 
+        // solo recortaremos para que sea vertical.
+        context.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
 
         // Añadir marca de agua
         const textDate = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
@@ -123,7 +143,7 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
                                 autoPlay 
                                 playsInline 
                                 muted 
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover scale-x-[-1]"
                             />
                         )}
                         <canvas ref={canvasRef} className="hidden" />
