@@ -25,9 +25,8 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: { 
-                    facingMode: 'user', // Front camera preferred
-                    width: { ideal: 720 },
-                    height: { ideal: 1280 }
+                    facingMode: 'user',
+                    aspectRatio: { ideal: 0.5625 } // 9:16 (vertical)
                 }, 
                 audio: false
             });
