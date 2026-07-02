@@ -30,12 +30,28 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
                 const context = canvas.getContext('2d');
                 if (!context) return;
 
-                // Mantener las dimensiones originales de la foto
-                canvas.width = img.width;
-                canvas.height = img.height;
+                // Optimización: Redimensionar si la imagen es muy grande
+                const MAX_SIZE = 1280;
+                let width = img.width;
+                let height = img.height;
 
-                // Dibujar la foto
-                context.drawImage(img, 0, 0, canvas.width, canvas.height);
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height = Math.round(height * (MAX_SIZE / width));
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width = Math.round(width * (MAX_SIZE / height));
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                // Dibujar la foto redimensionada
+                context.drawImage(img, 0, 0, width, height);
 
                 // Añadir marca de agua con tamaño proporcional a la foto (para que se lea bien en alta resolución)
                 const textDate = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
@@ -52,7 +68,8 @@ export function CameraCapture({ onCapture, onCancel, title = "Tomar Fotografía"
                 context.textBaseline = "middle";
                 context.fillText(textDate, 20, canvas.height - (bannerHeight / 2));
 
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                // Guardar con calidad reducida para optimizar peso (75%)
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
                 setCapturedImage(dataUrl);
             };
             img.src = event.target?.result as string;

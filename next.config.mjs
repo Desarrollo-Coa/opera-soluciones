@@ -13,6 +13,9 @@ const nextConfig = {
   // Configuración para archivos estáticos
   trailingSlash: false,
   assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  serverActions: {
+    bodySizeLimit: '10mb',
+  },
 }
 
 export default nextConfig
