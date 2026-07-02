@@ -175,4 +175,120 @@ export class AutorreporteService {
             throw new Error('Error al eliminar el autorreporte');
         }
     }
+
+    /**
+     * Obtiene una matriz mensual del estado de cada trabajador para un mes y año específicos
+     */
+    static async obtenerSeguimientoMensual(year: number, month: number) {
+        try {
+            const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+            // Último día del mes
+            const endDateObj = new Date(year, month, 0);
+            const endDate = format(endDateObj, 'yyyy-MM-dd');
+            const totalDays = endDateObj.getDate();
+
+            // 1. Obtener todos los trabajadores activos
+            const usersQuery = `
+                SELECT 
+                    u.US_IDUSUARIO_PK as id, 
+                    u.US_NOMBRE as first_name, 
+                    u.US_APELLIDO as last_name, 
+                    u.US_NUMERO_DOCUMENTO as document_number
+                FROM OS_USUARIOS u
+                JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK
+                WHERE u.US_ACTIVO = 1 AND ur.RO_NOMBRE != 'ADMINISTRADOR'
+                ORDER BY u.US_NOMBRE ASC
+            `;
+            const users = await executeQuery(usersQuery) as RowDataPacket[];
+
+            // 2. Obtener reportes del mes
+            const reportsQuery = `
+                SELECT 
+                    US_IDUSUARIO_FK as userId,
+                    AR_TIPO as tipo,
+                    AR_FECHA_REGISTRO as fechaRegistro
+                FROM OS_AUTORREPORTES
+                WHERE AR_ACTIVO = 1 
+                  AND AR_FECHA_REGISTRO >= ? 
+                  AND AR_FECHA_REGISTRO <= ?
+            `;
+            const reports = await executeQuery(reportsQuery, [startDate, endDate]) as RowDataPacket[];
+
+            // 3. Obtener ausencias que se cruzan con el mes
+            const absencesQuery = `
+                SELECT 
+                    a.US_IDUSUARIO_FK as userId,
+                    a.AU_FECHA_INICIO as fechaInicio,
+                    a.AU_FECHA_FIN as fechaFin,
+                    ta.TA_NOMBRE as tipoNombre
+                FROM OS_AUSENCIAS a
+                JOIN OS_TIPOS_AUSENCIA ta ON a.TA_IDTIPO_AUSENCIA_FK = ta.TA_IDTIPO_AUSENCIA_PK
+                WHERE a.AU_ACTIVO = 1
+                  AND a.AU_FECHA_INICIO <= ?
+                  AND a.AU_FECHA_FIN >= ?
+            `;
+            // Intersección: inicio de ausencia <= fin_de_mes Y fin_de_ausencia >= inicio_de_mes
+            const absences = await executeQuery(absencesQuery, [endDate, startDate]) as RowDataPacket[];
+
+            // Estructurar los resultados
+            const resultados = users.map((u: any) => {
+                const empleadoMensual: any = {
+                    id: u.id,
+                    first_name: u.first_name,
+                    last_name: u.last_name,
+                    document_number: u.document_number,
+                    dias: {}
+                };
+
+                for (let day = 1; day <= totalDays; day++) {
+                    const currentDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    
+                    empleadoMensual.dias[day] = {
+                        estado: 'VACIO',
+                        fecha: currentDate
+                    };
+
+                    // Chequear ausencias primero
+                    const userAbsence = absences.find(a => 
+                        a.userId === u.id && 
+                        format(new Date(a.fechaInicio), 'yyyy-MM-dd') <= currentDate && 
+                        format(new Date(a.fechaFin), 'yyyy-MM-dd') >= currentDate
+                    );
+
+                    if (userAbsence) {
+                        empleadoMensual.dias[day].estado = 'AUSENCIA';
+                        empleadoMensual.dias[day].ausenciaInfo = userAbsence.tipoNombre;
+                        continue; // Si tiene ausencia registrada, es prioridad
+                    }
+
+                    // Chequear reportes
+                    const dayReports = reports.filter(r => 
+                        r.userId === u.id && 
+                        format(new Date(r.fechaRegistro), 'yyyy-MM-dd') === currentDate
+                    );
+
+                    if (dayReports.length > 0) {
+                        const hasInicio = dayReports.some(r => r.tipo === 'INICIO');
+                        const hasFin = dayReports.some(r => r.tipo === 'FIN');
+                        const hasDescanso = dayReports.some(r => r.tipo === 'DESCANSO');
+
+                        if (hasDescanso) {
+                            empleadoMensual.dias[day].estado = 'DESCANSO';
+                        } else if (hasInicio && hasFin) {
+                            empleadoMensual.dias[day].estado = 'COMPLETO';
+                        } else if (hasInicio) {
+                            empleadoMensual.dias[day].estado = 'INICIO_SOLO';
+                        }
+                    }
+                }
+
+                return empleadoMensual;
+            });
+
+            return resultados;
+        } catch (error) {
+            console.error('[AutorreporteService] Error al obtener seguimiento mensual:', error);
+            throw new Error(ERROR_MESSAGES.DATABASE_ERROR);
+        }
+    }
 }

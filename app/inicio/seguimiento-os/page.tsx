@@ -12,10 +12,11 @@ import { getReporteCompletoPDFAction } from '@/actions/reportes-pdf-actions';
 import { generarReportePDF } from '@/lib/pdf/generador-reporte';
 import MapaDistribucion from './components/MapaDistribucion';
 import { EmpleadoAutorreporte } from '@/types/autorreporte';
+import { CalendarView } from '@/components/autorreporte/CalendarView';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import { Search, MapPin, Coffee, CheckCircle, Clock, Image as ImageIcon, Users, Trash2, Download } from 'lucide-react';
+import { Search, MapPin, Coffee, CheckCircle, Clock, Image as ImageIcon, Users, Trash2, Download, LayoutGrid, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SeguimientoTrabajadorOSPage() {
@@ -24,6 +25,9 @@ export default function SeguimientoTrabajadorOSPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('calendar');
+    const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+    const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth() + 1);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -107,20 +111,48 @@ export default function SeguimientoTrabajadorOSPage() {
                 </div>
             </div>
 
-            <div className="relative flex items-center max-w-md w-full">
-                <Search className="absolute left-3 w-5 h-5 text-gray-400" />
-                <Input 
-                    placeholder="Buscar empleado por nombre o número de documento..." 
-                    className="pl-10 h-11 bg-white shadow-sm border-gray-200 text-base"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-2">
+                <div className="relative flex items-center max-w-md w-full">
+                    <Search className="absolute left-3 w-5 h-5 text-gray-400" />
+                    <Input 
+                        placeholder="Buscar empleado..." 
+                        className="pl-10 h-10 bg-white shadow-sm border-gray-200 text-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                
+                <div className="bg-gray-100 p-1 rounded-lg flex items-center shadow-inner border border-gray-200">
+                    <button 
+                        onClick={() => setViewMode('cards')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md flex items-center transition-all ${viewMode === 'cards' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <LayoutGrid className="w-4 h-4 mr-2" />
+                        Tarjetas
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('calendar')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md flex items-center transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <CalendarDays className="w-4 h-4 mr-2" />
+                        Matriz Mensual
+                    </button>
+                </div>
             </div>
 
-            {/* Layout Principal: Pestañas + Tarjetas (Izquierda) y Mapa (Derecha) */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-                
-                {/* Columna Izquierda: Navegación y Tarjetas */}
+            {viewMode === 'calendar' ? (
+                <div className="mt-6 flex flex-col gap-6 animate-in fade-in duration-300">
+                    <CalendarView 
+                        year={calendarYear} 
+                        month={calendarMonth} 
+                        setYear={setCalendarYear} 
+                        setMonth={setCalendarMonth} 
+                        renderEmpleadoCard={(emp, refresh, isModal) => <EmpleadoCard empleado={emp} onRefresh={refresh} isModal={isModal} />}
+                    />
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6 animate-in fade-in zoom-in-95 duration-300">
+                    {/* Columna Izquierda: Navegación y Tarjetas */}
                 <div className="xl:col-span-2">
                     <Tabs defaultValue="pendientes" className="w-full">
                         <TabsList className="flex w-full md:w-fit bg-transparent h-auto p-0 border-b border-gray-200">
@@ -221,6 +253,7 @@ export default function SeguimientoTrabajadorOSPage() {
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 }
@@ -246,7 +279,7 @@ function EmptyState({ icon, title, description }: { icon: React.ReactNode, title
     )
 }
 
-function EmpleadoCard({ empleado, onRefresh }: { empleado: EmpleadoAutorreporte, onRefresh: () => void }) {
+function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: EmpleadoAutorreporte, onRefresh: () => void, isModal?: boolean }) {
     const handleDelete = async (id: number) => {
         if (!window.confirm("¿Está seguro de eliminar este reporte de forma permanente?")) return;
         try {
@@ -294,7 +327,7 @@ function EmpleadoCard({ empleado, onRefresh }: { empleado: EmpleadoAutorreporte,
                 <Card className="overflow-hidden border border-gray-200 shadow-sm flex flex-col bg-white h-full">
                     {/* Cabecera Tipo Producto (Imagen Principal) */}
                     {tieneFoto && (
-                <div className="flex h-14 w-full bg-gray-100 overflow-hidden relative border-b border-gray-100">
+                <div className={`flex ${isModal ? 'h-[300px]' : 'h-14'} w-full bg-gray-100 overflow-hidden relative border-b border-gray-100`}>
                     {empleado.reportes.inicio?.foto && (
                         <Dialog>
                             <DialogTrigger asChild>

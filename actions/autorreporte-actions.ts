@@ -86,6 +86,16 @@ export async function getSeguimientoDiarioAction(fecha: string) {
     }
 }
 
+export async function getSeguimientoMensualAction(year: number, month: number) {
+    try {
+        const data = await AutorreporteService.obtenerSeguimientoMensual(year, month);
+        return { success: true, data };
+    } catch (error) {
+        console.error('[Autorreporte Actions] Error al obtener seguimiento mensual:', error);
+        return { success: false, message: 'Error al obtener datos mensuales' };
+    }
+}
+
 export async function eliminarAutorreporteAction(idReporte: number) {
     try {
         const fotoUrl = await AutorreporteService.eliminarReporte(idReporte);

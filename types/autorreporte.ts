@@ -47,3 +47,17 @@ export interface AutorreporteDashboardData {
         totalAusencias: number;
     };
 }
+
+export interface SeguimientoMensualDia {
+    estado: 'COMPLETO' | 'INICIO_SOLO' | 'DESCANSO' | 'AUSENCIA' | 'VACIO';
+    fecha: string;
+    ausenciaInfo?: string;
+}
+
+export interface EmpleadoSeguimientoMensual {
+    id: number;
+    first_name: string;
+    last_name: string;
+    document_number: string;
+    dias: Record<number, SeguimientoMensualDia>;
+}
