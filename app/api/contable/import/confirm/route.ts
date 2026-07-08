@@ -171,12 +171,12 @@ export async function POST(request: NextRequest) {
 
 function getTableName(type: string): string | null {
   const tableMapping: Record<string, string> = {
-    'gastos': 'os_gastos_mes',
-    'facturacion': 'os_facturacion',
-    'bancos': 'os_transferencias',
-    'payroll': 'os_gastos_mes',
-    'expenses': 'os_gastos_mes',
-    'transfers': 'os_transferencias'
+    'gastos': 'OS_GASTOS_MES',
+    'facturacion': 'OS_FACTURACION',
+    'bancos': 'OS_TRANSFERENCIAS',
+    'payroll': 'OS_GASTOS_MES',
+    'expenses': 'OS_GASTOS_MES',
+    'transfers': 'OS_TRANSFERENCIAS'
   }
   
   console.log('Mapping type', type, 'to table:', tableMapping[type])
@@ -185,7 +185,7 @@ function getTableName(type: string): string | null {
 
 function getColumnMapping(tableName: string): Record<string, string> {
   const mapping: Record<string, Record<string, string>> = {
-    'os_transferencias': {
+    'OS_TRANSFERENCIAS': {
       'fecha': 'TR_FECHA',
       'year': 'TR_ANIO',
       'mes': 'TR_MES',
@@ -197,7 +197,7 @@ function getColumnMapping(tableName: string): Record<string, string> {
       'created_by': 'TR_CREADO_POR',
       'created_at': 'TR_FECHA_CREACION'
     },
-    'os_gastos_mes': {
+    'OS_GASTOS_MES': {
       'fecha': 'GM_FECHA',
       'year': 'GM_ANIO',
       'mes': 'GM_MES',
@@ -216,7 +216,7 @@ function getColumnMapping(tableName: string): Record<string, string> {
       'created_by': 'GM_CREADO_POR',
       'created_at': 'GM_FECHA_CREACION'
     },
-    'os_facturacion': {
+    'OS_FACTURACION': {
       'fecha': 'FA_FECHA',
       'year': 'FA_ANIO',
       'mes': 'FA_MES',
