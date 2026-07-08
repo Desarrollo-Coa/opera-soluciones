@@ -401,7 +401,7 @@ function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: Empl
                                                     <MapPin className="w-3 h-3" />
                                                 </a>
                                             )}
-                                            <span className="text-emerald-700 font-bold">{format(new Date(empleado.reportes.inicio.hora), 'HH:mm', { locale: es })}</span>
+                                            <span className="text-emerald-700 font-bold">{empleado.reportes.inicio.hora.substring(11, 16)}</span>
                                         </div>
                                     </div>
                                 </ContextMenuTrigger>
@@ -427,7 +427,7 @@ function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: Empl
                                                     <MapPin className="w-3 h-3" />
                                                 </a>
                                             )}
-                                            <span className="text-orange-700 font-bold">{format(new Date(empleado.reportes.descanso.hora), 'HH:mm', { locale: es })}</span>
+                                            <span className="text-orange-700 font-bold">{empleado.reportes.descanso.hora.substring(11, 16)}</span>
                                         </div>
                                     </div>
                                 </ContextMenuTrigger>
@@ -453,7 +453,7 @@ function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: Empl
                                                     <MapPin className="w-3 h-3" />
                                                 </a>
                                             )}
-                                            <span className="text-blue-700 font-bold">{format(new Date(empleado.reportes.fin.hora), 'HH:mm', { locale: es })}</span>
+                                            <span className="text-blue-700 font-bold">{empleado.reportes.fin.hora.substring(11, 16)}</span>
                                         </div>
                                     </div>
                                 </ContextMenuTrigger>

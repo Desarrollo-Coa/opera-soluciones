@@ -21,10 +21,12 @@ export class AutorreporteService {
         lng?: number | null
     ): Promise<number> {
         try {
-            // Fecha local aproximada
-            const ahora = new Date();
-            const fechaRegistro = format(ahora, 'yyyy-MM-dd');
-            const fechaHora = format(ahora, 'yyyy-MM-dd HH:mm:ss');
+            // Asegurar que la hora local guardada sea siempre la de Colombia (UTC-5)
+            const nowUtc = new Date();
+            const bogotaTime = new Date(nowUtc.getTime() + (nowUtc.getTimezoneOffset() - 300) * 60000);
+            
+            const fechaRegistro = format(bogotaTime, 'yyyy-MM-dd');
+            const fechaHora = format(bogotaTime, 'yyyy-MM-dd HH:mm:ss');
 
             // Validar si ya existe el reporte hoy
             const checkQuery = `SELECT AR_IDAUTORREPORTE_PK FROM OS_AUTORREPORTES WHERE US_IDUSUARIO_FK = ? AND AR_TIPO = ? AND AR_FECHA_REGISTRO = ? AND AR_ACTIVO = 1`;
