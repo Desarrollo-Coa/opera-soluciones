@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { CameraCapture } from '@/components/autorreporte/CameraCapture';
 import { loginAutorreporte, registrarAutorreporteAction, getPreguntasAutorreporteAction, verificarDisponibilidadReporteAction, getDailyStatusAction } from '@/actions/autorreporte-actions';
 import { TipoAutorreporte } from '@/types/autorreporte';
-import { LogIn, LogOut, Coffee, Camera, RefreshCw, ChevronRight, ShieldCheck, UserCircle2 } from 'lucide-react';
+import { LogIn, LogOut, Coffee, Camera, RefreshCw, ChevronRight, ShieldCheck, UserCircle2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,7 +26,9 @@ export default function AutorreportePage() {
     // Estado de flujo
     const [activeAction, setActiveAction] = useState<TipoAutorreporte | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [step, setStep] = useState<'ACTIONS' | 'FORM' | 'CAMERA'>('ACTIONS');
+    const [step, setStep] = useState<'ACTIONS' | 'FORM' | 'CAMERA' | 'LOCATION_DENIED'>('ACTIONS');
+    const [pendingPhoto, setPendingPhoto] = useState<string | undefined>();
+    const [locationCoords, setLocationCoords] = useState<{lat: number, lng: number} | null>(null);
     
     // Estado de preguntas
     const [preguntas, setPreguntas] = useState<any[]>([]);
@@ -52,6 +54,17 @@ export default function AutorreportePage() {
             } catch (e) {
                 localStorage.removeItem('app_user');
             }
+        }
+    }, []);
+
+    // Solicitar permiso de ubicación preventivamente al cargar la página
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                () => { /* Permiso concedido o ya lo tenía */ },
+                () => { /* Permiso denegado, lo manejaremos en el handleReport */ },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+            );
         }
     }, []);
 
@@ -91,22 +104,33 @@ export default function AutorreportePage() {
         setIsLoading(true);
 
         try {
-            let lat: number | null = null;
-            let lng: number | null = null;
+            let lat = locationCoords?.lat || null;
+            let lng = locationCoords?.lng || null;
             
-            if ('geolocation' in navigator) {
-                try {
-                    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { 
-                            enableHighAccuracy: true, 
-                            timeout: 10000, 
-                            maximumAge: 0 
+            if (!lat || !lng) {
+                if ('geolocation' in navigator) {
+                    try {
+                        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                            navigator.geolocation.getCurrentPosition(resolve, reject, { 
+                                enableHighAccuracy: true, 
+                                timeout: 10000, 
+                                maximumAge: 0 
+                            });
                         });
-                    });
-                    lat = position.coords.latitude;
-                    lng = position.coords.longitude;
-                } catch (geoError: any) {
-                    console.warn("Ubicación no disponible:", geoError.message);
+                        lat = position.coords.latitude;
+                        lng = position.coords.longitude;
+                        setLocationCoords({ lat, lng });
+                    } catch (geoError: any) {
+                        setPendingPhoto(fotoBase64);
+                        setStep('LOCATION_DENIED');
+                        setIsLoading(false);
+                        return;
+                    }
+                } else {
+                    setPendingPhoto(fotoBase64);
+                    setStep('LOCATION_DENIED');
+                    setIsLoading(false);
+                    return;
                 }
             }
 
@@ -119,6 +143,7 @@ export default function AutorreportePage() {
             if (result.success) {
                 setSuccessMessage(`¡Registro de ${tipo.toLowerCase()} exitoso!`);
                 setActiveAction(null);
+                setPendingPhoto(undefined);
                 setTimeout(() => handleLogout(), 4000);
             } else {
                 toast.error("Error", { description: result.message });
@@ -138,6 +163,7 @@ export default function AutorreportePage() {
         setSuccessMessage(null);
         setRespuestas({});
         setStep('ACTIONS');
+        setPendingPhoto(undefined);
         setDailyStatus(null);
         localStorage.removeItem('app_user');
     };
@@ -145,15 +171,45 @@ export default function AutorreportePage() {
     const iniciarAccion = async (tipo: TipoAutorreporte) => {
         if (!user) return;
         setIsLoading(true);
+        setActiveAction(tipo);
+
+        // Validar Permiso GPS ANTES de empezar el flujo (formularios/cámara)
+        let lat: number | null = null;
+        let lng: number | null = null;
+        
+        if ('geolocation' in navigator) {
+            try {
+                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { 
+                        enableHighAccuracy: true, 
+                        timeout: 10000, 
+                        maximumAge: 0 
+                    });
+                });
+                lat = position.coords.latitude;
+                lng = position.coords.longitude;
+            } catch (geoError: any) {
+                setStep('LOCATION_DENIED');
+                setIsLoading(false);
+                return;
+            }
+        } else {
+            setStep('LOCATION_DENIED');
+            setIsLoading(false);
+            return;
+        }
+
+        setLocationCoords({ lat, lng });
+
         const check = await verificarDisponibilidadReporteAction(user.id, tipo);
         setIsLoading(false);
         
         if (!check.disponible) {
             toast.error("Validación", { description: check.message });
+            setActiveAction(null);
             return;
         }
 
-        setActiveAction(tipo);
         if (tipo === 'INICIO') {
             setStep('FORM');
         } else if (tipo === 'FIN') {
@@ -179,6 +235,40 @@ export default function AutorreportePage() {
             toast.error("Completa todos los campos obligatorios para continuar.");
         }
     };
+
+    if (activeAction && step === 'LOCATION_DENIED') {
+        return (
+            <div className="min-h-screen bg-[#f0f4f9] flex flex-col items-center p-4 sm:p-8 font-sans">
+                <div className="w-full max-w-md bg-white rounded-[24px] shadow-sm border border-[#dadce0] p-8 text-center flex flex-col items-center mt-10">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <MapPin className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h2 className="text-2xl font-normal text-[#202124] mb-3">Se requiere tu ubicación</h2>
+                    <p className="text-[#5f6368] mb-6 text-sm leading-relaxed">
+                        Para completar el autorreporte de <b>{activeAction.toLowerCase()}</b>, es necesario que nos compartas tu ubicación geográfica actual.
+                        <br/><br/>
+                        Si el navegador no te preguntó o bloqueaste el permiso por error, haz clic en el <b>ícono del candado (🔒)</b> o de información (ⓘ) en la barra de direcciones superior, selecciona <b>"Permitir"</b> en la opción de Ubicación y vuelve a intentarlo.
+                    </p>
+                    <div className="flex gap-3 w-full">
+                        <Button variant="outline" className="flex-1 border-[#dadce0] text-[#5f6368] hover:bg-gray-50" onClick={() => {
+                            setStep('ACTIONS');
+                            setActiveAction(null);
+                            setPendingPhoto(undefined);
+                        }}>Cancelar</Button>
+                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => {
+                            if (pendingPhoto) {
+                                handleReport(activeAction, pendingPhoto);
+                            } else {
+                                iniciarAccion(activeAction);
+                            }
+                        }} disabled={isLoading}>
+                            {isLoading ? "Verificando..." : "Intentar de nuevo"}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // VISTA DE PREGUNTAS (ESTILO GOOGLE FORMS)
     if (activeAction === 'INICIO' && step === 'FORM') {
