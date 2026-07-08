@@ -142,6 +142,9 @@ export function CalendarView({ year, month, setYear, setMonth, renderEmpleadoCar
                                         </th>
                                     );
                                 })}
+                                <th className="px-4 py-3 min-w-[80px] sticky right-0 bg-gray-50 z-10 border-l border-gray-200 shadow-[-1px_0_0_0_#e5e7eb] text-center">
+                                    Total Días
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -177,6 +180,9 @@ export function CalendarView({ year, month, setYear, setMonth, renderEmpleadoCar
                                             </td>
                                         );
                                     })}
+                                    <td className="px-4 py-2 sticky right-0 bg-white group-hover:bg-gray-50 z-10 border-l border-gray-100 shadow-[-1px_0_0_0_#f3f4f6] text-center font-bold text-blue-600">
+                                        {Object.values(emp.dias).filter(d => ['COMPLETO', 'INICIO_SOLO', 'DESCANSO'].includes(d.estado)).length}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

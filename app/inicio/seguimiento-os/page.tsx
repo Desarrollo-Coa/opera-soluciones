@@ -312,13 +312,35 @@ function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: Empl
             const res = await registrarAutorreporteAction(empleado.id, 'DESCANSO');
             if (res.success) {
                 toast.success("Descanso registrado exitosamente");
-                onDelete();
+                onRefresh();
             } else {
                 toast.error("Error", { description: res.message });
             }
         } catch (e) {
             toast.error("Error al registrar descanso");
         }
+    };
+
+    const calcularHorasTrabajadas = () => {
+        if (!empleado.reportes?.inicio?.hora || !empleado.reportes?.fin?.hora) return null;
+        const inicio = new Date(empleado.reportes.inicio.hora);
+        const fin = new Date(empleado.reportes.fin.hora);
+        const diffMs = fin.getTime() - inicio.getTime();
+        
+        if (isNaN(diffMs) || diffMs < 0) return null;
+        
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        const hoursStr = String(hours).padStart(2, '0');
+        const minutesStr = String(minutes).padStart(2, '0');
+        
+        return (
+            <div className="mt-2 flex items-center justify-center gap-1.5 text-xs font-bold bg-blue-50 text-blue-800 py-1.5 rounded-md border border-blue-100 shadow-sm">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Horas trabajadas {hoursStr}:{minutesStr}</span>
+            </div>
+        );
     };
 
     return (
@@ -464,6 +486,8 @@ function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: Empl
                                 </ContextMenuContent>
                             </ContextMenu>
                         )}
+                        
+                        {calcularHorasTrabajadas()}
                     </div>
                 )}
                 
