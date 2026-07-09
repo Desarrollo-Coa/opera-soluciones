@@ -409,7 +409,8 @@ export default function EmployeesPage() {
                       <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[140px]">Cargo</th>
                       <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[110px]">Salario</th>
                       <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Rol</th>
-                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[130px]">Estado</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[120px]">Puesto</th>
+                      <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[130px]">Est. Contrato</th>
                       <th className="text-left p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[100px]">Activo</th>
                       <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[90px]">Días fin</th>
                       <th className="text-right p-2 sm:p-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wider border border-black w-[80px]">Acc.</th>
@@ -457,7 +458,7 @@ export default function EmployeesPage() {
                       ))
                     ) : filteredEmployees.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="text-center py-12 text-gray-500">
+                        <td colSpan={11} className="text-center py-12 text-gray-500">
                           {employees.length === 0 ? 'No hay empleados registrados' : 'No se encontraron empleados con los filtros aplicados'}
                         </td>
                       </tr>
@@ -489,6 +490,7 @@ export default function EmployeesPage() {
                               {employee.role_name}
                             </Badge>
                           </td>
+                          <td className={`p-2 text-[12px] border border-black text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis`} title={employee.puesto_name || '-'}>{employee.puesto_name || '-'}</td>
                           <td className="p-2 border border-black">
                             <Badge variant={getStatusBadgeVariant(employee.contract_status_name)} className="text-xs">
                               {employee.contract_status_name}

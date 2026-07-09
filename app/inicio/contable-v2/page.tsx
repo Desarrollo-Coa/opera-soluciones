@@ -18,10 +18,7 @@ export default async function ContableV2Page() {
             <div className="flex flex-col gap-6 p-6">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Contable y financiero v2</h1>
-                        <p className="text-muted-foreground mt-1">
-                            Administración financiera dinámica y analítica avanzada
-                        </p>
+                        <h1 className="text-3xl font-bold tracking-tight">Contable y financiero v2 Z experimental</h1>
                     </div>
                     <div>
                         <CreateModuleDialog />

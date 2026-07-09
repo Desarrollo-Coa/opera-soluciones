@@ -4,6 +4,7 @@ import { useState, useEffect, useActionState } from "react"
 import { useRouter } from "next/navigation"
 import { Employee } from "@/types/employee"
 import { CargoRow } from "@/actions/nomina/cargos-actions"
+import { Puesto } from "@/types/puestos"
 import { updateEmployeeProfileAction } from "@/actions/employees-actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,7 +13,7 @@ import { toast } from "sonner"
 import {
     ArrowLeft, FileText, Briefcase, ShieldCheck,
     CreditCard, Edit2, X, Save, User as UserIcon,
-    Receipt, PlusCircle, CheckCircle2
+    Receipt, PlusCircle, CheckCircle2, MapPin
 } from "lucide-react"
 
 // Tabs Components
@@ -22,16 +23,18 @@ import { SeguridadSocialTab } from "./profile-tabs/seguridad-social-tab"
 import { BancariaTab } from "./profile-tabs/bancaria-tab"
 import { DocumentList } from "./document-list"
 import { DocumentUpload } from "./document-upload"
+import { PuestosTab } from "./profile-tabs/puestos-tab"
 
 interface Props {
     initialEmployee: Employee;
     cargos: CargoRow[];
+    puestos: Puesto[];
     userRole: string;
 }
 
-export function EmployeeProfileClient({ initialEmployee, cargos, userRole }: Props) {
+export function EmployeeProfileClient({ initialEmployee, cargos, puestos, userRole }: Props) {
     const router = useRouter()
-    const [activeTab, setActiveTab] = useState<'personal' | 'laboral' | 'seguridad' | 'bancaria' | 'documentos' | 'volantes'>('personal')
+    const [activeTab, setActiveTab] = useState<'personal' | 'laboral' | 'seguridad' | 'bancaria' | 'documentos' | 'volantes' | 'puestos'>('personal')
     const [documents, setDocuments] = useState<any[]>([])
     const [docsLoading, setDocsLoading] = useState(true)
 
@@ -64,6 +67,7 @@ export function EmployeeProfileClient({ initialEmployee, cargos, userRole }: Pro
         { id: 'laboral', label: 'Información Laboral', icon: Briefcase, sub: 'Cargo y contratación' },
         { id: 'seguridad', label: 'Seguridad Social', icon: ShieldCheck, sub: 'EPS, ARL, Fondos' },
         { id: 'bancaria', label: 'Información de Pago', icon: CreditCard, sub: 'Cuentas y bancos' },
+        { id: 'puestos', label: 'Asignación de Puestos', icon: MapPin, sub: 'Ubicación e historial' },
         { id: 'documentos', label: 'Documentación', icon: FileText, sub: 'Archivos y soportes' },
         { id: 'volantes', label: 'Historial de Nómina', icon: Receipt, sub: 'Volantes generados' },
     ]
@@ -141,6 +145,7 @@ export function EmployeeProfileClient({ initialEmployee, cargos, userRole }: Pro
                         {activeTab === 'laboral' && <LaboralTab employee={initialEmployee} editMode={false} cargos={cargos} />}
                         {activeTab === 'seguridad' && <SeguridadSocialTab employee={initialEmployee} editMode={false} />}
                         {activeTab === 'bancaria' && <BancariaTab employee={initialEmployee} editMode={false} />}
+                        {activeTab === 'puestos' && <PuestosTab employee={initialEmployee} puestos={puestos} />}
 
                         {activeTab === 'documentos' && (
                             <div className="space-y-6">

@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Home, Users, FileText, Settings, LogOut, Shield, User, FolderOpen, CalendarDays } from "lucide-react"
+import { Home, Users, FileText, Settings, LogOut, Shield, User, FolderOpen, CalendarDays, MapPin } from "lucide-react"
 
 import {
   Sidebar,
@@ -64,7 +64,7 @@ export function DashboardLayout({ children, userRole = "ADMIN" }: DashboardLayou
         ...baseItems,
         { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
         { icon: Users, label: "Empleados", href: "/inicio/empleados" },
-        { icon: FileText, label: "Contable y financiero v2", href: "/inicio/contable-v2" },
+        { icon: FileText, label: "Contable", href: "/inicio/contable" },
         { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
       ];
     }
@@ -75,7 +75,7 @@ export function DashboardLayout({ children, userRole = "ADMIN" }: DashboardLayou
         { icon: FolderOpen, label: "SGI", href: "/inicio/sgi" },
         { icon: Users, label: "Empleados", href: "/inicio/empleados" },
         { icon: FileText, label: "Nómina", href: "/inicio/nomina" },
-        { icon: FileText, label: "Contable y financiero v2", href: "/inicio/contable-v2" },
+        { icon: FileText, label: "Contable", href: "/inicio/contable" },
         { icon: User, label: "Mi Perfil", href: "/inicio/perfil" },
       ];
     }

@@ -13,6 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   ArrowLeft,
   Save,
@@ -25,7 +27,8 @@ import {
   Loader2,
   FileText,
   Files,
-  Lock
+  Lock,
+  History
 } from "lucide-react"
 import { ProfilePictureUpload } from "@/components/ui/profile-picture-upload"
 import { UniversalSelect } from "@/components/ui/universal-select"
@@ -45,6 +48,8 @@ import {
 } from "@/actions/reference-actions"
 import { getCargosAction } from "@/actions/nomina/cargos-actions"
 import { updateEmployeeProfileAction, createEmployeeAction } from "@/actions/employees-actions"
+import { getPuestosAction, getHistorialPuestosAction } from "@/actions/puestos-actions"
+import { Puesto, HistorialPuesto } from "@/types/puestos"
 import { getGlobalLockedPeriodsAction } from "@/actions/nomina/liquidacion-actions"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -83,6 +88,10 @@ function EmployeeActionContent() {
   const [municipalities, setMunicipalities] = useState<ReferenceItem[]>([])
   const [documents, setDocuments] = useState<any[]>([])
   const [docsLoading, setDocsLoading] = useState(false)
+  const [puestosList, setPuestosList] = useState<Puesto[]>([])
+  const [isHistorialOpen, setIsHistorialOpen] = useState(false)
+  const [historialData, setHistorialData] = useState<HistorialPuesto[]>([])
+  const [historialLoading, setHistorialLoading] = useState(false)
 
   // Local Form State (for controlled inputs and picture preview)
   const [initialData, setInitialData] = useState<any>(null)
@@ -96,6 +105,10 @@ function EmployeeActionContent() {
   const [selectedARL, setSelectedARL] = useState<string>("")
   const [selectedPension, setSelectedPension] = useState<string>("")
   const [selectedCompensation, setSelectedCompensation] = useState<string>("")
+  const [selectedPuesto, setSelectedPuesto] = useState<string>("")
+  const [initialPuesto, setInitialPuesto] = useState<string>("")
+  const [puestoFechaInicio, setPuestoFechaInicio] = useState<string>(new Date().toISOString().split('T')[0])
+  const [puestoFechaFinAnterior, setPuestoFechaFinAnterior] = useState<string>(new Date().toISOString().split('T')[0])
   const [lockedByPayroll, setLockedByPayroll] = useState(false)
 
   // Server Action Hook
@@ -132,7 +145,7 @@ function EmployeeActionContent() {
         const [
           contractRes, rolesRes, epsRes, arlRes,
           pensionRes, compensationRes, modalitiesRes,
-          cargosRes, banksRes, deptosRes, lockedRes
+          cargosRes, banksRes, deptosRes, lockedRes, puestosRes
         ] = await Promise.all([
           fetch('/api/reference/contract-statuses').then(r => r.json()),
           fetch('/api/reference/roles').then(r => r.json()),
@@ -144,7 +157,8 @@ function EmployeeActionContent() {
           getCargosAction(),
           getBanksAction(),
           getDepartmentsAction(),
-          getGlobalLockedPeriodsAction()
+          getGlobalLockedPeriodsAction(),
+          getPuestosAction(true)
         ])
 
         if (lockedRes.success && lockedRes.data) {
@@ -161,6 +175,7 @@ function EmployeeActionContent() {
         if (cargosRes.success) setCargos(cargosRes.data || [])
         if (banksRes.success) setBanks(banksRes.data || [])
         if (deptosRes.success) setDepartments(deptosRes.data || [])
+        if (puestosRes.success && Array.isArray(puestosRes.data)) setPuestosList(puestosRes.data)
 
         // Load Employee Data if editing
         if (isEdit && employeeId) {
@@ -184,7 +199,12 @@ function EmployeeActionContent() {
               if (munRes.success) setMunicipalities(munRes.data || [])
             }
 
-            // Load documents
+            if (e.puesto_id) {
+              setSelectedPuesto(e.puesto_id.toString())
+              setInitialPuesto(e.puesto_id.toString())
+            }
+
+            // Fetch Docs
             setDocsLoading(true)
             const docRes = await fetch(`/api/documents?employeeId=${employeeId}`, { cache: 'no-store' }).then(r => r.json())
             setDocuments(docRes.documents || [])
@@ -487,6 +507,101 @@ function EmployeeActionContent() {
                         {userRoles.map(r => <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="puesto_id">Puesto Físico (Opcional)</Label>
+                      {isEdit && employeeId && (
+                        <Dialog open={isHistorialOpen} onOpenChange={(open) => {
+                          setIsHistorialOpen(open);
+                          if (open) {
+                            setHistorialLoading(true);
+                            getHistorialPuestosAction(parseInt(employeeId)).then(res => {
+                              if (res.success && res.data) setHistorialData(res.data);
+                              setHistorialLoading(false);
+                            });
+                          }
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button type="button" variant="ghost" size="sm" className="h-6 text-xs text-indigo-600 hover:text-indigo-800">
+                              <History className="h-3 w-3 mr-1" /> Ver Historial
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Historial de Puestos de Trabajo</DialogTitle>
+                            </DialogHeader>
+                            {historialLoading ? (
+                              <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>
+                            ) : historialData.length === 0 ? (
+                              <p className="text-center text-sm text-gray-500 p-8">No hay registros de historial para este empleado.</p>
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Puesto</TableHead>
+                                    <TableHead>Fecha Acción</TableHead>
+                                    <TableHead>Fecha Inicio</TableHead>
+                                    <TableHead>Fecha Fin</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {historialData.map((h, i) => (
+                                    <TableRow key={h.id}>
+                                      <TableCell className="font-medium">{h.puesto_nombre}</TableCell>
+                                      <TableCell>{new Date(h.fecha_asignacion).toLocaleString()}</TableCell>
+                                      <TableCell>{new Date(h.fecha_asignacion).toLocaleDateString()}</TableCell>
+                                      <TableCell>{h.fecha_fin ? new Date(h.fecha_fin).toLocaleDateString() : <span className="text-green-600 font-semibold">Actual</span>}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
+                    <UniversalSelect
+                      value={selectedPuesto}
+                      onValueChange={setSelectedPuesto}
+                      options={puestosList.map(p => ({ id: p.id, code: p.id.toString(), name: p.nombre }))}
+                      placeholder="Seleccionar Puesto (con buscador)..."
+                    />
+                    <input type="hidden" name="puesto_id" value={selectedPuesto} />
+                    
+                    {selectedPuesto !== initialPuesto && (
+                      <div className="flex flex-col gap-4 mt-4 p-4 bg-slate-50 border rounded-lg">
+                        {initialPuesto && initialPuesto !== "" && (
+                          <div className="space-y-2">
+                            <Label htmlFor="puesto_fecha_fin_anterior" className="text-xs font-semibold text-slate-600">
+                              Fecha Fin (Puesto Anterior)
+                            </Label>
+                            <Input
+                              id="puesto_fecha_fin_anterior"
+                              name="puesto_fecha_fin_anterior"
+                              type="date"
+                              value={puestoFechaFinAnterior}
+                              onChange={(e) => setPuestoFechaFinAnterior(e.target.value)}
+                              className="h-9"
+                            />
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <Label htmlFor="puesto_fecha_inicio" className="text-xs font-semibold text-slate-600">
+                            Fecha Inicio (Nuevo Puesto)
+                          </Label>
+                          <Input
+                            id="puesto_fecha_inicio"
+                            name="puesto_fecha_inicio"
+                            type="date"
+                            value={puestoFechaInicio}
+                            onChange={(e) => setPuestoFechaInicio(e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

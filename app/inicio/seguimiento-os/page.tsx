@@ -388,6 +388,12 @@ function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: Empl
                             <span className="text-[9px] uppercase font-bold text-gray-400 mr-1.5">{empleado.document_type}</span>
                             {empleado.document_number}
                         </div>
+                        {empleado.puesto_name && (
+                            <div className="flex items-center gap-1 mt-1 text-[10px] text-indigo-600 bg-indigo-50 w-fit px-1.5 py-0.5 rounded border border-indigo-100">
+                                <MapPin className="w-3 h-3" />
+                                <span className="font-semibold">{empleado.puesto_name}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

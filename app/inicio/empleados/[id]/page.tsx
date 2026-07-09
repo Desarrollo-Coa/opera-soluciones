@@ -2,6 +2,7 @@ import { pool } from "@/lib/db";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { EmployeeProfileClient } from "@/components/employees/employee-profile-client";
 import { getCargosAction } from "@/actions/nomina/cargos-actions";
+import { getPuestosAction } from "@/actions/puestos-actions";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Employee } from "@/types/employee";
@@ -60,15 +61,18 @@ export default async function EmployeeDetailsPage({ params }: PageProps) {
       u.RO_IDROL_FK as role_id,
       u.CA_IDCARGO_FK as cargo_id,
       u.EC_IDESTADO_CONTRATO_FK as contract_status_id,
+      u.PU_IDPUESTO_FK as puesto_id,
       u.US_FECHA_CONTRATACION as hire_date,
       u.US_FECHA_RETIRO as termination_date,
       ur.RO_NOMBRE as role_name, 
       cs.EC_NOMBRE as contract_status_name, 
-      c.CA_NOMBRE as cargo_name 
+      c.CA_NOMBRE as cargo_name,
+      p.PU_NOMBRE as puesto_name
      FROM OS_USUARIOS u 
      LEFT JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK 
      LEFT JOIN OS_ESTADOS_CONTRATO cs ON u.EC_IDESTADO_CONTRATO_FK = cs.EC_IDESTADO_CONTRATO_PK 
      LEFT JOIN OS_CARGOS c ON u.CA_IDCARGO_FK = c.CA_IDCARGO_PK
+     LEFT JOIN OS_PUESTOS p ON u.PU_IDPUESTO_FK = p.PU_IDPUESTO_PK
      WHERE u.US_IDUSUARIO_PK = ?`,
     [employeeId]
   );
@@ -83,11 +87,16 @@ export default async function EmployeeDetailsPage({ params }: PageProps) {
   const cargosRes = await getCargosAction();
   const cargos = cargosRes.success ? cargosRes.data || [] : [];
 
+  // Fetch Puestos for the selector
+  const puestosRes = await getPuestosAction(true); // Solo activos
+  const puestos = puestosRes.success && Array.isArray(puestosRes.data) ? puestosRes.data : [];
+
   return (
     <DashboardLayout userRole={userRole}>
       <EmployeeProfileClient
         initialEmployee={employee}
         cargos={cargos}
+        puestos={puestos}
         userRole={userRole}
       />
     </DashboardLayout>

@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { ActionResponse } from './reference-actions';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
+import { asignarPuestoEmpleadoAction } from './puestos-actions';
 
 // --- Schema de Validación (sin cambios en claves del formulario, son nombres de campo HTML) ---
 const employeeProfileSchema = z.object({
@@ -50,6 +51,9 @@ const employeeProfileSchema = z.object({
     is_active: z.coerce.boolean().optional().default(true),
     role_id: z.coerce.number().optional().nullable(),
     contract_status_id: z.coerce.number().optional().nullable(),
+    puesto_id: z.coerce.number().optional().nullable(),
+    puesto_fecha_inicio: z.string().optional().nullable(),
+    puesto_fecha_fin_anterior: z.string().optional().nullable(),
 
     // Sueldo (aunque se guarde en cargos, se permite en el schema para fluidez)
     salary: z.coerce.number().optional().nullable(),
@@ -175,6 +179,11 @@ export async function updateEmployeeProfileAction(
             );
         }
 
+        // Asignar/Actualizar Puesto
+        if (d.puesto_id !== undefined) {
+            await asignarPuestoEmpleadoAction(d.id!, d.puesto_id || null, "Actualización desde perfil", d.puesto_fecha_inicio, d.puesto_fecha_fin_anterior);
+        }
+
         revalidatePath(`/inicio/empleados/${d.id}`);
         revalidatePath('/inicio/empleados');
 
@@ -273,6 +282,13 @@ export async function createEmployeeAction(
                 creatorId
             ]
         );
+
+        const newId = (result as any).insertId;
+
+        // 3. Asignar Puesto si se seleccionó
+        if (d.puesto_id) {
+            await asignarPuestoEmpleadoAction(newId, d.puesto_id, "Asignación inicial", d.puesto_fecha_inicio, null);
+        }
 
         revalidatePath('/inicio/empleados');
 

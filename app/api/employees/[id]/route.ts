@@ -74,6 +74,8 @@ export async function GET(
       cargo_id: employee.CA_IDCARGO_FK,
       cargo_name: employee.position,
       position: employee.position,
+      puesto_id: employee.PU_IDPUESTO_FK,
+      puesto_name: employee.puesto_name,
       hire_date: employee.US_FECHA_CONTRATACION ? new Date(employee.US_FECHA_CONTRATACION).toISOString() : null,
       termination_date: employee.US_FECHA_RETIRO ? new Date(employee.US_FECHA_RETIRO).toISOString() : null,
       work_schedule: employee.US_HORARIO_TRABAJO,

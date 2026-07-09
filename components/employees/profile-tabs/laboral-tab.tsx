@@ -63,6 +63,10 @@ export function LaboralTab({
                             <p className="text-gray-900">{employee.department || 'No registrado'}</p>
                         </div>
                         <div className="space-y-1">
+                            <p className="text-sm font-medium text-gray-500">Puesto Físico Asignado</p>
+                            <p className="text-gray-900 font-medium">{employee.puesto_name || 'No asignado'}</p>
+                        </div>
+                        <div className="space-y-1">
                             <p className="text-sm font-medium text-gray-500">Estado del Contrato</p>
                             <p className="text-gray-900 font-medium">{employee.contract_status_name || 'Activo'}</p>
                         </div>

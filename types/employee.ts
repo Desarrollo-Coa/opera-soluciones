@@ -21,6 +21,8 @@ export interface Employee {
     // Información laboral
     cargo_id?: number | null;
     cargo_name?: string | null;
+    puesto_id?: number | null;
+    puesto_name?: string | null;
     position?: string | null;
     hire_date?: string | null;
     termination_date?: string | null;

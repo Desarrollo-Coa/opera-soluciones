@@ -25,6 +25,7 @@ export interface EmpleadoAutorreporte {
     document_number: string;
     document_type?: string;
     is_active: boolean;
+    puesto_name?: string;
     estado_reporte: 'PENDIENTE' | 'AUSENCIA' | 'REPORTADO';
     reportes: {
         inicio: { id: number; hora: string; foto: string | null; respuestas?: Record<string, string>; lat?: number; lng?: number } | null;

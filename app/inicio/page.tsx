@@ -14,7 +14,8 @@ import {
   Activity,
   Briefcase,
   Wallet2,
-  Clock
+  Clock,
+  MapPin
 } from "lucide-react";
 import Link from "next/link";
 import { ROLE_CODES } from "@/lib/constants";
@@ -126,6 +127,15 @@ function getRoleModules(role: string): Module[] {
       bgColor: "bg-yellow-50/50",
       hoverColor: "hover:bg-yellow-50 hover:shadow-yellow-100",
       href: "/inicio/seguimiento-os",
+    },
+    {
+      title: "Puestos de Trabajo",
+      description: "Administrar ubicaciones físicas de los trabajadores",
+      icon: MapPin,
+      color: "text-teal-600",
+      bgColor: "bg-teal-50/50",
+      hoverColor: "hover:bg-teal-50 hover:shadow-teal-100",
+      href: "/inicio/puestos",
     }
   ];
 

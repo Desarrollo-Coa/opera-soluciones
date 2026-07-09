@@ -36,11 +36,16 @@ export class AutorreporteService {
                 throw new Error(`Ya has registrado tu ${tipo.toLowerCase()} el día de hoy.`);
             }
 
+            // Obtener el puesto actual del usuario
+            const userPuestoQuery = `SELECT PU_IDPUESTO_FK FROM OS_USUARIOS WHERE US_IDUSUARIO_PK = ?`;
+            const userRows = await executeQuery(userPuestoQuery, [usuarioId]) as RowDataPacket[];
+            const puestoId = userRows.length > 0 ? userRows[0].PU_IDPUESTO_FK : null;
+
             const result = await executeQuery(
                 `INSERT INTO OS_AUTORREPORTES 
-                (US_IDUSUARIO_FK, AR_TIPO, AR_FECHA_HORA, AR_FECHA_REGISTRO, AR_URL_FOTO, AR_LATITUD, AR_LONGITUD) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [usuarioId, tipo, fechaHora, fechaRegistro, fotoUrl, lat ?? null, lng ?? null]
+                (US_IDUSUARIO_FK, PU_IDPUESTO_FK, AR_TIPO, AR_FECHA_HORA, AR_FECHA_REGISTRO, AR_URL_FOTO, AR_LATITUD, AR_LONGITUD) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [usuarioId, puestoId, tipo, fechaHora, fechaRegistro, fotoUrl, lat ?? null, lng ?? null]
             );
 
             const insertId = result.insertId;
@@ -90,7 +95,8 @@ export class AutorreporteService {
                     -- Extraer autorreportes del día con ID (ID|||HORA|||FOTO|||LAT|||LNG)
                     (SELECT CONCAT(AR_IDAUTORREPORTE_PK, '|||', AR_FECHA_HORA, '|||', IFNULL(AR_URL_FOTO, ''), '|||', IFNULL(AR_LATITUD, ''), '|||', IFNULL(AR_LONGITUD, '')) FROM OS_AUTORREPORTES WHERE US_IDUSUARIO_FK = u.US_IDUSUARIO_PK AND AR_TIPO = 'INICIO' AND AR_FECHA_REGISTRO = ? AND AR_ACTIVO = 1 ORDER BY AR_FECHA_HORA ASC LIMIT 1) as reporte_inicio,
                     (SELECT CONCAT(AR_IDAUTORREPORTE_PK, '|||', AR_FECHA_HORA, '|||', IFNULL(AR_LATITUD, ''), '|||', IFNULL(AR_LONGITUD, '')) FROM OS_AUTORREPORTES WHERE US_IDUSUARIO_FK = u.US_IDUSUARIO_PK AND AR_TIPO = 'DESCANSO' AND AR_FECHA_REGISTRO = ? AND AR_ACTIVO = 1 ORDER BY AR_FECHA_HORA ASC LIMIT 1) as reporte_descanso,
-                    (SELECT CONCAT(AR_IDAUTORREPORTE_PK, '|||', AR_FECHA_HORA, '|||', IFNULL(AR_URL_FOTO, ''), '|||', IFNULL(AR_LATITUD, ''), '|||', IFNULL(AR_LONGITUD, '')) FROM OS_AUTORREPORTES WHERE US_IDUSUARIO_FK = u.US_IDUSUARIO_PK AND AR_TIPO = 'FIN' AND AR_FECHA_REGISTRO = ? AND AR_ACTIVO = 1 ORDER BY AR_FECHA_HORA DESC LIMIT 1) as reporte_fin
+                    (SELECT CONCAT(AR_IDAUTORREPORTE_PK, '|||', AR_FECHA_HORA, '|||', IFNULL(AR_URL_FOTO, ''), '|||', IFNULL(AR_LATITUD, ''), '|||', IFNULL(AR_LONGITUD, '')) FROM OS_AUTORREPORTES WHERE US_IDUSUARIO_FK = u.US_IDUSUARIO_PK AND AR_TIPO = 'FIN' AND AR_FECHA_REGISTRO = ? AND AR_ACTIVO = 1 ORDER BY AR_FECHA_HORA DESC LIMIT 1) as reporte_fin,
+                    (SELECT PU_NOMBRE FROM OS_PUESTOS WHERE PU_IDPUESTO_PK = u.PU_IDPUESTO_FK) as puesto_name
                 FROM OS_USUARIOS u
                 JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK
                 WHERE u.US_ACTIVO = 1 
@@ -107,6 +113,7 @@ export class AutorreporteService {
                     document_number: row.document_number,
                     document_type: row.document_type,
                     is_active: Boolean(row.is_active),
+                    puesto_name: row.puesto_name,
                     estado_reporte: 'PENDIENTE',
                     reportes: {
                         inicio: null,

@@ -33,6 +33,8 @@ export interface UserWithRole {
   CA_IDCARGO_FK?: number
   position?: string // Alias virtual → CA_NOMBRE
   salary?: number   // Alias virtual → CA_SUELDO_BASE
+  PU_IDPUESTO_FK?: number
+  puesto_name?: string
   US_FECHA_CONTRATACION?: Date
   US_FECHA_RETIRO?: Date
   US_HORARIO_TRABAJO?: string
@@ -258,11 +260,12 @@ export async function getUserById(id: number): Promise<UserWithRole | null> {
   try {
     const users = await executeQuery(`
       SELECT u.*, cs.EC_NOMBRE as contract_status_name, ur.RO_NOMBRE as role_name, ur.RO_CODIGO as role_code, 
-             c.CA_NOMBRE as position, c.CA_SUELDO_BASE as salary
+             c.CA_NOMBRE as position, c.CA_SUELDO_BASE as salary, p.PU_NOMBRE as puesto_name
       FROM OS_USUARIOS u 
       LEFT JOIN OS_ESTADOS_CONTRATO cs ON u.EC_IDESTADO_CONTRATO_FK = cs.EC_IDESTADO_CONTRATO_PK 
       LEFT JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK 
       LEFT JOIN OS_CARGOS c ON u.CA_IDCARGO_FK = c.CA_IDCARGO_PK
+      LEFT JOIN OS_PUESTOS p ON u.PU_IDPUESTO_FK = p.PU_IDPUESTO_PK
       WHERE u.US_IDUSUARIO_PK = ? AND u.US_FECHA_ELIMINACION IS NULL
     `, [id]) as UserWithRole[]
 
@@ -285,11 +288,13 @@ export async function getAllActiveUsers(): Promise<UserWithRole[]> {
         u.US_FECHA_CREACION, u.RO_IDROL_FK, u.EC_IDESTADO_CONTRATO_FK, u.US_DEPARTAMENTO, u.US_IDMANAGER_FK,
         cs.EC_NOMBRE as contract_status_name, 
         ur.RO_NOMBRE as role_name, 
-        ur.RO_CODIGO as role_code 
+        ur.RO_CODIGO as role_code,
+        p.PU_NOMBRE as puesto_name
       FROM OS_USUARIOS u 
       LEFT JOIN OS_ESTADOS_CONTRATO cs ON u.EC_IDESTADO_CONTRATO_FK = cs.EC_IDESTADO_CONTRATO_PK 
       LEFT JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK 
       LEFT JOIN OS_CARGOS c ON u.CA_IDCARGO_FK = c.CA_IDCARGO_PK
+      LEFT JOIN OS_PUESTOS p ON u.PU_IDPUESTO_FK = p.PU_IDPUESTO_PK
       WHERE u.US_FECHA_ELIMINACION IS NULL 
       ORDER BY u.US_IDUSUARIO_PK DESC
     `) as UserWithRole[]
