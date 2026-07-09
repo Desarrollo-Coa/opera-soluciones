@@ -681,16 +681,6 @@ export function FileExplorer({ initialFolderId = null }: FileExplorerProps) {
               </nav>
             </div>
 
-            <div className="mt-auto p-4 bg-primary/5 rounded-lg border border-primary/10">
-              <div className="flex items-center space-x-2 text-xs text-primary font-medium mb-2">
-                <Info className="w-3 h-3" />
-                <span>Espacio Utilizado</span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: "45%" }} className="h-full bg-primary" />
-              </div>
-              <p className="mt-2 text-[10px] text-slate-500">4.5 GB de 10 GB disponibles</p>
-            </div>
           </div>
         </ResizablePanel>
 
@@ -1282,7 +1272,7 @@ function DraggableItem({
           <ContextMenuItem onClick={() => handleClipboard('copy')} className="rounded-lg"><Clock className="w-4 h-4 mr-3" /> Copiar</ContextMenuItem>
           <ContextMenuItem onClick={() => handleClipboard('cut')} className="rounded-lg"><Trash2 className="w-4 h-4 mr-3" /> Cortar</ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem onClick={(e) => { e.stopPropagation(); setRenamingId(item.id); setRenamingName(item.original_name || item.name); }} className="rounded-lg"><Edit className="w-4 h-4 mr-3" /> Renombrar</ContextMenuItem>
+          <ContextMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimeout(() => { setRenamingId(item.id); setRenamingName(item.original_name || item.name); }, 150); }} className="rounded-lg"><Edit className="w-4 h-4 mr-3" /> Renombrar</ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem onClick={() => { setEditingItem(item); setDeleteConfirmOpen(true); }} className="rounded-lg text-rose-500 focus:bg-rose-50 dark:focus:bg-rose-950 focus:text-rose-600 font-medium"><Trash2 className="w-4 h-4 mr-3" /> Mover a papelera</ContextMenuItem>
         </ContextMenuContent>

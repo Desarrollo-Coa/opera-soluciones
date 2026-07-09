@@ -11,12 +11,12 @@ export async function getMailerConfigAction() {
             return { success: false, message: 'No tienes permisos para ver esta configuración' };
         }
 
-        const rows = await executeQuery(`SELECT ID, HORA_ENVIO, EMAILS, ACTIVO, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM FROM OS_MAILER_CONFIG LIMIT 1`) as any[];
+        const rows = await executeQuery(`SELECT ID, HORA_ENVIO, HORA_ENVIO_SALIDA, EMAILS, ACTIVO, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM FROM OS_MAILER_CONFIG LIMIT 1`) as any[];
         if (rows.length === 0) {
             return { 
                 success: true, 
                 data: { 
-                    id: 0, hora_envio: '10:00', emails: [], activo: false,
+                    id: 0, hora_envio: '10:00', hora_envio_salida: '18:00', emails: [], activo: false,
                     smtp_host: '', smtp_port: 465, smtp_user: '', smtp_pass: '', smtp_from: ''
                 } 
             };
@@ -35,6 +35,7 @@ export async function getMailerConfigAction() {
             data: { 
                 id: config.ID, 
                 hora_envio: config.HORA_ENVIO, 
+                hora_envio_salida: config.HORA_ENVIO_SALIDA,
                 emails, 
                 activo: Boolean(config.ACTIVO),
                 smtp_host: config.SMTP_HOST || '',
@@ -51,7 +52,7 @@ export async function getMailerConfigAction() {
 }
 
 export async function saveMailerConfigAction(data: { 
-    hora_envio: string, emails: string[], activo: boolean,
+    hora_envio: string, hora_envio_salida: string, emails: string[], activo: boolean,
     smtp_host: string, smtp_port: number, smtp_user: string, smtp_pass: string, smtp_from: string
 }) {
     try {
@@ -68,11 +69,11 @@ export async function saveMailerConfigAction(data: {
         if (rows.length > 0) {
             await executeQuery(
                 `UPDATE OS_MAILER_CONFIG SET 
-                    HORA_ENVIO = ?, EMAILS = ?, ACTIVO = ?,
+                    HORA_ENVIO = ?, HORA_ENVIO_SALIDA = ?, EMAILS = ?, ACTIVO = ?,
                     SMTP_HOST = ?, SMTP_PORT = ?, SMTP_USER = ?, SMTP_PASS = ?, SMTP_FROM = ?
                  WHERE ID = ?`,
                 [
-                    data.hora_envio, emailsJson, activoInt,
+                    data.hora_envio, data.hora_envio_salida, emailsJson, activoInt,
                     data.smtp_host, data.smtp_port, data.smtp_user, data.smtp_pass, data.smtp_from,
                     rows[0].ID
                 ]
@@ -80,10 +81,10 @@ export async function saveMailerConfigAction(data: {
         } else {
             await executeQuery(
                 `INSERT INTO OS_MAILER_CONFIG 
-                    (HORA_ENVIO, EMAILS, ACTIVO, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    (HORA_ENVIO, HORA_ENVIO_SALIDA, EMAILS, ACTIVO, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    data.hora_envio, emailsJson, activoInt,
+                    data.hora_envio, data.hora_envio_salida, emailsJson, activoInt,
                     data.smtp_host, data.smtp_port, data.smtp_user, data.smtp_pass, data.smtp_from
                 ]
             );

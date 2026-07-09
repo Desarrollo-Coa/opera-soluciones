@@ -16,6 +16,7 @@ export function MailerConfig() {
     
     const [activo, setActivo] = useState(false);
     const [horaEnvio, setHoraEnvio] = useState('10:00');
+    const [horaEnvioSalida, setHoraEnvioSalida] = useState('18:00');
     const [emails, setEmails] = useState<string[]>([]);
     const [newEmail, setNewEmail] = useState('');
 
@@ -35,6 +36,7 @@ export function MailerConfig() {
         if (res.success && res.data) {
             setActivo(res.data.activo);
             setHoraEnvio(res.data.hora_envio);
+            setHoraEnvioSalida(res.data.hora_envio_salida);
             setEmails(res.data.emails || []);
             setSmtpHost(res.data.smtp_host || '');
             setSmtpPort(String(res.data.smtp_port || 465));
@@ -75,14 +77,15 @@ export function MailerConfig() {
             return;
         }
 
-        if (!horaEnvio) {
-            toast.error("Debe especificar una hora de envío");
+        if (!horaEnvio || !horaEnvioSalida) {
+            toast.error("Debe especificar las horas de envío de entrada y salida");
             return;
         }
 
         setIsSaving(true);
         const res = await saveMailerConfigAction({ 
             hora_envio: horaEnvio, 
+            hora_envio_salida: horaEnvioSalida,
             emails, 
             activo,
             smtp_host: smtpHost,
@@ -113,7 +116,7 @@ export function MailerConfig() {
                             Reporte Automático por Correo
                         </CardTitle>
                         <CardDescription className="mt-1.5 text-slate-500">
-                            Envía un reporte diario consolidado con los autorreportes pendientes de los trabajadores.
+                            Envía reportes diarios consolidados con los autorreportes pendientes de los trabajadores.
                         </CardDescription>
                     </div>
                     <div className="flex flex-col items-center gap-2 bg-white px-3 py-2 rounded-lg border shadow-sm">
@@ -132,24 +135,45 @@ export function MailerConfig() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                     {/* Columna 1: Reporte */}
                     <div className="space-y-6">
-                        <div className="space-y-3">
-                    <Label className="flex items-center gap-2 text-slate-700">
-                        <Clock className="w-4 h-4 text-slate-400" />
-                        Hora de Envío Diaria
-                    </Label>
-                    <div className="flex items-center gap-3">
-                        <Input 
-                            type="time" 
-                            value={horaEnvio}
-                            onChange={(e) => setHoraEnvio(e.target.value)}
-                            className="w-32"
-                            disabled={!activo}
-                        />
-                        <span className="text-xs text-slate-500">
-                            El sistema revisará y enviará el correo exactamente a esta hora.
-                        </span>
-                    </div>
-                </div>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className="flex items-center gap-2 text-slate-700 mb-2">
+                                    <Clock className="w-4 h-4 text-slate-400" />
+                                    Hora de Envío (Pendientes de Entrada)
+                                </Label>
+                                <div className="flex items-center gap-3">
+                                    <Input 
+                                        type="time" 
+                                        value={horaEnvio}
+                                        onChange={(e) => setHoraEnvio(e.target.value)}
+                                        className="w-32"
+                                        disabled={!activo}
+                                    />
+                                    <span className="text-xs text-slate-500">
+                                        Revisa quiénes no han marcado INICIO.
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <Label className="flex items-center gap-2 text-slate-700 mb-2">
+                                    <Clock className="w-4 h-4 text-slate-400" />
+                                    Hora de Envío (Pendientes de Salida)
+                                </Label>
+                                <div className="flex items-center gap-3">
+                                    <Input 
+                                        type="time" 
+                                        value={horaEnvioSalida}
+                                        onChange={(e) => setHoraEnvioSalida(e.target.value)}
+                                        className="w-32"
+                                        disabled={!activo}
+                                    />
+                                    <span className="text-xs text-slate-500">
+                                        Revisa quiénes marcaron INICIO pero olvidaron el FIN.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
                 <div className="space-y-3 pt-4 border-t border-slate-100">
                     <Label className="flex items-center gap-2 text-slate-700">

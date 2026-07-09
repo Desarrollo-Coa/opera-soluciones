@@ -249,9 +249,11 @@ export default function AutorreportePage() {
                         <br/><br/>
                         Si el navegador no te preguntó o bloqueaste el permiso por error, sigue estos pasos según tu dispositivo:
                         <br/><br/>
-                        <b>En Android (Chrome):</b> Toca el ícono del candado (🔒) o configuración en la barra superior de direcciones, ve a "Permisos" y selecciona "Permitir" en Ubicación.
+                        <b>En Android (Chrome):</b> Toca el ícono del candado (🔒) o configuración en la barra superior, ve a "Permisos" y selecciona "Permitir" en Ubicación.
                         <br/><br/>
-                        <b>En iPhone (Safari):</b> Toca el ícono "aA" en la barra de direcciones (esquina inferior o superior izquierda), selecciona "Ajustes del sitio web" y cambia la Ubicación a "Permitir".
+                        <b>En iPhone (Safari):</b> Toca el ícono "aA" en la barra de direcciones, selecciona "Ajustes del sitio web" y cambia la Ubicación a "Permitir".
+                        <br/><br/>
+                        <b>Si instalaste la App (PWA):</b> Ve a la Configuración/Ajustes generales de tu celular, busca la lista de Aplicaciones, selecciona SGI Opera (o Chrome/Safari) y en la sección de "Permisos" activa la Ubicación.
                         <br/><br/>
                         Una vez lo hayas hecho, presiona el botón de abajo para recargar la página.
                     </p>
