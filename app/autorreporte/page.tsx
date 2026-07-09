@@ -244,10 +244,16 @@ export default function AutorreportePage() {
                         <MapPin className="w-8 h-8 text-blue-600" />
                     </div>
                     <h2 className="text-2xl font-normal text-[#202124] mb-3">Se requiere tu ubicación</h2>
-                    <p className="text-[#5f6368] mb-6 text-sm leading-relaxed">
-                        Para completar el autorreporte de <b>{activeAction.toLowerCase()}</b>, es necesario que nos compartas tu ubicación geográfica actual.
+                    <p className="text-[#5f6368] mb-6 text-sm leading-relaxed text-left">
+                        Para completar el autorreporte de <b>{activeAction?.toLowerCase()}</b>, es necesario que nos compartas tu ubicación geográfica actual.
                         <br/><br/>
-                        Si el navegador no te preguntó o bloqueaste el permiso por error, haz clic en el <b>ícono del candado (🔒)</b> o de información (ⓘ) en la barra de direcciones superior, selecciona <b>"Permitir"</b> en la opción de Ubicación y vuelve a intentarlo.
+                        Si el navegador no te preguntó o bloqueaste el permiso por error, sigue estos pasos según tu dispositivo:
+                        <br/><br/>
+                        <b>En Android (Chrome):</b> Toca el ícono del candado (🔒) o configuración en la barra superior de direcciones, ve a "Permisos" y selecciona "Permitir" en Ubicación.
+                        <br/><br/>
+                        <b>En iPhone (Safari):</b> Toca el ícono "aA" en la barra de direcciones (esquina inferior o superior izquierda), selecciona "Ajustes del sitio web" y cambia la Ubicación a "Permitir".
+                        <br/><br/>
+                        Una vez lo hayas hecho, presiona el botón de abajo para recargar la página.
                     </p>
                     <div className="flex gap-3 w-full">
                         <Button variant="outline" className="flex-1 border-[#dadce0] text-[#5f6368] hover:bg-gray-50" onClick={() => {
@@ -256,13 +262,9 @@ export default function AutorreportePage() {
                             setPendingPhoto(undefined);
                         }}>Cancelar</Button>
                         <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => {
-                            if (pendingPhoto) {
-                                handleReport(activeAction, pendingPhoto);
-                            } else {
-                                iniciarAccion(activeAction);
-                            }
+                            window.location.reload();
                         }} disabled={isLoading}>
-                            {isLoading ? "Verificando..." : "Intentar de nuevo"}
+                            {isLoading ? "Cargando..." : "Recargar página"}
                         </Button>
                     </div>
                 </div>
