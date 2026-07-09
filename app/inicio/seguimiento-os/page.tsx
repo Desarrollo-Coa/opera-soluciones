@@ -11,6 +11,7 @@ import { getSeguimientoDiarioAction, eliminarAutorreporteAction, registrarAutorr
 import { getReporteCompletoPDFAction } from '@/actions/reportes-pdf-actions';
 import { generarReportePDF } from '@/lib/pdf/generador-reporte';
 import MapaDistribucion from './components/MapaDistribucion';
+import { PreguntasModal } from '@/components/seguimiento/preguntas-modal';
 import { EmpleadoAutorreporte } from '@/types/autorreporte';
 import { CalendarView } from '@/components/autorreporte/CalendarView';
 import { format } from 'date-fns';
@@ -108,6 +109,7 @@ export default function SeguimientoTrabajadorOSPage() {
                         <Download className={`w-3.5 h-3.5 mr-2 ${isGeneratingPdf ? 'animate-bounce' : ''}`} />
                         PDF
                     </Button>
+                    <PreguntasModal />
                 </div>
             </div>
 
@@ -388,12 +390,10 @@ function EmpleadoCard({ empleado, onRefresh, isModal = false }: { empleado: Empl
                             <span className="text-[9px] uppercase font-bold text-gray-400 mr-1.5">{empleado.document_type}</span>
                             {empleado.document_number}
                         </div>
-                        {empleado.puesto_name && (
-                            <div className="flex items-center gap-1 mt-1 text-[10px] text-indigo-600 bg-indigo-50 w-fit px-1.5 py-0.5 rounded border border-indigo-100">
-                                <MapPin className="w-3 h-3" />
-                                <span className="font-semibold">{empleado.puesto_name}</span>
-                            </div>
-                        )}
+                        <div className={`flex items-center gap-1 mt-1 text-[10px] w-fit px-1.5 py-0.5 rounded border ${empleado.puesto_name ? 'text-indigo-600 bg-indigo-50 border-indigo-100' : 'text-gray-500 bg-gray-50 border-gray-200'}`}>
+                            <MapPin className="w-3 h-3" />
+                            <span className="font-semibold">{empleado.puesto_name || 'Puesto no definido'}</span>
+                        </div>
                     </div>
                 </div>
 

@@ -43,6 +43,9 @@ if (process.env.NODE_ENV !== 'production') {
  */
 export interface DatabaseConnection {
     execute(query: string, params?: any[]): Promise<any>;
+    beginTransaction(): Promise<void>;
+    commit(): Promise<void>;
+    rollback(): Promise<void>;
     release(): void;
 }
 
@@ -60,6 +63,18 @@ class MySQLConnection implements DatabaseConnection {
             console.error('Database query error:', error);
             throw new Error(ERROR_MESSAGES.DATABASE_ERROR);
         }
+    }
+
+    async beginTransaction(): Promise<void> {
+        await this.connection.beginTransaction();
+    }
+
+    async commit(): Promise<void> {
+        await this.connection.commit();
+    }
+
+    async rollback(): Promise<void> {
+        await this.connection.rollback();
     }
 
     release(): void {
