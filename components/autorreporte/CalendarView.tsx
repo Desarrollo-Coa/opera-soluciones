@@ -51,6 +51,9 @@ export function CalendarView({ year, month, setYear, setMonth, renderEmpleadoCar
     const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
     const currentYear = new Date().getFullYear();
+    const isCurrentMonth = year === new Date().getFullYear() && month === new Date().getMonth() + 1;
+    const currentDay = new Date().getDate();
+
     const years = [currentYear - 1, currentYear, currentYear + 1];
     const months = [
         { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
@@ -58,6 +61,20 @@ export function CalendarView({ year, month, setYear, setMonth, renderEmpleadoCar
         { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
         { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' }
     ];
+
+    // Scroll al día actual si es el mes actual
+    useEffect(() => {
+        if (data.length > 0 && isCurrentMonth) {
+            setTimeout(() => {
+                const el = document.getElementById('current-day-col');
+                const container = document.getElementById('calendar-scroll-container');
+                if (el && container) {
+                    const scrollLeft = el.offsetLeft - (container.clientWidth / 2) + (el.clientWidth / 2);
+                    container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
+                }
+            }, 300); // Dar tiempo al renderizado de la tabla
+        }
+    }, [data, isCurrentMonth]);
 
     const getStatusColor = (estado: string) => {
         switch (estado) {
@@ -123,21 +140,26 @@ export function CalendarView({ year, month, setYear, setMonth, renderEmpleadoCar
 
             {/* Matriz Calendario */}
             <Card className="bg-white border-gray-200">
-                <div className="max-h-[600px] overflow-auto custom-scrollbar">
-                    <div className="min-w-[1200px]">
+                <div id="calendar-scroll-container" className="max-h-[600px] overflow-auto custom-scrollbar">
+                    <div className="min-w-fit">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase text-[10px] font-bold sticky top-0 z-20 shadow-sm">
                             <tr>
-                                <th className="px-4 py-3 min-w-[250px] sticky left-0 bg-gray-50 z-10 border-r border-gray-200 shadow-[1px_0_0_0_#e5e7eb]">
+                                <th className="px-2 md:px-4 py-3 min-w-[130px] max-w-[140px] md:min-w-[220px] md:max-w-[250px] sticky left-0 bg-gray-50 z-10 border-r border-gray-200 shadow-[1px_0_0_0_#e5e7eb]">
                                     Trabajador
                                 </th>
                                 {daysArray.map(day => {
                                     const date = new Date(year, month - 1, day);
+                                    const isToday = isCurrentMonth && day === currentDay;
                                     return (
-                                        <th key={day} className="px-1 py-3 text-center min-w-[40px]">
+                                        <th 
+                                            key={day} 
+                                            id={isToday ? 'current-day-col' : undefined}
+                                            className={`px-1 py-3 text-center min-w-[36px] ${isToday ? 'bg-blue-100/50 border-x border-blue-200' : ''}`}
+                                        >
                                             <div className="flex flex-col items-center">
-                                                <span className="text-gray-900 text-xs">{day}</span>
-                                                <span className="text-[9px] text-gray-400">{format(date, 'E', { locale: es }).substring(0, 3)}</span>
+                                                <span className={`text-xs ${isToday ? 'text-blue-700 font-extrabold' : 'text-gray-900'}`}>{day}</span>
+                                                <span className={`text-[9px] ${isToday ? 'text-blue-600 font-bold' : 'text-gray-400'}`}>{format(date, 'E', { locale: es }).substring(0, 3)}</span>
                                             </div>
                                         </th>
                                     );
@@ -157,20 +179,21 @@ export function CalendarView({ year, month, setYear, setMonth, renderEmpleadoCar
                             )}
                             {data.map((emp) => (
                                 <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-2 sticky left-0 bg-white hover:bg-gray-50 z-10 border-r border-gray-100 shadow-[1px_0_0_0_#f3f4f6]">
-                                        <div className="font-semibold text-gray-900 text-xs truncate max-w-[230px]" title={`${emp.first_name} ${emp.last_name}`}>
+                                    <td className="px-2 md:px-4 py-2 sticky left-0 bg-white hover:bg-gray-50 z-10 border-r border-gray-100 shadow-[1px_0_0_0_#f3f4f6]">
+                                        <div className="font-semibold text-gray-900 text-xs break-words whitespace-normal leading-tight max-w-[120px] md:max-w-[200px]" title={`${emp.first_name} ${emp.last_name}`}>
                                             {emp.first_name} {emp.last_name}
                                         </div>
-                                        <div className="text-[10px] text-gray-500">
+                                        <div className="text-[9px] md:text-[10px] text-gray-500 mt-0.5">
                                             {emp.document_number}
                                         </div>
                                     </td>
                                     {daysArray.map(day => {
                                         const diaData = emp.dias[day];
                                         const isClickable = diaData?.estado !== 'VACIO';
+                                        const isToday = isCurrentMonth && day === currentDay;
                                         
                                         return (
-                                            <td key={day} className="px-1 py-2 text-center relative group">
+                                            <td key={day} className={`px-1 py-2 text-center relative group ${isToday ? 'bg-blue-50/30' : ''}`}>
                                                 <button 
                                                     disabled={!isClickable}
                                                     onClick={() => handleCellClick(emp.id, day, diaData?.estado)}

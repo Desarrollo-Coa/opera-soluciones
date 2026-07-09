@@ -100,6 +100,7 @@ export class AutorreporteService {
                 FROM OS_USUARIOS u
                 JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK
                 WHERE u.US_ACTIVO = 1 
+                  AND u.US_FECHA_ELIMINACION IS NULL
                   AND ur.RO_NOMBRE != 'ADMINISTRADOR'
             `;
 
@@ -205,7 +206,9 @@ export class AutorreporteService {
                     u.US_NUMERO_DOCUMENTO as document_number
                 FROM OS_USUARIOS u
                 JOIN OS_ROLES ur ON u.RO_IDROL_FK = ur.RO_IDROL_PK
-                WHERE u.US_ACTIVO = 1 AND ur.RO_NOMBRE != 'ADMINISTRADOR'
+                WHERE u.US_ACTIVO = 1 
+                  AND u.US_FECHA_ELIMINACION IS NULL 
+                  AND ur.RO_NOMBRE != 'ADMINISTRADOR'
                 ORDER BY u.US_NOMBRE ASC
             `;
             const users = await executeQuery(usersQuery) as RowDataPacket[];

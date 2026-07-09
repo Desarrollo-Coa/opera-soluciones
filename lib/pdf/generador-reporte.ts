@@ -140,8 +140,8 @@ export async function generarReportePDF(fecha: string, empleadosData: any[], log
             
             for (const res of inicio.respuestas) {
                 tableBody.push([
-                    { text: res.pregunta, fontSize: 10, color: '#3c4043', margin: [0, 6, 0, 6] },
-                    { text: res.valor, fontSize: 10, bold: true, color: '#202124', alignment: 'center', margin: [0, 6, 0, 6] }
+                    { text: res.pregunta, fontSize: 8, color: '#3c4043', margin: [0, 2, 0, 2] },
+                    { text: res.valor, fontSize: 8, bold: true, color: '#202124', alignment: 'center', margin: [0, 2, 0, 2] }
                 ]);
             }
 
@@ -157,8 +157,8 @@ export async function generarReportePDF(fecha: string, empleadosData: any[], log
                     hLineColor: () => '#e8eaed',
                     paddingLeft: () => 5,
                     paddingRight: () => 5,
-                    paddingTop: () => 3,
-                    paddingBottom: () => 3
+                    paddingTop: () => 1,
+                    paddingBottom: () => 1
                 }
             });
         }

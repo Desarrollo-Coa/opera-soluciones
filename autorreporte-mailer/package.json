@@ -1,0 +1,17 @@
+{
+  "name": "sgi-autorreporte-mailer",
+  "version": "1.0.0",
+  "description": "Servicio de notificaciones automáticas para autorreportes pendientes de SGI Opera Soluciones",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.9.7",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.13"
+  }
+}
